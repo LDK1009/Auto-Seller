@@ -126,8 +126,9 @@ export default function BackgroundRemovalView() {
                 value={isModelLoading ? modelProgress : overallProgress / 100}
                 indeterminate={isModelLoading && modelProgress === 0}
               />
+              {/* 전체 / 완료 (숫자만) */}
               <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'right' }}>
-                완료 {doneCount} / 전체 {jobs.length}
+                {jobs.length} / {doneCount}
               </Typography>
             </Stack>
 
