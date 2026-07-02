@@ -17,6 +17,7 @@ import { useBackgroundRemoval } from './_hooks/useBackgroundRemoval';
 import ImageDropzone from './_components/ImageDropzone';
 import BackgroundOptionSelector from './_components/BackgroundOptionSelector';
 import ImageJobGrid from './_components/ImageJobGrid';
+import StatBox from './_components/StatBox';
 
 export default function BackgroundRemovalView() {
   const {
@@ -141,10 +142,11 @@ export default function BackgroundRemovalView() {
                 value={isModelLoading ? modelProgress : overallProgress / 100}
                 indeterminate={isModelLoading && modelProgress === 0}
               />
-              {/* 전체 / 완료 (숫자만) */}
-              <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'right' }}>
-                {jobs.length} / {doneCount}
-              </Typography>
+              {/* 작업 파일 수 — 좌측 개별 박스 */}
+              <Stack direction="row" spacing={1}>
+                <StatBox label="전체" value={jobs.length} />
+                <StatBox label="완료" value={doneCount} />
+              </Stack>
             </Stack>
             )}
 
