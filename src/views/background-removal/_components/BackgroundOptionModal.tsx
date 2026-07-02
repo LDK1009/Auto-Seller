@@ -208,15 +208,16 @@ export default function BackgroundOptionModal({
                 </NavButton>
               </PreviewBody>
 
-              {/* 파일명 · 위치 */}
-              <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                <FileName variant="caption" color="text.secondary" title={currentJob.file.name}>
-                  {currentJob.file.name}
-                </FileName>
+              {/* 위치(중앙) · 파일명(우측 끝) */}
+              <MetaRow>
+                <span />
                 <Typography variant="caption" color="text.secondary">
                   {index + 1} / {jobs.length}
                 </Typography>
-              </Stack>
+                <FileName variant="caption" color="text.secondary" title={currentJob.file.name}>
+                  {currentJob.file.name}
+                </FileName>
+              </MetaRow>
             </Stack>
           )}
 
@@ -261,7 +262,9 @@ export default function BackgroundOptionModal({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>확인</Button>
+        <Button fullWidth variant="contained" onClick={onClose}>
+          확인
+        </Button>
       </DialogActions>
     </Dialog>
   );
@@ -360,12 +363,19 @@ const NavButton = styled(IconButton)<{ $side: 'left' | 'right' }>(({ theme, $sid
   '&:hover': { backgroundColor: 'rgba(255,255,255,1)' },
 }));
 
+// 위치는 중앙, 파일명은 우측 끝 (양쪽 1fr 그리드로 중앙 고정)
+const MetaRow = styled.div({
+  display: 'grid',
+  gridTemplateColumns: '1fr auto 1fr',
+  alignItems: 'center',
+});
+
 const FileName = styled(Typography)({
-  flex: 1,
   minWidth: 0,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
+  textAlign: 'right',
 });
 
 //////////////////// 툴 섹션 ////////////////////
