@@ -24,7 +24,10 @@ export type ImageJob = {
   file: File;
   originalUrl: string; // 원본 미리보기 objectURL
   status: ProcessStatus;
-  progress: number; // 0~1 (processing 중)
+  progress: number; // 0~1 목표 진행률 (processing 중)
+  progressMs: number; // 위 목표까지 바 애니메이션 시간(ms)
+  downloading: boolean; // 모델 다운로드 구간(바 indeterminate)
+  step: string; // 현재 단계 라벨(모델 다운로드 / 배경 분석 …), processing 중에만 유효
   transparentBlob: Blob | null; // 누끼(투명) 결과 — 재합성 재료
   resultBlob: Blob | null; // 배경옵션 적용 최종 결과
   resultUrl: string | null; // 최종 결과 objectURL
@@ -39,6 +42,7 @@ function patchJob(jobs: ImageJob[], id: string, patch: Partial<ImageJob>): Image
 export function useBackgroundRemoval() {
   const [jobs, setJobs] = useState<ImageJob[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false); // 취소 요청 후 현재 이미지 마무리 대기
   const [isZipping, setIsZipping] = useState(false);
   const [backgroundOption, setBackgroundOption] = useState<BackgroundOption>({ kind: 'transparent' });
   const [customColor, setCustomColor] = useState(DEFAULT_CUSTOM_COLOR);
@@ -46,6 +50,9 @@ export function useBackgroundRemoval() {
   // 순차 루프에서 최신 배경옵션 참조용
   const backgroundOptionRef = useRef(backgroundOption);
   backgroundOptionRef.current = backgroundOption;
+
+  // 협조적 취소 플래그 (진행 중 이미지의 추론 자체는 중단 불가 → 다음 이미지부터 중지)
+  const cancelRequestedRef = useRef(false);
 
   // 언마운트 시 objectURL 정리를 위한 최신 jobs 참조
   const jobsRef = useRef<ImageJob[]>(jobs);
@@ -66,6 +73,9 @@ export function useBackgroundRemoval() {
       originalUrl: URL.createObjectURL(file),
       status: 'pending',
       progress: 0,
+      progressMs: 0,
+      downloading: false,
+      step: '',
       transparentBlob: null,
       resultBlob: null,
       resultUrl: null,
@@ -104,16 +114,28 @@ export function useBackgroundRemoval() {
       .map((job) => job.id);
     if (pendingIds.length === 0 || isProcessing) return;
 
+    cancelRequestedRef.current = false;
+    setIsCancelling(false);
     setIsProcessing(true);
     for (const id of pendingIds) {
+      // 취소 요청 시 다음 이미지부터 중지 (진행 중인 이미지는 위 반복에서 이미 완료됨)
+      if (cancelRequestedRef.current) break;
+
       const target = jobsRef.current.find((job) => job.id === id);
       if (!target) continue;
 
-      setJobs((prev) => patchJob(prev, id, { status: 'processing', progress: 0, error: null }));
+      setJobs((prev) => patchJob(prev, id, {
+        status: 'processing', progress: 0, progressMs: 0, downloading: false, step: '준비 중', error: null,
+      }));
       try {
         //////////////////// 1) 배경 제거(투명) ////////////////////
-        const transparentBlob = await removeImageBackground(target.file, (ratio) => {
-          setJobs((prev) => patchJob(prev, id, { progress: ratio }));
+        const transparentBlob = await removeImageBackground(target.file, ({ step, phase, ratio, durationMs }) => {
+          setJobs((prev) => patchJob(prev, id, {
+            step,
+            progress: ratio,
+            progressMs: durationMs,
+            downloading: phase === 'download',
+          }));
         });
 
         //////////////////// 2) 배경옵션 적용 ////////////////////
@@ -123,6 +145,9 @@ export function useBackgroundRemoval() {
         setJobs((prev) => patchJob(prev, id, {
           status: 'done',
           progress: 1,
+          progressMs: 200,
+          downloading: false,
+          step: '',
           transparentBlob,
           resultBlob,
           resultUrl,
@@ -133,8 +158,24 @@ export function useBackgroundRemoval() {
         setJobs((prev) => patchJob(prev, id, { status: 'error', error: message }));
       }
     }
+    const wasCancelled = cancelRequestedRef.current;
+    cancelRequestedRef.current = false;
+    setIsCancelling(false);
     setIsProcessing(false);
-    enqueueSnackbar('누끼 처리가 완료되었습니다.', { variant: 'success' });
+    if (wasCancelled) {
+      enqueueSnackbar('누끼 처리를 중지했습니다. 남은 이미지는 대기 상태입니다.', { variant: 'info' });
+    } else {
+      enqueueSnackbar('누끼 처리가 완료되었습니다.', { variant: 'success' });
+    }
+  }, [isProcessing]);
+
+  //////////////////// 처리 취소 요청 ////////////////////
+  // 진행 중 이미지의 추론은 중단 불가 → 현재 이미지 완료 후 나머지 중지(협조적 취소).
+  const requestCancel = useCallback(() => {
+    if (!isProcessing || cancelRequestedRef.current) return;
+    cancelRequestedRef.current = true;
+    setIsCancelling(true);
+    enqueueSnackbar('현재 이미지를 마친 뒤 중지합니다.', { variant: 'warning' });
   }, [isProcessing]);
 
   //////////////////// 배경옵션 변경 시 완료 job 재합성 ////////////////////
@@ -196,6 +237,7 @@ export function useBackgroundRemoval() {
   return {
     jobs,
     isProcessing,
+    isCancelling,
     isZipping,
     backgroundOption,
     customColor,
@@ -206,6 +248,7 @@ export function useBackgroundRemoval() {
     removeJob,
     clearAll,
     start,
+    requestCancel,
     changeBackgroundOption,
     downloadAllAsZip,
   };

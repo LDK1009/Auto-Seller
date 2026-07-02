@@ -11,6 +11,7 @@ import Divider from '@mui/material/Divider';
 import LinearProgress from '@mui/material/LinearProgress';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import DownloadIcon from '@mui/icons-material/Download';
+import StopCircleIcon from '@mui/icons-material/StopCircle';
 import { useBackgroundRemoval } from './_hooks/useBackgroundRemoval';
 import ImageDropzone from './_components/ImageDropzone';
 import BackgroundOptionSelector from './_components/BackgroundOptionSelector';
@@ -20,6 +21,7 @@ export default function BackgroundRemovalView() {
   const {
     jobs,
     isProcessing,
+    isCancelling,
     isZipping,
     backgroundOption,
     customColor,
@@ -30,6 +32,7 @@ export default function BackgroundRemovalView() {
     removeJob,
     clearAll,
     start,
+    requestCancel,
     changeBackgroundOption,
     downloadAllAsZip,
   } = useBackgroundRemoval();
@@ -76,6 +79,17 @@ export default function BackgroundRemovalView() {
               >
                 {isProcessing ? '처리 중…' : `누끼 처리 (${pendingCount})`}
               </Button>
+              {isProcessing && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<StopCircleIcon />}
+                  onClick={requestCancel}
+                  disabled={isCancelling}
+                >
+                  {isCancelling ? '중지 중…' : '취소'}
+                </Button>
+              )}
               <Button
                 variant="outlined"
                 startIcon={<DownloadIcon />}

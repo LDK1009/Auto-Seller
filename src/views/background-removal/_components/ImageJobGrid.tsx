@@ -24,6 +24,6 @@ export default function ImageJobGrid({ jobs, onRemove }: ImageJobGridProps) {
 //////////////////////////////////////// 스타일 ////////////////////////////////////////
 const Grid = styled.div(({ theme }) => ({
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-  gap: theme.spacing(2),
+  gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+  gap: theme.spacing(1.5),
 }));
