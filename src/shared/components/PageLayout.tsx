@@ -15,6 +15,7 @@ type PageLayoutProps = {
   title: string;
   description?: string;
   actions?: ReactNode; // 타이틀 우측 액션 (버튼 등)
+  help?: ReactNode; // 컨텐츠 상단 도움말 패널 (HelpPanel 권장)
   maxWidth?: Breakpoint;
   children: ReactNode;
 };
@@ -23,6 +24,7 @@ export default function PageLayout({
   title,
   description,
   actions,
+  help,
   maxWidth = 'lg',
   children,
 }: PageLayoutProps) {
@@ -42,6 +44,9 @@ export default function PageLayout({
         </Stack>
         {actions && <ActionsSlot>{actions}</ActionsSlot>}
       </TitleSection>
+
+      {/* 도움말 (컨텐츠 상단 고정 위치) */}
+      {help && <HelpSlot>{help}</HelpSlot>}
 
       {/* 컨텐츠 섹션 */}
       <ContentSection>{children}</ContentSection>
@@ -68,6 +73,10 @@ const TitleSection = styled.div(({ theme }) => ({
 const ActionsSlot = styled.div({
   flexShrink: 0,
 });
+
+const HelpSlot = styled.div(({ theme }) => ({
+  marginBottom: theme.spacing(3),
+}));
 
 const ContentSection = styled.div(({ theme }) => ({
   flex: 1,

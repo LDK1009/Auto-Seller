@@ -16,6 +16,8 @@ import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import PaletteIcon from '@mui/icons-material/Palette';
 import AnimatedProgressBar from '@/shared/components/AnimatedProgressBar';
 import PageLayout from '@/shared/components/PageLayout';
+import HelpPanel from '@/shared/components/HelpPanel';
+import { MAX_FILE_SIZE, MAX_FILE_COUNT, MAX_TOTAL_SIZE } from './_constants/backgroundRemoval';
 import { useBackgroundRemoval } from './_hooks/useBackgroundRemoval';
 import ImageDropzone from './_components/ImageDropzone';
 import BackgroundOptionModal from './_components/BackgroundOptionModal';
@@ -61,6 +63,25 @@ export default function BackgroundRemovalView() {
     <PageLayout
       title="대량 이미지 누끼"
       description="여러 상품 이미지의 배경을 한 번에 제거합니다. 처리는 브라우저에서 진행되어 이미지가 서버로 전송되지 않습니다."
+      help={
+        <HelpPanel storageKey="background-removal">
+          <Stack spacing={0.75}>
+            <Typography variant="body2">① 이미지를 드래그하거나 클릭해서 업로드합니다 (여러 장 가능)</Typography>
+            <Typography variant="body2">
+              ② [배경 제거]를 누르면 브라우저에서 AI가 배경을 지웁니다 — 첫 실행은 모델 준비로 시간이 걸릴 수
+              있어요
+            </Typography>
+            <Typography variant="body2">
+              ③ 완료 후 [배경 선택]에서 투명·색상·패턴·검색 이미지 배경으로 바꿀 수 있습니다
+            </Typography>
+            <Typography variant="body2">④ [다운로드]를 누르면 전체 결과가 ZIP으로 저장됩니다</Typography>
+            <Typography variant="caption" color="text.secondary">
+              개별 {Math.round(MAX_FILE_SIZE / (1024 * 1024))}MB · 최대 {MAX_FILE_COUNT}장 · 총{' '}
+              {Math.round(MAX_TOTAL_SIZE / (1024 * 1024))}MB까지 / 이미지는 서버로 전송되지 않습니다
+            </Typography>
+          </Stack>
+        </HelpPanel>
+      }
     >
       <Stack spacing={3}>
         {/* 업로드 (이미지가 없을 때만 노출) */}
