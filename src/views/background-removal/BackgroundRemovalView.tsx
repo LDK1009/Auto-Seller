@@ -7,8 +7,6 @@ import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
 import Divider from '@mui/material/Divider';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -103,13 +101,15 @@ export default function BackgroundRemovalView() {
               >
                 {isZipping ? 'ZIP 생성 중…' : `ZIP 다운로드 (${doneCount})`}
               </Button>
-              <Tooltip title="전체 초기화">
-                <span style={{ marginLeft: 'auto' }}>
-                  <IconButton onClick={clearAll} disabled={isProcessing} aria-label="전체 초기화">
-                    <DeleteSweepIcon />
-                  </IconButton>
-                </span>
-              </Tooltip>
+              <Button
+                color="inherit"
+                startIcon={<DeleteSweepIcon />}
+                onClick={clearAll}
+                disabled={isProcessing}
+                sx={{ ml: 'auto' }}
+              >
+                전체 초기화
+              </Button>
             </Stack>
 
             {/* 전체 진행률 (모델 로딩 중엔 모델 다운로드 표시) */}
