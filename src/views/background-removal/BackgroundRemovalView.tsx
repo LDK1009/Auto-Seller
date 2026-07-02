@@ -180,9 +180,10 @@ export default function BackgroundRemovalView() {
         onNavigate={(nextIndex) => setSelectedId(jobs[nextIndex].id)}
       />
 
-      {/* 배경 선택 모달 */}
+      {/* 배경 선택 모달 (완료 이미지 미리보기 포함) */}
       <BackgroundOptionModal
         open={isBackgroundModalOpen}
+        jobs={jobs.filter((job) => job.status === 'done')}
         value={backgroundOption}
         customColor={customColor}
         onChange={changeBackgroundOption}
