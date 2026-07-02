@@ -43,6 +43,9 @@ export default function BackgroundRemovalView() {
   const hasJobs = jobs.length > 0;
   const overallProgress = hasJobs ? Math.round((doneCount / jobs.length) * 100) : 0;
 
+  // 작업 단계: 처리 중 / 작업 전(대기·오류 남음) / 작업 완료(전부 처리됨)
+  const phase = isProcessing ? 'processing' : pendingCount > 0 ? 'before' : 'done';
+
   return (
     <Container maxWidth="lg">
       <Stack spacing={3} sx={{ py: 5 }}>
@@ -72,17 +75,21 @@ export default function BackgroundRemovalView() {
           <>
             <Divider />
 
-            {/* 액션 바 */}
+            {/* 액션 바 — 단계별 버튼 */}
             <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
-              <Button
-                variant="contained"
-                startIcon={<AutoFixHighIcon />}
-                onClick={start}
-                disabled={isProcessing || pendingCount === 0}
-              >
-                {isProcessing ? '처리 중…' : `누끼 처리 (${pendingCount})`}
-              </Button>
-              {isProcessing && (
+              {/* 작업 전: 배경 제거 */}
+              {phase === 'before' && (
+                <Button
+                  variant="contained"
+                  startIcon={<AutoFixHighIcon />}
+                  onClick={start}
+                  disabled={pendingCount === 0}
+                >
+                  배경 제거 ({pendingCount})
+                </Button>
+              )}
+              {/* 작업 중: 작업 취소 */}
+              {phase === 'processing' && (
                 <Button
                   variant="outlined"
                   color="error"
@@ -90,29 +97,34 @@ export default function BackgroundRemovalView() {
                   onClick={requestCancel}
                   disabled={isCancelling}
                 >
-                  {isCancelling ? '중지 중…' : '취소'}
+                  {isCancelling ? '중지 중…' : '작업 취소'}
                 </Button>
               )}
-              <Button
-                variant="outlined"
-                startIcon={<DownloadIcon />}
-                onClick={downloadAllAsZip}
-                disabled={isProcessing || isZipping || doneCount === 0}
-              >
-                {isZipping ? 'ZIP 생성 중…' : `ZIP 다운로드 (${doneCount})`}
-              </Button>
-              <Button
-                color="inherit"
-                startIcon={<DeleteSweepIcon />}
-                onClick={clearAll}
-                disabled={isProcessing}
-                sx={{ ml: 'auto' }}
-              >
-                전체 초기화
-              </Button>
+              {/* 작업 완료: 다운로드 · 초기화 */}
+              {phase === 'done' && (
+                <>
+                  <Button
+                    variant="contained"
+                    startIcon={<DownloadIcon />}
+                    onClick={downloadAllAsZip}
+                    disabled={isZipping || doneCount === 0}
+                  >
+                    {isZipping ? '다운로드 중…' : `다운로드 (${doneCount})`}
+                  </Button>
+                  <Button
+                    color="inherit"
+                    startIcon={<DeleteSweepIcon />}
+                    onClick={clearAll}
+                    sx={{ ml: 'auto' }}
+                  >
+                    전체 초기화
+                  </Button>
+                </>
+              )}
             </Stack>
 
-            {/* 전체 진행률 (모델 로딩 중엔 모델 다운로드 표시) */}
+            {/* 전체 진행률 (작업 전·중에만, 모델 로딩 중엔 모델 다운로드 표시) */}
+            {phase !== 'done' && (
             <Stack spacing={0.5}>
               <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="caption" color="text.secondary">
@@ -131,6 +143,7 @@ export default function BackgroundRemovalView() {
                 {jobs.length} / {doneCount}
               </Typography>
             </Stack>
+            )}
 
             {/* 이미지 그리드 */}
             <ImageJobGrid jobs={jobs} onRemove={removeJob} />
