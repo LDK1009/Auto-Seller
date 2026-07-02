@@ -23,6 +23,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import FormatColorResetIcon from '@mui/icons-material/FormatColorReset';
 import PaletteIcon from '@mui/icons-material/Palette';
+import CheckIcon from '@mui/icons-material/Check';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { BackgroundOption } from '../_constants/backgroundRemoval';
 import type { ImageJob } from '../_store/backgroundRemovalStore';
@@ -270,7 +271,7 @@ export default function BackgroundOptionModal({
         />
       </DialogContent>
       <DialogActions>
-        <Button fullWidth variant="contained" onClick={onClose}>
+        <Button fullWidth variant="contained" startIcon={<CheckIcon />} onClick={onClose}>
           확인
         </Button>
       </DialogActions>
