@@ -157,5 +157,5 @@ const ErrorText = styled(Typography)({
 
 const RemoveButton = styled(IconButton)({
   flexShrink: 0,
-  alignSelf: 'flex-start',
+  alignSelf: 'center',
 });
