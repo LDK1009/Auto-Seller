@@ -7,10 +7,13 @@ import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import Divider from '@mui/material/Divider';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import DownloadIcon from '@mui/icons-material/Download';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
 import AnimatedProgressBar from '@/shared/components/AnimatedProgressBar';
 import { useBackgroundRemoval } from './_hooks/useBackgroundRemoval';
 import ImageDropzone from './_components/ImageDropzone';
@@ -100,12 +103,13 @@ export default function BackgroundRemovalView() {
               >
                 {isZipping ? 'ZIP 생성 중…' : `ZIP 다운로드 (${doneCount})`}
               </Button>
-              <Button color="inherit" onClick={clearAll} disabled={isProcessing}>
-                전체 초기화
-              </Button>
-              <Typography variant="body2" color="text.secondary" sx={{ ml: 'auto' }}>
-                완료 {doneCount} / 전체 {jobs.length}
-              </Typography>
+              <Tooltip title="전체 초기화">
+                <span style={{ marginLeft: 'auto' }}>
+                  <IconButton onClick={clearAll} disabled={isProcessing} aria-label="전체 초기화">
+                    <DeleteSweepIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
             </Stack>
 
             {/* 전체 진행률 (모델 로딩 중엔 모델 다운로드 표시) */}
@@ -122,6 +126,9 @@ export default function BackgroundRemovalView() {
                 value={isModelLoading ? modelProgress : overallProgress / 100}
                 indeterminate={isModelLoading && modelProgress === 0}
               />
+              <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'right' }}>
+                완료 {doneCount} / 전체 {jobs.length}
+              </Typography>
             </Stack>
 
             {/* 이미지 그리드 */}
