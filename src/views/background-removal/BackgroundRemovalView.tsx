@@ -75,11 +75,12 @@ export default function BackgroundRemovalView() {
           <>
             <Divider />
 
-            {/* 액션 바 — 단계별 버튼 */}
-            <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* 액션 바 — 단계별 버튼 (풀너비) */}
+            <Stack spacing={1.5}>
               {/* 작업 전: 배경 제거 */}
               {phase === 'before' && (
                 <Button
+                  fullWidth
                   variant="contained"
                   startIcon={<AutoFixHighIcon />}
                   onClick={start}
@@ -91,6 +92,7 @@ export default function BackgroundRemovalView() {
               {/* 작업 중: 작업 취소 */}
               {phase === 'processing' && (
                 <Button
+                  fullWidth
                   variant="outlined"
                   color="error"
                   startIcon={<StopCircleIcon />}
@@ -104,6 +106,7 @@ export default function BackgroundRemovalView() {
               {phase === 'done' && (
                 <>
                   <Button
+                    fullWidth
                     variant="contained"
                     startIcon={<DownloadIcon />}
                     onClick={downloadAllAsZip}
@@ -112,10 +115,10 @@ export default function BackgroundRemovalView() {
                     {isZipping ? '다운로드 중…' : `다운로드 (${doneCount})`}
                   </Button>
                   <Button
+                    fullWidth
                     color="inherit"
                     startIcon={<DeleteSweepIcon />}
                     onClick={clearAll}
-                    sx={{ ml: 'auto' }}
                   >
                     전체 초기화
                   </Button>
