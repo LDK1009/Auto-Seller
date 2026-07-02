@@ -3,6 +3,7 @@
 
 import type { Metadata } from 'next';
 import ThemeRegistry from '@/shared/theme/ThemeRegistry';
+import { pretendard } from '@/shared/theme/pretendard';
 import { APP_NAME, APP_DESCRIPTION } from '@/shared/constants/app';
 import './globals.css';
 
@@ -17,7 +18,7 @@ type RootLayoutProps = {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="ko">
+    <html lang="ko" className={pretendard.variable}>
       <body>
         <ThemeRegistry>{children}</ThemeRegistry>
       </body>

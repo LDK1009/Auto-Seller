@@ -27,15 +27,16 @@ const theme = createTheme({
 
   //////////////////// 타이포그래피 ////////////////////
   typography: {
+    // next/font/local이 주입하는 CSS 변수(--font-pretendard) 사용, 그 뒤 시스템 폴백
     fontFamily: [
-      'Pretendard',
+      'var(--font-pretendard)',
       '-apple-system',
       'BlinkMacSystemFont',
       'system-ui',
       'Roboto',
+      '"Malgun Gothic"',
       '"Apple SD Gothic Neo"',
       '"Noto Sans KR"',
-      '"Helvetica Neue"',
       'sans-serif',
     ].join(','),
   },
