@@ -87,7 +87,7 @@ export default function BackgroundRemovalView() {
                   onClick={start}
                   disabled={pendingCount === 0}
                 >
-                  배경 제거 ({pendingCount})
+                  배경 제거
                 </Button>
               )}
               {/* 작업 중: 작업 취소 */}
@@ -113,7 +113,7 @@ export default function BackgroundRemovalView() {
                     onClick={downloadAllAsZip}
                     disabled={isZipping || doneCount === 0}
                   >
-                    {isZipping ? '다운로드 중…' : `다운로드 (${doneCount})`}
+                    {isZipping ? '다운로드 중…' : '다운로드'}
                   </Button>
                   <Button
                     fullWidth
