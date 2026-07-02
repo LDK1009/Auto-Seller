@@ -4,7 +4,7 @@
 // Application 레이어 — 순차 처리 루프, 협조적 취소, 배경 재합성, ZIP, 입력 검증을 조율한다.
 // 상태 보관·변경은 _store/backgroundRemovalStore가 담당(레이어 분리).
 // 무거운 배경제거(removeImageBackground)는 1회만 수행하고 투명 결과를 보관 →
-// 배경옵션 변경 시에는 applyBackgroundColor 재합성만 수행한다.
+// 배경옵션 변경 시에는 applyBackground 재합성만 수행한다.
 
 import { useCallback, useEffect, useRef } from 'react';
 import { enqueueSnackbar } from 'notistack';
@@ -16,7 +16,8 @@ import {
   type BackgroundOption,
 } from '../_constants/backgroundRemoval';
 import { removeImageBackground } from '../_utils/removeImageBackground';
-import { applyBackgroundColor } from '../_utils/applyBackgroundColor';
+import { applyBackground } from '../_utils/applyBackground';
+import { fetchBackgroundImage } from '@/shared/services/backgroundImageSearch';
 import { buildZip, downloadBlob } from '../_utils/buildZip';
 import { useBackgroundRemovalStore, type ImageJob } from '../_store/backgroundRemovalStore';
 
@@ -168,7 +169,10 @@ export function useBackgroundRemoval() {
 
         //////////////////// 2) 배경옵션 적용 (루프 중 변경 반영 위해 최신값 참조) ////////////////////
         const currentOption = useBackgroundRemovalStore.getState().backgroundOption;
-        const resultBlob = await applyBackgroundColor(transparentBlob, currentOption);
+        // 이미지 배경이면 프록시에서 로드 (HTTP 캐시로 반복 비용 낮음)
+        const backgroundImageBlob =
+          currentOption.kind === 'image' ? await fetchBackgroundImage(currentOption.url) : null;
+        const resultBlob = await applyBackground(transparentBlob, currentOption, backgroundImageBlob);
         const resultUrl = URL.createObjectURL(resultBlob);
 
         patchJob(id, {
@@ -212,13 +216,25 @@ export function useBackgroundRemoval() {
 
   //////////////////// 배경옵션 변경 시 완료 job 재합성 ////////////////////
   const changeBackgroundOption = useCallback(async (option: BackgroundOption) => {
+    // 이미지 배경이면 먼저 로드 — 실패 시 옵션을 바꾸지 않고 중단(일관성 유지)
+    let backgroundImageBlob: Blob | null = null;
+    if (option.kind === 'image') {
+      try {
+        backgroundImageBlob = await fetchBackgroundImage(option.url);
+      } catch (error) {
+        console.error(error);
+        enqueueSnackbar('배경 이미지를 불러오지 못했습니다.', { variant: 'error' });
+        return;
+      }
+    }
+
     const store = useBackgroundRemovalStore.getState();
     store.setBackgroundOption(option);
 
     const doneJobs = store.jobs.filter((job) => job.status === 'done' && job.transparentBlob);
     for (const job of doneJobs) {
       try {
-        const resultBlob = await applyBackgroundColor(job.transparentBlob as Blob, option);
+        const resultBlob = await applyBackground(job.transparentBlob as Blob, option, backgroundImageBlob);
         const resultUrl = URL.createObjectURL(resultBlob);
 
         const { jobs: latestJobs, patchJob } = useBackgroundRemovalStore.getState();

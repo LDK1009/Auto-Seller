@@ -1,10 +1,10 @@
 'use client';
 
 //////////////////////////////////////// 배경 선택 모달 ////////////////////////////////////////
-// 완료된 이미지의 배경 옵션(투명/흰색/커스텀)을 선택하는 모달.
-// 옵션 변경 시 완료 이미지들이 즉시 재합성되며, 미리보기 슬라이드로 모든 이미지 확인 가능.
+// 3섹션: [검색] 무료 배경 이미지 검색·적용 / [미리보기] 결과 슬라이드 / [툴] 배경제거·색상.
+// 옵션 변경 시 완료 이미지들이 즉시 재합성된다(훅의 changeBackgroundOption).
 
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import styled from '@emotion/styled';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -12,14 +12,21 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
+import CircularProgress from '@mui/material/CircularProgress';
+import SearchIcon from '@mui/icons-material/Search';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import FormatColorResetIcon from '@mui/icons-material/FormatColorReset';
+import PaletteIcon from '@mui/icons-material/Palette';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { BackgroundOption } from '../_constants/backgroundRemoval';
 import type { ImageJob } from '../_store/backgroundRemovalStore';
-import BackgroundOptionSelector from './BackgroundOptionSelector';
+import { useBackgroundImageSearch } from '../_hooks/useBackgroundImageSearch';
 
 type BackgroundOptionModalProps = {
   open: boolean;
@@ -47,8 +54,14 @@ export default function BackgroundOptionModal({
   onCustomColorChange,
   onClose,
 }: BackgroundOptionModalProps) {
-  const [rawIndex, setRawIndex] = useState(0); // 순수 UI 상태
+  //////////////////// 검색 상태 ////////////////////
+  const { results, isLoading, hasMore, hasSearched, search, loadMore } = useBackgroundImageSearch();
+  const [keyword, setKeyword] = useState(''); // 순수 UI 상태 (입력값)
+
+  //////////////////// 미리보기 슬라이드 상태 ////////////////////
+  const [rawIndex, setRawIndex] = useState(0);
   const [direction, setDirection] = useState(0);
+  const colorInputRef = useRef<HTMLInputElement>(null);
 
   // 이미지 삭제 등으로 개수가 줄었을 때 안전하게 보정
   const index = jobs.length > 0 ? Math.min(rawIndex, jobs.length - 1) : 0;
@@ -70,6 +83,10 @@ export default function BackgroundOptionModal({
     }
   }, [index, jobs.length]);
 
+  const handleSearch = () => {
+    if (!isLoading) search(keyword);
+  };
+
   // 투명 배경 선택 시에만 격자무늬로 투명 영역 표시
   const showCheckerboard = value.kind === 'transparent';
 
@@ -77,10 +94,76 @@ export default function BackgroundOptionModal({
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>배경 선택</DialogTitle>
       <DialogContent>
-        <Stack spacing={2}>
-          {/* 미리보기 슬라이드 */}
+        <Stack spacing={2.5}>
+          {/* ==================== 검색 섹션 ==================== */}
+          <Stack spacing={1}>
+            <Typography variant="subtitle2" color="text.secondary">
+              배경 이미지 검색
+            </Typography>
+            <TextField
+              size="small"
+              fullWidth
+              placeholder="무료 배경 이미지 검색 (예: 대리석, 우드, 스튜디오)"
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') handleSearch();
+              }}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton size="small" onClick={handleSearch} disabled={isLoading} aria-label="검색">
+                        <SearchIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+
+            {/* 검색 결과 — 가로 스크롤 */}
+            {results.length > 0 && (
+              <ResultsRow>
+                {results.map((item) => {
+                  const isSelected = value.kind === 'image' && value.url === item.imageUrl;
+                  return (
+                    <ResultThumb
+                      key={item.id}
+                      type="button"
+                      $isSelected={isSelected}
+                      onClick={() => onChange({ kind: 'image', url: item.imageUrl })}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={item.thumbUrl} alt="배경 후보" loading="lazy" />
+                    </ResultThumb>
+                  );
+                })}
+                {hasMore && (
+                  <MoreButton type="button" onClick={loadMore} disabled={isLoading}>
+                    {isLoading ? <CircularProgress size={18} /> : '더보기'}
+                  </MoreButton>
+                )}
+              </ResultsRow>
+            )}
+            {isLoading && results.length === 0 && (
+              <Typography variant="caption" color="text.secondary">
+                검색 중…
+              </Typography>
+            )}
+            {hasSearched && !isLoading && results.length === 0 && (
+              <Typography variant="caption" color="text.secondary">
+                검색 결과가 없습니다.
+              </Typography>
+            )}
+          </Stack>
+
+          {/* ==================== 미리보기 섹션 ==================== */}
           {currentJob && (
             <Stack spacing={0.5}>
+              <Typography variant="subtitle2" color="text.secondary">
+                미리보기
+              </Typography>
               <PreviewBody>
                 <NavButton $side="left" onClick={goPrev} disabled={!hasPrev} aria-label="이전">
                   <ChevronLeftIcon />
@@ -131,13 +214,48 @@ export default function BackgroundOptionModal({
             </Stack>
           )}
 
-          {/* 배경 옵션 */}
-          <BackgroundOptionSelector
-            value={value}
-            customColor={customColor}
-            onChange={onChange}
-            onCustomColorChange={onCustomColorChange}
-          />
+          {/* ==================== 툴 섹션 ==================== */}
+          <Stack spacing={0.5}>
+            <Typography variant="subtitle2" color="text.secondary">
+              배경 도구
+            </Typography>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              {/* 배경 제거(투명) */}
+              <Tooltip title="배경 제거 (투명)">
+                <ToolButton
+                  $isActive={value.kind === 'transparent'}
+                  onClick={() => onChange({ kind: 'transparent' })}
+                  aria-label="배경 제거"
+                >
+                  <FormatColorResetIcon />
+                </ToolButton>
+              </Tooltip>
+
+              {/* 배경 색상 */}
+              <Tooltip title="배경 색상">
+                <ToolButton
+                  $isActive={value.kind === 'color'}
+                  onClick={() => colorInputRef.current?.click()}
+                  aria-label="배경 색상"
+                >
+                  <PaletteIcon />
+                </ToolButton>
+              </Tooltip>
+              <HiddenColorInput
+                ref={colorInputRef}
+                type="color"
+                value={customColor}
+                onChange={(event) => {
+                  onCustomColorChange(event.target.value);
+                  onChange({ kind: 'color', hex: event.target.value });
+                }}
+                aria-label="배경 색상 선택"
+              />
+
+              {/* 현재 색상 표시 */}
+              {value.kind === 'color' && <ColorSwatch style={{ backgroundColor: value.hex }} />}
+            </Stack>
+          </Stack>
         </Stack>
       </DialogContent>
       <DialogActions>
@@ -152,6 +270,46 @@ export default function BackgroundOptionModal({
 const CHECKERBOARD =
   'repeating-conic-gradient(#e9e9e9 0% 25%, #ffffff 0% 50%) 50% / 16px 16px';
 
+//////////////////// 검색 섹션 ////////////////////
+const ResultsRow = styled.div(({ theme }) => ({
+  display: 'flex',
+  gap: theme.spacing(1),
+  overflowX: 'auto',
+  paddingBottom: theme.spacing(0.5),
+}));
+
+const ResultThumb = styled.button<{ $isSelected: boolean }>(({ theme, $isSelected }) => ({
+  flexShrink: 0,
+  width: 88,
+  height: 64,
+  padding: 0,
+  border: `2px solid ${$isSelected ? theme.palette.primary.main : theme.palette.divider}`,
+  borderRadius: 8,
+  overflow: 'hidden',
+  cursor: 'pointer',
+  backgroundColor: theme.palette.background.paper,
+  '& img': {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    display: 'block',
+  },
+}));
+
+const MoreButton = styled.button(({ theme }) => ({
+  flexShrink: 0,
+  width: 88,
+  height: 64,
+  border: `1px dashed ${theme.palette.divider}`,
+  borderRadius: 8,
+  cursor: 'pointer',
+  backgroundColor: theme.palette.background.paper,
+  color: theme.palette.text.secondary,
+  fontSize: 13,
+  '&:disabled': { cursor: 'default', opacity: 0.6 },
+}));
+
+//////////////////// 미리보기 섹션 ////////////////////
 const PreviewBody = styled.div({
   position: 'relative',
   display: 'flex',
@@ -161,7 +319,7 @@ const PreviewBody = styled.div({
 const Stage = styled.div<{ $showCheckerboard: boolean }>(({ theme, $showCheckerboard }) => ({
   flex: 1,
   minWidth: 0,
-  height: '40vh',
+  height: '36vh',
   overflow: 'hidden',
   borderRadius: 8,
   border: `1px solid ${theme.palette.divider}`,
@@ -207,3 +365,27 @@ const FileName = styled(Typography)({
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
 });
+
+//////////////////// 툴 섹션 ////////////////////
+const ToolButton = styled(IconButton)<{ $isActive: boolean }>(({ theme, $isActive }) => ({
+  border: `1px solid ${$isActive ? theme.palette.primary.main : theme.palette.divider}`,
+  borderRadius: 8,
+  color: $isActive ? theme.palette.primary.main : theme.palette.text.secondary,
+  backgroundColor: $isActive ? theme.palette.action.selected : 'transparent',
+}));
+
+const HiddenColorInput = styled.input({
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  opacity: 0,
+  pointerEvents: 'none',
+});
+
+const ColorSwatch = styled.span(({ theme }) => ({
+  width: 24,
+  height: 24,
+  borderRadius: 6,
+  border: `1px solid ${theme.palette.divider}`,
+  display: 'inline-block',
+}));

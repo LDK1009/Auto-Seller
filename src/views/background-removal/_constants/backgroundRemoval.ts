@@ -48,16 +48,11 @@ export const STEP_PROGRESS: Record<string, StepProgress> = {
   'compute:encode': { label: '이미지 저장', end: 1.0, estMs: 900 }, // PNG 인코딩 (중간)
 };
 
-//////////////////// 배경 옵션 프리셋 ////////////////////
-// kind 'transparent' = 배경 제거만, 'color' = 단색 배경 합성
+//////////////////// 배경 옵션 ////////////////////
+// 'transparent' = 배경 제거만, 'color' = 단색 배경 합성, 'image' = 검색 이미지 배경 합성
 export type BackgroundOption =
   | { kind: 'transparent' }
-  | { kind: 'color'; hex: string };
+  | { kind: 'color'; hex: string }
+  | { kind: 'image'; url: string };
 
 export const DEFAULT_CUSTOM_COLOR = '#F2F2F2';
-
-// 빠른 선택용 프리셋 (스마트스토어는 흰 배경 상품컷 권장)
-export const BACKGROUND_PRESETS: { label: string; option: BackgroundOption }[] = [
-  { label: '투명', option: { kind: 'transparent' } },
-  { label: '흰색', option: { kind: 'color', hex: '#FFFFFF' } },
-];
