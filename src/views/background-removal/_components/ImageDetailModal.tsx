@@ -124,9 +124,6 @@ export default function ImageDetailModal({ jobs, index, onClose, onNavigate }: I
 }
 
 //////////////////////////////////////// 스타일 ////////////////////////////////////////
-const CHECKERBOARD =
-  'repeating-conic-gradient(#e9e9e9 0% 25%, #ffffff 0% 50%) 50% / 20px 20px';
-
 const Header = styled.div(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -155,8 +152,6 @@ const Stage = styled.div({
   minWidth: 0,
   height: '60vh',
   overflow: 'hidden',
-  borderRadius: 8,
-  background: CHECKERBOARD,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
