@@ -113,9 +113,14 @@ export default function BackgroundOptionModal({
                 input: {
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton size="small" onClick={handleSearch} disabled={isLoading} aria-label="검색">
-                        <SearchIcon fontSize="small" />
-                      </IconButton>
+                      {/* 검색 중엔 로딩 스피너로 교체해 진행 중임을 표시 */}
+                      {isLoading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <IconButton size="small" onClick={handleSearch} aria-label="검색">
+                          <SearchIcon fontSize="small" />
+                        </IconButton>
+                      )}
                     </InputAdornment>
                   ),
                 },
@@ -158,7 +163,8 @@ export default function BackgroundOptionModal({
             )}
           </Stack>
 
-          {/* ==================== 미리보기 섹션 ==================== */}
+          {/* ==================== 미리보기 + 툴 섹션 ==================== */}
+          <Stack spacing={1}>
           {currentJob && (
             <Stack spacing={0.5}>
               <Typography variant="subtitle2" color="text.secondary">
@@ -214,11 +220,7 @@ export default function BackgroundOptionModal({
             </Stack>
           )}
 
-          {/* ==================== 툴 섹션 ==================== */}
-          <Stack spacing={0.5}>
-            <Typography variant="subtitle2" color="text.secondary">
-              배경 도구
-            </Typography>
+            {/* 툴 — 미리보기 바로 하단 */}
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
               {/* 배경 제거(투명) */}
               <Tooltip title="배경 제거 (투명)">

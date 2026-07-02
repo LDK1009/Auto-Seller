@@ -9,7 +9,6 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
-import Divider from '@mui/material/Divider';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import DownloadIcon from '@mui/icons-material/Download';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
@@ -71,12 +70,11 @@ export default function BackgroundRemovalView() {
           </Typography>
         </Stack>
 
-        {/* 업로드 */}
-        <ImageDropzone onFilesAdded={addFiles} disabled={isProcessing} />
+        {/* 업로드 (이미지가 없을 때만 노출) */}
+        {!hasJobs && <ImageDropzone onFilesAdded={addFiles} disabled={isProcessing} />}
 
         {hasJobs && (
           <>
-            <Divider />
 
             {/* 액션 바 — 단계별 버튼 (풀너비) */}
             <Stack spacing={1.5}>

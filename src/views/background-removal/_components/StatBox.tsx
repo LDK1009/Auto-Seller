@@ -22,8 +22,8 @@ export default function StatBox({ label, value }: StatBoxProps) {
 
 //////////////////////////////////////// 스타일 ////////////////////////////////////////
 const Box = styled.div(({ theme }) => ({
-  minWidth: 60,
-  padding: theme.spacing(0.5, 1.5),
+  minWidth: 76,
+  padding: theme.spacing(1, 2),
   border: `1px solid ${theme.palette.divider}`,
   borderRadius: theme.shape.borderRadius,
   backgroundColor: theme.palette.background.default, // paper 컨테이너 위에서 흰색으로 부각

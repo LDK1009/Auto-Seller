@@ -107,8 +107,8 @@ const Row = styled.div(({ theme }) => ({
 
 const ThumbBox = styled.div({
   flexShrink: 0,
-  width: 64,
-  height: 64,
+  width: 88,
+  height: 88,
   borderRadius: 8,
   overflow: 'hidden',
   background: CHECKERBOARD,

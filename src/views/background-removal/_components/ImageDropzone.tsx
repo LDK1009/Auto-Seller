@@ -55,14 +55,14 @@ export default function ImageDropzone({ onFilesAdded, disabled = false }: ImageD
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
     >
-      <CloudUploadOutlinedIcon fontSize="large" color="primary" />
-      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+      <CloudUploadOutlinedIcon color="primary" sx={{ fontSize: 56 }} />
+      <Typography variant="h6" sx={{ fontWeight: 600 }}>
         이미지를 드래그하거나 클릭해서 업로드
       </Typography>
-      <Typography variant="caption" color="text.secondary">
+      <Typography variant="body2" color="text.secondary">
         PNG · JPG · WEBP · 여러 장 동시 선택 가능
       </Typography>
-      <Typography variant="caption" color="text.disabled">
+      <Typography variant="body2" color="text.disabled">
         개별 {MB(MAX_FILE_SIZE)}MB · 최대 {MAX_FILE_COUNT}장 · 총 {MB(MAX_TOTAL_SIZE)}MB 까지
       </Typography>
       <HiddenInput
@@ -84,8 +84,8 @@ const DropArea = styled.div<{ $isDragging: boolean; $disabled: boolean }>(
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: theme.spacing(1),
-    padding: theme.spacing(5),
+    gap: theme.spacing(1.25),
+    padding: theme.spacing(10, 5),
     border: `2px dashed ${$isDragging ? theme.palette.primary.main : theme.palette.divider}`,
     borderRadius: theme.shape.borderRadius,
     backgroundColor: $isDragging ? theme.palette.action.hover : theme.palette.background.paper,

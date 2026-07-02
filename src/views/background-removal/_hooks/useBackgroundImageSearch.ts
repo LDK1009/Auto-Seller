@@ -27,6 +27,9 @@ export function useBackgroundImageSearch() {
     const query = rawQuery.trim();
     if (!query) return;
 
+    // 새 검색: 기존 결과를 먼저 비워 혼동 방지
+    setResults([]);
+    setHasMore(false);
     setIsLoading(true);
     setHasSearched(true);
     try {
