@@ -40,17 +40,16 @@ export default function ImageJobCard({ job, onRemove }: ImageJobCardProps) {
 
       {/* 정보 컬럼 */}
       <Info>
-        {/* 상단: 파일명 · 상태 */}
+        {/* 상단: 파일명 */}
         <TopRow>
           <FileName variant="body2" title={job.file.name}>
             {job.file.name}
           </FileName>
-          <Chip size="small" label={statusMeta.label} color={statusMeta.color} variant="outlined" />
         </TopRow>
 
-        {/* 하단: 진행바 · 단계 */}
+        {/* 하단: 처리 중이면 진행바·단계, 그 외엔 상태 뱃지 */}
         <BottomRow>
-          {job.status === 'processing' && (
+          {job.status === 'processing' ? (
             <>
               <ProgressWrap>
                 <AnimatedProgressBar value={job.progress} durationMs={job.progressMs} />
@@ -59,21 +58,15 @@ export default function ImageJobCard({ job, onRemove }: ImageJobCardProps) {
                 <SlideUpText value={job.step}>{job.step}</SlideUpText>
               </StepText>
             </>
-          )}
-          {job.status === 'pending' && (
-            <HintText variant="caption" color="text.secondary">
-              처리 대기 중
-            </HintText>
-          )}
-          {job.status === 'done' && (
-            <HintText variant="caption" color="success.main">
-              누끼 완료
-            </HintText>
-          )}
-          {job.status === 'error' && (
-            <ErrorText variant="caption" color="error">
-              {job.error}
-            </ErrorText>
+          ) : (
+            <>
+              <Chip size="small" label={statusMeta.label} color={statusMeta.color} variant="outlined" />
+              {job.status === 'error' && (
+                <ErrorText variant="caption" color="error">
+                  {job.error}
+                </ErrorText>
+              )}
+            </>
           )}
         </BottomRow>
       </Info>
@@ -157,8 +150,6 @@ const StepText = styled(Typography)({
   minWidth: 64,
   textAlign: 'right',
 });
-
-const HintText = styled(Typography)({});
 
 const ErrorText = styled(Typography)({
   wordBreak: 'break-word',
