@@ -29,8 +29,7 @@ export type ImageJob = {
   status: ProcessStatus;
   progress: number; // 0~1 목표 진행률 (processing 중)
   progressMs: number; // 위 목표까지 바 애니메이션 시간(ms)
-  downloading: boolean; // 모델 다운로드 구간(바 indeterminate)
-  step: string; // 현재 단계 라벨(모델 다운로드 / 배경 분석 …), processing 중에만 유효
+  step: string; // 현재 단계 라벨(배경 분석 …), processing 중에만 유효
   transparentBlob: Blob | null; // 누끼(투명) 결과 — 재합성 재료
   resultBlob: Blob | null; // 배경옵션 적용 최종 결과
   resultUrl: string | null; // 최종 결과 objectURL
@@ -46,6 +45,8 @@ export function useBackgroundRemoval() {
   const [jobs, setJobs] = useState<ImageJob[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false); // 취소 요청 후 현재 이미지 마무리 대기
+  const [isModelLoading, setIsModelLoading] = useState(false); // 모델 다운로드(최초 1회) — 전체 바에 표시
+  const [modelProgress, setModelProgress] = useState(0); // 모델 다운로드 비율 0~1
   const [isZipping, setIsZipping] = useState(false);
   const [backgroundOption, setBackgroundOption] = useState<BackgroundOption>({ kind: 'transparent' });
   const [customColor, setCustomColor] = useState(DEFAULT_CUSTOM_COLOR);
@@ -122,7 +123,6 @@ export function useBackgroundRemoval() {
       status: 'pending',
       progress: 0,
       progressMs: 0,
-      downloading: false,
       step: '',
       transparentBlob: null,
       resultBlob: null,
@@ -164,6 +164,8 @@ export function useBackgroundRemoval() {
 
     cancelRequestedRef.current = false;
     setIsCancelling(false);
+    setIsModelLoading(false);
+    setModelProgress(0);
     setIsProcessing(true);
     for (const id of pendingIds) {
       // 취소 요청 시 다음 이미지부터 중지 (진행 중인 이미지는 위 반복에서 이미 완료됨)
@@ -173,17 +175,19 @@ export function useBackgroundRemoval() {
       if (!target) continue;
 
       setJobs((prev) => patchJob(prev, id, {
-        status: 'processing', progress: 0, progressMs: 0, downloading: false, step: '준비 중', error: null,
+        status: 'processing', progress: 0, progressMs: 0, step: '준비 중', error: null,
       }));
       try {
         //////////////////// 1) 배경 제거(투명) ////////////////////
         const transparentBlob = await removeImageBackground(target.file, ({ step, phase, ratio, durationMs }) => {
-          setJobs((prev) => patchJob(prev, id, {
-            step,
-            progress: ratio,
-            progressMs: durationMs,
-            downloading: phase === 'download',
-          }));
+          // 모델 다운로드는 개별 바가 아니라 전체 로딩바(hook 상태)로 표시
+          if (phase === 'download') {
+            setIsModelLoading(true);
+            setModelProgress(ratio);
+            return;
+          }
+          setIsModelLoading(false);
+          setJobs((prev) => patchJob(prev, id, { step, progress: ratio, progressMs: durationMs }));
         });
 
         //////////////////// 2) 배경옵션 적용 ////////////////////
@@ -194,7 +198,6 @@ export function useBackgroundRemoval() {
           status: 'done',
           progress: 1,
           progressMs: 200,
-          downloading: false,
           step: '',
           transparentBlob,
           resultBlob,
@@ -209,6 +212,7 @@ export function useBackgroundRemoval() {
     const wasCancelled = cancelRequestedRef.current;
     cancelRequestedRef.current = false;
     setIsCancelling(false);
+    setIsModelLoading(false);
     setIsProcessing(false);
     if (wasCancelled) {
       enqueueSnackbar('누끼 처리를 중지했습니다. 남은 이미지는 대기 상태입니다.', { variant: 'info' });
@@ -286,6 +290,8 @@ export function useBackgroundRemoval() {
     jobs,
     isProcessing,
     isCancelling,
+    isModelLoading,
+    modelProgress,
     isZipping,
     backgroundOption,
     customColor,

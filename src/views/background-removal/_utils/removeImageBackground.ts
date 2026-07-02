@@ -25,14 +25,29 @@ export async function removeImageBackground(
 ): Promise<Blob> {
   const { removeBackground } = await import('@imgly/background-removal');
 
+  // 다운로드는 자산(모델·WASM)이 여러 개라 개별 %가 리셋됨 → 전체 바이트로 누적 집계
+  const downloadBytes = new Map<string, { current: number; total: number }>();
+
   const blob = await removeBackground(file, {
     ...REMOVE_BG_CONFIG,
     progress: (key, current, total) => {
       if (!onProgress) return;
 
-      //////////////////// 다운로드 구간 (바는 채우지 않고 indeterminate) ////////////////////
+      //////////////////// 다운로드 구간 (누적 집계 비율) ////////////////////
       if (key.startsWith('fetch:')) {
-        onProgress({ step: DOWNLOAD_STEP_LABEL, phase: 'download', ratio: 0, durationMs: 0 });
+        downloadBytes.set(key, { current, total });
+        let loaded = 0;
+        let size = 0;
+        for (const entry of downloadBytes.values()) {
+          loaded += entry.current;
+          size += entry.total;
+        }
+        onProgress({
+          step: DOWNLOAD_STEP_LABEL,
+          phase: 'download',
+          ratio: size > 0 ? loaded / size : 0,
+          durationMs: 0,
+        });
         return;
       }
 

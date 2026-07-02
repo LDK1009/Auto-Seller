@@ -8,10 +8,10 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
-import LinearProgress from '@mui/material/LinearProgress';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import DownloadIcon from '@mui/icons-material/Download';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
+import AnimatedProgressBar from '@/shared/components/AnimatedProgressBar';
 import { useBackgroundRemoval } from './_hooks/useBackgroundRemoval';
 import ImageDropzone from './_components/ImageDropzone';
 import BackgroundOptionSelector from './_components/BackgroundOptionSelector';
@@ -22,6 +22,8 @@ export default function BackgroundRemovalView() {
     jobs,
     isProcessing,
     isCancelling,
+    isModelLoading,
+    modelProgress,
     isZipping,
     backgroundOption,
     customColor,
@@ -106,8 +108,21 @@ export default function BackgroundRemovalView() {
               </Typography>
             </Stack>
 
-            {/* 전체 진행률 */}
-            <LinearProgress variant="determinate" value={overallProgress} />
+            {/* 전체 진행률 (모델 로딩 중엔 모델 다운로드 표시) */}
+            <Stack spacing={0.5}>
+              <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="caption" color="text.secondary">
+                  {isModelLoading ? '모델 로딩 중 (최초 1회)' : '전체 진행률'}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {isModelLoading ? Math.round(modelProgress * 100) : overallProgress}%
+                </Typography>
+              </Stack>
+              <AnimatedProgressBar
+                value={isModelLoading ? modelProgress : overallProgress / 100}
+                indeterminate={isModelLoading && modelProgress === 0}
+              />
+            </Stack>
 
             {/* 이미지 그리드 */}
             <ImageJobGrid jobs={jobs} onRemove={removeJob} />

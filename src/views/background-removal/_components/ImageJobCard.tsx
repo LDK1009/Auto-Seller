@@ -53,11 +53,7 @@ export default function ImageJobCard({ job, onRemove }: ImageJobCardProps) {
           {job.status === 'processing' && (
             <>
               <ProgressWrap>
-                <AnimatedProgressBar
-                  value={job.progress}
-                  durationMs={job.progressMs}
-                  indeterminate={job.downloading}
-                />
+                <AnimatedProgressBar value={job.progress} durationMs={job.progressMs} />
               </ProgressWrap>
               <StepText variant="caption" color="text.secondary">
                 <SlideUpText value={job.step}>{job.step}</SlideUpText>
