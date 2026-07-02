@@ -11,23 +11,33 @@ import {
   type GradientDirection,
 } from '../_constants/backgroundRemoval';
 
-//////////////////// 그라데이션 방향 → 선형 그라데이션 좌표 ////////////////////
-// (x0,y0)=선택 색 시작점, (x1,y1)=흰색 도착점. 방향은 색이 흐르는 쪽.
-function getGradientLine(
+//////////////////// 그라데이션 방향 → 그라데이션 객체 ////////////////////
+// 선형: (x0,y0)=선택 색 시작점 → (x1,y1)=흰색 도착점. 'center'는 중앙에서 퍼지는 radial.
+function createDirectionalGradient(
+  context: CanvasRenderingContext2D,
   direction: GradientDirection,
   width: number,
   height: number,
-): [number, number, number, number] {
-  switch (direction) {
-    case 'top': return [0, height, 0, 0];
-    case 'top-right': return [0, height, width, 0];
-    case 'right': return [0, 0, width, 0];
-    case 'bottom-right': return [0, 0, width, height];
-    case 'bottom': return [0, 0, 0, height];
-    case 'bottom-left': return [width, 0, 0, height];
-    case 'left': return [width, 0, 0, 0];
-    case 'top-left': return [width, height, 0, 0];
+): CanvasGradient {
+  if (direction === 'center') {
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const cornerRadius = Math.sqrt(centerX * centerX + centerY * centerY); // 중앙→모서리 거리
+    return context.createRadialGradient(centerX, centerY, 0, centerX, centerY, cornerRadius);
   }
+
+  const lines: Record<Exclude<GradientDirection, 'center'>, [number, number, number, number]> = {
+    top: [0, height, 0, 0],
+    'top-right': [0, height, width, 0],
+    right: [0, 0, width, 0],
+    'bottom-right': [0, 0, width, height],
+    bottom: [0, 0, 0, height],
+    'bottom-left': [width, 0, 0, height],
+    left: [width, 0, 0, 0],
+    'top-left': [width, height, 0, 0],
+  };
+  const [x0, y0, x1, y1] = lines[direction];
+  return context.createLinearGradient(x0, y0, x1, y1);
 }
 
 //////////////////// 패턴 배경 그리기 ////////////////////
@@ -46,9 +56,8 @@ function drawPatternBackground(
 
   switch (pattern) {
     case 'gradient': {
-      // 선택 색 → 흰색, 지정 방향으로
-      const [x0, y0, x1, y1] = getGradientLine(gradientDirection, width, height);
-      const gradient = context.createLinearGradient(x0, y0, x1, y1);
+      // 선택 색 → 흰색, 지정 방향으로 (center는 중앙에서 퍼지는 radial)
+      const gradient = createDirectionalGradient(context, gradientDirection, width, height);
       gradient.addColorStop(0, hex);
       gradient.addColorStop(1, PATTERN_SECONDARY_COLOR);
       context.fillStyle = gradient;

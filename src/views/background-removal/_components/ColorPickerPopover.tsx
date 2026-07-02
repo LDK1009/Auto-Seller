@@ -23,8 +23,8 @@ import {
 
 const APPLY_DEBOUNCE_MS = 400;
 
-// 그라데이션 방향 → CSS 방향 키워드
-const CSS_DIRECTION: Record<GradientDirection, string> = {
+// 그라데이션 방향 → CSS 방향 키워드 ('center'는 radial로 별도 처리)
+const CSS_DIRECTION: Record<Exclude<GradientDirection, 'center'>, string> = {
   top: 'to top',
   'top-right': 'to top right',
   right: 'to right',
@@ -35,12 +35,13 @@ const CSS_DIRECTION: Record<GradientDirection, string> = {
   'top-left': 'to top left',
 };
 
-// 방향 화살표 표시용
+// 방향 화살표 표시용 (3×3 그리드, 중앙은 퍼짐)
 const DIRECTION_ARROWS: Record<GradientDirection, string> = {
   'top-left': '↖',
   top: '↑',
   'top-right': '↗',
   left: '←',
+  center: '◉',
   right: '→',
   'bottom-left': '↙',
   bottom: '↓',
@@ -55,6 +56,9 @@ export function getPatternPreviewCss(
 ): string {
   switch (pattern) {
     case 'gradient':
+      if (gradientDirection === 'center') {
+        return `radial-gradient(circle, ${hex}, #FFFFFF)`;
+      }
       return `linear-gradient(${CSS_DIRECTION[gradientDirection]}, ${hex}, #FFFFFF)`;
     case 'stripes-vertical':
       return `repeating-linear-gradient(90deg, ${hex} 0 4px, #FFFFFF 4px 8px)`;
@@ -183,7 +187,7 @@ export default function ColorPickerPopover({
             <Typography variant="caption" color="text.secondary">
               그라데이션 방향
             </Typography>
-            <SwatchRow>
+            <DirectionGrid>
               {GRADIENT_DIRECTIONS.map(({ direction, label }) => (
                 <Tooltip key={direction} title={label}>
                   <DirectionTile
@@ -196,7 +200,7 @@ export default function ColorPickerPopover({
                   </DirectionTile>
                 </Tooltip>
               ))}
-            </SwatchRow>
+            </DirectionGrid>
           </Stack>
         )}
       </Body>
@@ -240,6 +244,14 @@ const PatternTile = styled.button<{ $isSelected: boolean }>(({ theme, $isSelecte
   borderRadius: 6,
   cursor: 'pointer',
   border: `2px solid ${$isSelected ? theme.palette.primary.main : theme.palette.divider}`,
+}));
+
+// 3×3 방향 그리드 (중앙 = 퍼짐)
+const DirectionGrid = styled.div(({ theme }) => ({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, 26px)',
+  gap: theme.spacing(0.75),
+  justifyContent: 'flex-start',
 }));
 
 const DirectionTile = styled.button<{ $isSelected: boolean }>(({ theme, $isSelected }) => ({

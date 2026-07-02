@@ -53,7 +53,7 @@ export const STEP_PROGRESS: Record<string, StepProgress> = {
 // 패턴은 선택 색상 + 흰색 2톤으로 그린다.
 export type PatternKind = 'solid' | 'gradient' | 'stripes-vertical' | 'stripes-horizontal' | 'check';
 
-// 그라데이션 진행 방향 (선택 색 → 흰색이 흐르는 방향)
+// 그라데이션 진행 방향 (선택 색 → 흰색이 흐르는 방향, 'center'는 중앙에서 바깥으로 퍼짐)
 export type GradientDirection =
   | 'top'
   | 'top-right'
@@ -62,7 +62,8 @@ export type GradientDirection =
   | 'bottom'
   | 'bottom-left'
   | 'left'
-  | 'top-left';
+  | 'top-left'
+  | 'center';
 
 export type BackgroundOption =
   | { kind: 'transparent' }
@@ -80,13 +81,14 @@ export const PATTERN_OPTIONS: { pattern: PatternKind; label: string }[] = [
   { pattern: 'check', label: '체크무늬' },
 ];
 
-// 그라데이션 방향 목록 (기본: 아래로)
+// 그라데이션 방향 목록 (기본: 아래로) — 3×3 그리드 순서, 중앙은 radial(퍼짐)
 export const DEFAULT_GRADIENT_DIRECTION: GradientDirection = 'bottom';
 export const GRADIENT_DIRECTIONS: { direction: GradientDirection; label: string }[] = [
   { direction: 'top-left', label: '왼쪽 위로' },
   { direction: 'top', label: '위로' },
   { direction: 'top-right', label: '오른쪽 위로' },
   { direction: 'left', label: '왼쪽으로' },
+  { direction: 'center', label: '중앙에서 퍼짐' },
   { direction: 'right', label: '오른쪽으로' },
   { direction: 'bottom-left', label: '왼쪽 아래로' },
   { direction: 'bottom', label: '아래로' },
