@@ -11,7 +11,7 @@ import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import AnimatedProgressBar from '@/shared/components/AnimatedProgressBar';
 import SlideUpText from '@/shared/components/SlideUpText';
-import type { ImageJob, ProcessStatus } from '../_hooks/useBackgroundRemoval';
+import type { ImageJob, ProcessStatus } from '../_store/backgroundRemovalStore';
 
 type ImageJobCardProps = {
   job: ImageJob;

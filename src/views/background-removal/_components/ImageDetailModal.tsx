@@ -13,7 +13,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import styled from '@emotion/styled';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { ImageJob } from '../_hooks/useBackgroundRemoval';
+import type { ImageJob } from '../_store/backgroundRemovalStore';
 import { STATUS_META } from './ImageJobCard';
 
 type ImageDetailModalProps = {

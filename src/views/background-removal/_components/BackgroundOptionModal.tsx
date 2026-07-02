@@ -18,7 +18,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { BackgroundOption } from '../_constants/backgroundRemoval';
-import type { ImageJob } from '../_hooks/useBackgroundRemoval';
+import type { ImageJob } from '../_store/backgroundRemovalStore';
 import BackgroundOptionSelector from './BackgroundOptionSelector';
 
 type BackgroundOptionModalProps = {

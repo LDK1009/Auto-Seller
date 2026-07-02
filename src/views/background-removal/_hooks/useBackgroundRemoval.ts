@@ -1,15 +1,15 @@
 'use client';
 
 //////////////////////////////////////// 누끼 처리 조율 훅 ////////////////////////////////////////
-// job 큐 상태, 순차 처리(메모리 안전), 배경옵션 적용/재합성, ZIP 다운로드를 조율한다.
+// Application 레이어 — 순차 처리 루프, 협조적 취소, 배경 재합성, ZIP, 입력 검증을 조율한다.
+// 상태 보관·변경은 _store/backgroundRemovalStore가 담당(레이어 분리).
 // 무거운 배경제거(removeImageBackground)는 1회만 수행하고 투명 결과를 보관 →
 // 배경옵션 변경 시에는 applyBackgroundColor 재합성만 수행한다.
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { enqueueSnackbar } from 'notistack';
 import {
   ACCEPTED_IMAGE_PREFIX,
-  DEFAULT_CUSTOM_COLOR,
   MAX_FILE_SIZE,
   MAX_FILE_COUNT,
   MAX_TOTAL_SIZE,
@@ -18,52 +18,29 @@ import {
 import { removeImageBackground } from '../_utils/removeImageBackground';
 import { applyBackgroundColor } from '../_utils/applyBackgroundColor';
 import { buildZip, downloadBlob } from '../_utils/buildZip';
+import { useBackgroundRemovalStore, type ImageJob } from '../_store/backgroundRemovalStore';
 
-//////////////////// 타입 ////////////////////
-export type ProcessStatus = 'pending' | 'processing' | 'done' | 'error';
-
-export type ImageJob = {
-  id: string;
-  file: File;
-  originalUrl: string; // 원본 미리보기 objectURL
-  status: ProcessStatus;
-  progress: number; // 0~1 목표 진행률 (processing 중)
-  progressMs: number; // 위 목표까지 바 애니메이션 시간(ms)
-  step: string; // 현재 단계 라벨(배경 분석 …), processing 중에만 유효
-  transparentBlob: Blob | null; // 누끼(투명) 결과 — 재합성 재료
-  resultBlob: Blob | null; // 배경옵션 적용 최종 결과
-  resultUrl: string | null; // 최종 결과 objectURL
-  error: string | null;
-};
-
-//////////////////// 유틸: job 부분 업데이트 ////////////////////
-function patchJob(jobs: ImageJob[], id: string, patch: Partial<ImageJob>): ImageJob[] {
-  return jobs.map((job) => (job.id === id ? { ...job, ...patch } : job));
-}
+// 컴포넌트 호환을 위한 타입 재노출
+export type { ImageJob, ProcessStatus } from '../_store/backgroundRemovalStore';
 
 export function useBackgroundRemoval() {
-  const [jobs, setJobs] = useState<ImageJob[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isCancelling, setIsCancelling] = useState(false); // 취소 요청 후 현재 이미지 마무리 대기
-  const [isModelLoading, setIsModelLoading] = useState(false); // 모델 다운로드(최초 1회) — 전체 바에 표시
-  const [modelProgress, setModelProgress] = useState(0); // 모델 다운로드 비율 0~1
-  const [isZipping, setIsZipping] = useState(false);
-  const [backgroundOption, setBackgroundOption] = useState<BackgroundOption>({ kind: 'transparent' });
-  const [customColor, setCustomColor] = useState(DEFAULT_CUSTOM_COLOR);
-
-  // 순차 루프에서 최신 배경옵션 참조용
-  const backgroundOptionRef = useRef(backgroundOption);
-  backgroundOptionRef.current = backgroundOption;
+  //////////////////// 스토어 구독 ////////////////////
+  const jobs = useBackgroundRemovalStore((state) => state.jobs);
+  const isProcessing = useBackgroundRemovalStore((state) => state.isProcessing);
+  const isCancelling = useBackgroundRemovalStore((state) => state.isCancelling);
+  const isModelLoading = useBackgroundRemovalStore((state) => state.isModelLoading);
+  const modelProgress = useBackgroundRemovalStore((state) => state.modelProgress);
+  const isZipping = useBackgroundRemovalStore((state) => state.isZipping);
+  const backgroundOption = useBackgroundRemovalStore((state) => state.backgroundOption);
+  const customColor = useBackgroundRemovalStore((state) => state.customColor);
+  const setCustomColor = useBackgroundRemovalStore((state) => state.setCustomColor);
 
   // 협조적 취소 플래그 (진행 중 이미지의 추론 자체는 중단 불가 → 다음 이미지부터 중지)
   const cancelRequestedRef = useRef(false);
 
-  // 언마운트 시 objectURL 정리를 위한 최신 jobs 참조
-  const jobsRef = useRef<ImageJob[]>(jobs);
-  jobsRef.current = jobs;
-
   //////////////////// 파일 추가 (입력 제한 검증) ////////////////////
   const addFiles = useCallback((files: File[] | FileList) => {
+    const { jobs: currentJobs, addJobs } = useBackgroundRemovalStore.getState();
     const all = Array.from(files);
     const rejected = { type: 0, size: 0, count: 0, total: 0 };
 
@@ -81,9 +58,8 @@ export function useBackgroundRemoval() {
     });
 
     // 3) 장수·총용량 상한 (현재 보유분 기준 누적 검사)
-    const current = jobsRef.current;
-    let runningCount = current.length;
-    let runningTotal = current.reduce((sum, job) => sum + job.file.size, 0);
+    let runningCount = currentJobs.length;
+    let runningTotal = currentJobs.reduce((sum, job) => sum + job.file.size, 0);
 
     const accepted: File[] = [];
     for (const file of candidates) {
@@ -129,72 +105,73 @@ export function useBackgroundRemoval() {
       resultUrl: null,
       error: null,
     }));
-    setJobs((prev) => [...prev, ...newJobs]);
+    addJobs(newJobs);
   }, []);
 
-  //////////////////// 개별 삭제 ////////////////////
+  //////////////////// 개별 삭제 (objectURL 정리 포함) ////////////////////
   const removeJob = useCallback((id: string) => {
-    setJobs((prev) => {
-      const target = prev.find((job) => job.id === id);
-      if (target) {
-        URL.revokeObjectURL(target.originalUrl);
-        if (target.resultUrl) URL.revokeObjectURL(target.resultUrl);
-      }
-      return prev.filter((job) => job.id !== id);
-    });
+    const { jobs: currentJobs, removeJob: removeFromStore } = useBackgroundRemovalStore.getState();
+    const target = currentJobs.find((job) => job.id === id);
+    if (target) {
+      URL.revokeObjectURL(target.originalUrl);
+      if (target.resultUrl) URL.revokeObjectURL(target.resultUrl);
+    }
+    removeFromStore(id);
   }, []);
 
-  //////////////////// 전체 초기화 ////////////////////
+  //////////////////// 전체 초기화 (objectURL 정리 포함) ////////////////////
   const clearAll = useCallback(() => {
-    setJobs((prev) => {
-      prev.forEach((job) => {
-        URL.revokeObjectURL(job.originalUrl);
-        if (job.resultUrl) URL.revokeObjectURL(job.resultUrl);
-      });
-      return [];
+    const { jobs: currentJobs, clearJobs } = useBackgroundRemovalStore.getState();
+    currentJobs.forEach((job) => {
+      URL.revokeObjectURL(job.originalUrl);
+      if (job.resultUrl) URL.revokeObjectURL(job.resultUrl);
     });
+    clearJobs();
   }, []);
 
   //////////////////// 전체 처리 (순차) ////////////////////
   const start = useCallback(async () => {
-    const pendingIds = jobsRef.current
+    const store = useBackgroundRemovalStore.getState();
+    const pendingIds = store.jobs
       .filter((job) => job.status === 'pending' || job.status === 'error')
       .map((job) => job.id);
-    if (pendingIds.length === 0 || isProcessing) return;
+    if (pendingIds.length === 0 || store.isProcessing) return;
 
     cancelRequestedRef.current = false;
-    setIsCancelling(false);
-    setIsModelLoading(false);
-    setModelProgress(0);
-    setIsProcessing(true);
+    store.setIsCancelling(false);
+    store.setIsModelLoading(false);
+    store.setModelProgress(0);
+    store.setIsProcessing(true);
+
     for (const id of pendingIds) {
       // 취소 요청 시 다음 이미지부터 중지 (진행 중인 이미지는 위 반복에서 이미 완료됨)
       if (cancelRequestedRef.current) break;
 
-      const target = jobsRef.current.find((job) => job.id === id);
+      const { jobs: latestJobs, patchJob, setIsModelLoading, setModelProgress } =
+        useBackgroundRemovalStore.getState();
+      const target = latestJobs.find((job) => job.id === id);
       if (!target) continue;
 
-      setJobs((prev) => patchJob(prev, id, {
-        status: 'processing', progress: 0, progressMs: 0, step: '준비 중', error: null,
-      }));
+      patchJob(id, { status: 'processing', progress: 0, progressMs: 0, step: '준비 중', error: null });
       try {
         //////////////////// 1) 배경 제거(투명) ////////////////////
         const transparentBlob = await removeImageBackground(target.file, ({ step, phase, ratio, durationMs }) => {
-          // 모델 다운로드는 개별 바가 아니라 전체 로딩바(hook 상태)로 표시
+          // 모델 다운로드는 개별 바가 아니라 전체 로딩바로 표시
           if (phase === 'download') {
             setIsModelLoading(true);
             setModelProgress(ratio);
             return;
           }
           setIsModelLoading(false);
-          setJobs((prev) => patchJob(prev, id, { step, progress: ratio, progressMs: durationMs }));
+          patchJob(id, { step, progress: ratio, progressMs: durationMs });
         });
 
-        //////////////////// 2) 배경옵션 적용 ////////////////////
-        const resultBlob = await applyBackgroundColor(transparentBlob, backgroundOptionRef.current);
+        //////////////////// 2) 배경옵션 적용 (루프 중 변경 반영 위해 최신값 참조) ////////////////////
+        const currentOption = useBackgroundRemovalStore.getState().backgroundOption;
+        const resultBlob = await applyBackgroundColor(transparentBlob, currentOption);
         const resultUrl = URL.createObjectURL(resultBlob);
 
-        setJobs((prev) => patchJob(prev, id, {
+        patchJob(id, {
           status: 'done',
           progress: 1,
           progressMs: 200,
@@ -202,48 +179,52 @@ export function useBackgroundRemoval() {
           transparentBlob,
           resultBlob,
           resultUrl,
-        }));
+        });
       } catch (error) {
         console.error(error);
         const message = error instanceof Error ? error.message : '알 수 없는 오류';
-        setJobs((prev) => patchJob(prev, id, { status: 'error', error: message }));
+        useBackgroundRemovalStore.getState().patchJob(id, { status: 'error', error: message });
       }
     }
+
     const wasCancelled = cancelRequestedRef.current;
     cancelRequestedRef.current = false;
-    setIsCancelling(false);
-    setIsModelLoading(false);
-    setIsProcessing(false);
+    const endStore = useBackgroundRemovalStore.getState();
+    endStore.setIsCancelling(false);
+    endStore.setIsModelLoading(false);
+    endStore.setIsProcessing(false);
     if (wasCancelled) {
       enqueueSnackbar('누끼 처리를 중지했습니다. 남은 이미지는 대기 상태입니다.', { variant: 'info' });
     } else {
       enqueueSnackbar('누끼 처리가 완료되었습니다.', { variant: 'success' });
     }
-  }, [isProcessing]);
+  }, []);
 
   //////////////////// 처리 취소 요청 ////////////////////
   // 진행 중 이미지의 추론은 중단 불가 → 현재 이미지 완료 후 나머지 중지(협조적 취소).
   const requestCancel = useCallback(() => {
-    if (!isProcessing || cancelRequestedRef.current) return;
+    const store = useBackgroundRemovalStore.getState();
+    if (!store.isProcessing || cancelRequestedRef.current) return;
     cancelRequestedRef.current = true;
-    setIsCancelling(true);
+    store.setIsCancelling(true);
     enqueueSnackbar('현재 이미지를 마친 뒤 중지합니다.', { variant: 'warning' });
-  }, [isProcessing]);
+  }, []);
 
   //////////////////// 배경옵션 변경 시 완료 job 재합성 ////////////////////
   const changeBackgroundOption = useCallback(async (option: BackgroundOption) => {
-    setBackgroundOption(option);
+    const store = useBackgroundRemovalStore.getState();
+    store.setBackgroundOption(option);
 
-    const doneJobs = jobsRef.current.filter((job) => job.status === 'done' && job.transparentBlob);
+    const doneJobs = store.jobs.filter((job) => job.status === 'done' && job.transparentBlob);
     for (const job of doneJobs) {
       try {
         const resultBlob = await applyBackgroundColor(job.transparentBlob as Blob, option);
         const resultUrl = URL.createObjectURL(resultBlob);
-        setJobs((prev) => {
-          const prevJob = prev.find((item) => item.id === job.id);
-          if (prevJob?.resultUrl) URL.revokeObjectURL(prevJob.resultUrl);
-          return patchJob(prev, job.id, { resultBlob, resultUrl });
-        });
+
+        const { jobs: latestJobs, patchJob } = useBackgroundRemovalStore.getState();
+        const prevJob = latestJobs.find((item) => item.id === job.id);
+        if (prevJob?.resultUrl) URL.revokeObjectURL(prevJob.resultUrl);
+        patchJob(job.id, { resultBlob, resultUrl });
       } catch (error) {
         console.error(error);
       }
@@ -252,13 +233,14 @@ export function useBackgroundRemoval() {
 
   //////////////////// ZIP 다운로드 ////////////////////
   const downloadAllAsZip = useCallback(async () => {
-    const doneJobs = jobsRef.current.filter((job) => job.status === 'done' && job.resultBlob);
+    const store = useBackgroundRemovalStore.getState();
+    const doneJobs = store.jobs.filter((job) => job.status === 'done' && job.resultBlob);
     if (doneJobs.length === 0) {
       enqueueSnackbar('다운로드할 완료 이미지가 없습니다.', { variant: 'info' });
       return;
     }
 
-    setIsZipping(true);
+    store.setIsZipping(true);
     try {
       const zipBlob = await buildZip(
         doneJobs.map((job) => ({ fileName: job.file.name, blob: job.resultBlob as Blob })),
@@ -268,17 +250,20 @@ export function useBackgroundRemoval() {
       console.error(error);
       enqueueSnackbar('ZIP 생성 중 오류가 발생했습니다.', { variant: 'error' });
     } finally {
-      setIsZipping(false);
+      useBackgroundRemovalStore.getState().setIsZipping(false);
     }
   }, []);
 
-  //////////////////// 언마운트 시 objectURL 정리 ////////////////////
+  //////////////////// 언마운트 시 objectURL·상태 정리 ////////////////////
+  // 스토어는 모듈 레벨에 남으므로, 라우트 이탈 시 revoke된 URL이 스토어에 남지 않게 함께 비운다.
   useEffect(() => {
     return () => {
-      jobsRef.current.forEach((job) => {
+      const { jobs: currentJobs, clearJobs } = useBackgroundRemovalStore.getState();
+      currentJobs.forEach((job) => {
         URL.revokeObjectURL(job.originalUrl);
         if (job.resultUrl) URL.revokeObjectURL(job.resultUrl);
       });
+      clearJobs();
     };
   }, []);
 

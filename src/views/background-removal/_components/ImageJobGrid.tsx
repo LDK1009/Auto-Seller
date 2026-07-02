@@ -3,7 +3,7 @@
 //////////////////////////////////////// 이미지 카드 그리드 ////////////////////////////////////////
 
 import styled from '@emotion/styled';
-import type { ImageJob } from '../_hooks/useBackgroundRemoval';
+import type { ImageJob } from '../_store/backgroundRemovalStore';
 import ImageJobCard from './ImageJobCard';
 
 type ImageJobGridProps = {
