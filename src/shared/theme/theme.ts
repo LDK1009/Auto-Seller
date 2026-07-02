@@ -16,8 +16,8 @@ const theme = createTheme({
       main: '#06B6D4', // 시안 액센트
     },
     background: {
-      default: '#F7F8FB',
-      paper: '#FFFFFF',
+      default: '#FFFFFF', // 사이트 기본 배경 — 흰색
+      paper: '#F7F8FB', // 배경색이 깔려야 하는 컨테이너(카드·모달 등)용
     },
     text: {
       primary: '#1A1D29',
@@ -56,6 +56,10 @@ const theme = createTheme({
         root: {
           textTransform: 'none',
         },
+        // 버튼 높이 전반 상향
+        sizeSmall: { minHeight: 36 },
+        sizeMedium: { minHeight: 46 },
+        sizeLarge: { minHeight: 54 },
       },
     },
   },

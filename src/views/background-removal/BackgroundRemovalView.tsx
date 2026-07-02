@@ -58,13 +58,6 @@ export default function BackgroundRemovalView() {
   // 배경 선택 모달 열림 (순수 UI 상태)
   const [isBackgroundModalOpen, setIsBackgroundModalOpen] = useState(false);
 
-  // 초기화 버튼 (작업 전·완료 공통)
-  const resetButton = (
-    <Button fullWidth variant="outlined" color="inherit" startIcon={<RestartAltIcon />} onClick={clearAll}>
-      초기화
-    </Button>
-  );
-
   return (
     <Container maxWidth="lg">
       <Stack spacing={3} sx={{ py: 5 }}>
@@ -87,20 +80,17 @@ export default function BackgroundRemovalView() {
 
             {/* 액션 바 — 단계별 버튼 (풀너비) */}
             <Stack spacing={1.5}>
-              {/* 작업 전: 배경 제거 · 초기화 */}
+              {/* 작업 전: 배경 제거 */}
               {phase === 'before' && (
-                <>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    startIcon={<AutoFixHighIcon />}
-                    onClick={start}
-                    disabled={pendingCount === 0}
-                  >
-                    배경 제거
-                  </Button>
-                  {resetButton}
-                </>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  startIcon={<AutoFixHighIcon />}
+                  onClick={start}
+                  disabled={pendingCount === 0}
+                >
+                  배경 제거
+                </Button>
               )}
               {/* 작업 중: 작업 취소 */}
               {phase === 'processing' && (
@@ -115,7 +105,7 @@ export default function BackgroundRemovalView() {
                   {isCancelling ? '중지 중…' : '작업 취소'}
                 </Button>
               )}
-              {/* 작업 완료: 배경 선택 · 다운로드 · 초기화 */}
+              {/* 작업 완료: 배경 선택 · 다운로드 */}
               {phase === 'done' && (
                 <>
                   <Button
@@ -135,7 +125,6 @@ export default function BackgroundRemovalView() {
                   >
                     {isZipping ? '다운로드 중…' : '다운로드'}
                   </Button>
-                  {resetButton}
                 </>
               )}
             </Stack>
@@ -158,12 +147,24 @@ export default function BackgroundRemovalView() {
             </Stack>
             )}
 
-            {/* 작업 아이템 컨테이너 (상단: 전체·완료 / 하단: 그리드) */}
-            <Paper variant="outlined" sx={{ p: 2, bgcolor: 'transparent' }}>
+            {/* 작업 아이템 컨테이너 (상단: 전체·완료·초기화 / 하단: 그리드) */}
+            <Paper variant="outlined" sx={{ p: 2 }}>
               <Stack spacing={2}>
-                <Stack direction="row" spacing={1}>
-                  <StatBox label="전체" value={jobs.length} />
-                  <StatBox label="완료" value={doneCount} />
+                <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Stack direction="row" spacing={1}>
+                    <StatBox label="전체" value={jobs.length} />
+                    <StatBox label="완료" value={doneCount} />
+                  </Stack>
+                  <Button
+                    variant="outlined"
+                    color="inherit"
+                    size="small"
+                    startIcon={<RestartAltIcon />}
+                    onClick={clearAll}
+                    disabled={isProcessing}
+                  >
+                    초기화
+                  </Button>
                 </Stack>
                 <ImageJobGrid jobs={jobs} onRemove={removeJob} onOpen={setSelectedId} />
               </Stack>

@@ -26,7 +26,7 @@ const Box = styled.div(({ theme }) => ({
   padding: theme.spacing(0.5, 1.5),
   border: `1px solid ${theme.palette.divider}`,
   borderRadius: theme.shape.borderRadius,
-  backgroundColor: theme.palette.background.paper,
+  backgroundColor: theme.palette.background.default, // paper 컨테이너 위에서 흰색으로 부각
   textAlign: 'center',
 }));
 
