@@ -220,8 +220,8 @@ export default function BackgroundOptionModal({
             </Stack>
           )}
 
-            {/* 툴 — 미리보기 바로 하단 */}
-            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            {/* 툴 — 미리보기 바로 하단, 중앙 정렬 */}
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'center' }}>
               {/* 배경 제거(투명) */}
               <Tooltip title="배경 제거 (투명)">
                 <ToolButton
