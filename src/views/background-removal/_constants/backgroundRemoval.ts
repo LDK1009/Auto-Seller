@@ -53,9 +53,20 @@ export const STEP_PROGRESS: Record<string, StepProgress> = {
 // 패턴은 선택 색상 + 흰색 2톤으로 그린다.
 export type PatternKind = 'solid' | 'gradient' | 'stripes-vertical' | 'stripes-horizontal' | 'check';
 
+// 그라데이션 진행 방향 (선택 색 → 흰색이 흐르는 방향)
+export type GradientDirection =
+  | 'top'
+  | 'top-right'
+  | 'right'
+  | 'bottom-right'
+  | 'bottom'
+  | 'bottom-left'
+  | 'left'
+  | 'top-left';
+
 export type BackgroundOption =
   | { kind: 'transparent' }
-  | { kind: 'color'; hex: string; pattern?: PatternKind } // pattern 미지정 = 단색
+  | { kind: 'color'; hex: string; pattern?: PatternKind; gradientDirection?: GradientDirection }
   | { kind: 'image'; url: string };
 
 export const DEFAULT_CUSTOM_COLOR = '#F2F2F2';
@@ -67,6 +78,19 @@ export const PATTERN_OPTIONS: { pattern: PatternKind; label: string }[] = [
   { pattern: 'stripes-vertical', label: '세로선' },
   { pattern: 'stripes-horizontal', label: '가로선' },
   { pattern: 'check', label: '체크무늬' },
+];
+
+// 그라데이션 방향 목록 (기본: 아래로)
+export const DEFAULT_GRADIENT_DIRECTION: GradientDirection = 'bottom';
+export const GRADIENT_DIRECTIONS: { direction: GradientDirection; label: string }[] = [
+  { direction: 'top-left', label: '왼쪽 위로' },
+  { direction: 'top', label: '위로' },
+  { direction: 'top-right', label: '오른쪽 위로' },
+  { direction: 'left', label: '왼쪽으로' },
+  { direction: 'right', label: '오른쪽으로' },
+  { direction: 'bottom-left', label: '왼쪽 아래로' },
+  { direction: 'bottom', label: '아래로' },
+  { direction: 'bottom-right', label: '오른쪽 아래로' },
 ];
 
 // 셀러 추천 색상 (상품컷에 자주 쓰는 톤)

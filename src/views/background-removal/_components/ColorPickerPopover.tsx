@@ -14,17 +14,48 @@ import { HexColorPicker } from 'react-colorful';
 import {
   PATTERN_OPTIONS,
   SELLER_RECOMMENDED_COLORS,
+  GRADIENT_DIRECTIONS,
+  DEFAULT_GRADIENT_DIRECTION,
   type BackgroundOption,
   type PatternKind,
+  type GradientDirection,
 } from '../_constants/backgroundRemoval';
 
 const APPLY_DEBOUNCE_MS = 400;
 
+// 그라데이션 방향 → CSS 방향 키워드
+const CSS_DIRECTION: Record<GradientDirection, string> = {
+  top: 'to top',
+  'top-right': 'to top right',
+  right: 'to right',
+  'bottom-right': 'to bottom right',
+  bottom: 'to bottom',
+  'bottom-left': 'to bottom left',
+  left: 'to left',
+  'top-left': 'to top left',
+};
+
+// 방향 화살표 표시용
+const DIRECTION_ARROWS: Record<GradientDirection, string> = {
+  'top-left': '↖',
+  top: '↑',
+  'top-right': '↗',
+  left: '←',
+  right: '→',
+  'bottom-left': '↙',
+  bottom: '↓',
+  'bottom-right': '↘',
+};
+
 ////////// 패턴 미리보기 CSS (팝오버 타일·모달 스와치 공용)
-export function getPatternPreviewCss(hex: string, pattern: PatternKind): string {
+export function getPatternPreviewCss(
+  hex: string,
+  pattern: PatternKind,
+  gradientDirection: GradientDirection = DEFAULT_GRADIENT_DIRECTION,
+): string {
   switch (pattern) {
     case 'gradient':
-      return `linear-gradient(180deg, ${hex}, #FFFFFF)`;
+      return `linear-gradient(${CSS_DIRECTION[gradientDirection]}, ${hex}, #FFFFFF)`;
     case 'stripes-vertical':
       return `repeating-linear-gradient(90deg, ${hex} 0 4px, #FFFFFF 4px 8px)`;
     case 'stripes-horizontal':
@@ -54,8 +85,10 @@ export default function ColorPickerPopover({
   onCustomColorChange,
   onClose,
 }: ColorPickerPopoverProps) {
-  // 현재 패턴 (색상 옵션이 아니면 단색 기준)
+  // 현재 패턴·그라데이션 방향 (색상 옵션이 아니면 기본값)
   const currentPattern: PatternKind = value.kind === 'color' ? value.pattern ?? 'solid' : 'solid';
+  const currentDirection: GradientDirection =
+    value.kind === 'color' ? value.gradientDirection ?? DEFAULT_GRADIENT_DIRECTION : DEFAULT_GRADIENT_DIRECTION;
 
   // 팔레트 드래그 디바운스 적용 타이머
   const applyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -70,19 +103,24 @@ export default function ColorPickerPopover({
     onCustomColorChange(hex);
     if (applyTimerRef.current) clearTimeout(applyTimerRef.current);
     applyTimerRef.current = setTimeout(() => {
-      onChange({ kind: 'color', hex, pattern: currentPattern });
+      onChange({ kind: 'color', hex, pattern: currentPattern, gradientDirection: currentDirection });
     }, APPLY_DEBOUNCE_MS);
   };
 
   ////////// 추천 색상: 즉시 적용
   const handleRecommendedClick = (hex: string) => {
     onCustomColorChange(hex);
-    onChange({ kind: 'color', hex, pattern: currentPattern });
+    onChange({ kind: 'color', hex, pattern: currentPattern, gradientDirection: currentDirection });
   };
 
   ////////// 패턴: 현재 색으로 즉시 적용
   const handlePatternClick = (pattern: PatternKind) => {
-    onChange({ kind: 'color', hex: customColor, pattern });
+    onChange({ kind: 'color', hex: customColor, pattern, gradientDirection: currentDirection });
+  };
+
+  ////////// 그라데이션 방향: 즉시 적용
+  const handleDirectionClick = (direction: GradientDirection) => {
+    onChange({ kind: 'color', hex: customColor, pattern: 'gradient', gradientDirection: direction });
   };
 
   return (
@@ -130,7 +168,7 @@ export default function ColorPickerPopover({
                 <PatternTile
                   type="button"
                   $isSelected={value.kind === 'color' && currentPattern === pattern}
-                  style={{ background: getPatternPreviewCss(customColor, pattern) }}
+                  style={{ background: getPatternPreviewCss(customColor, pattern, currentDirection) }}
                   onClick={() => handlePatternClick(pattern)}
                   aria-label={label}
                 />
@@ -138,6 +176,29 @@ export default function ColorPickerPopover({
             ))}
           </SwatchRow>
         </Stack>
+
+        {/* 그라데이션 방향 (그라데이션 선택 시에만) */}
+        {value.kind === 'color' && currentPattern === 'gradient' && (
+          <Stack spacing={0.5}>
+            <Typography variant="caption" color="text.secondary">
+              그라데이션 방향
+            </Typography>
+            <SwatchRow>
+              {GRADIENT_DIRECTIONS.map(({ direction, label }) => (
+                <Tooltip key={direction} title={label}>
+                  <DirectionTile
+                    type="button"
+                    $isSelected={currentDirection === direction}
+                    onClick={() => handleDirectionClick(direction)}
+                    aria-label={label}
+                  >
+                    {DIRECTION_ARROWS[direction]}
+                  </DirectionTile>
+                </Tooltip>
+              ))}
+            </SwatchRow>
+          </Stack>
+        )}
       </Body>
     </Popover>
   );
@@ -178,5 +239,18 @@ const PatternTile = styled.button<{ $isSelected: boolean }>(({ theme, $isSelecte
   padding: 0,
   borderRadius: 6,
   cursor: 'pointer',
+  border: `2px solid ${$isSelected ? theme.palette.primary.main : theme.palette.divider}`,
+}));
+
+const DirectionTile = styled.button<{ $isSelected: boolean }>(({ theme, $isSelected }) => ({
+  width: 26,
+  height: 26,
+  padding: 0,
+  borderRadius: 6,
+  cursor: 'pointer',
+  fontSize: 14,
+  lineHeight: 1,
+  color: $isSelected ? theme.palette.primary.main : theme.palette.text.secondary,
+  backgroundColor: $isSelected ? theme.palette.action.selected : theme.palette.background.default,
   border: `2px solid ${$isSelected ? theme.palette.primary.main : theme.palette.divider}`,
 }));

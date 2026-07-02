@@ -249,7 +249,9 @@ export default function BackgroundOptionModal({
               {/* 현재 색상/패턴 표시 */}
               {value.kind === 'color' && (
                 <ColorSwatch
-                  style={{ background: getPatternPreviewCss(value.hex, value.pattern ?? 'solid') }}
+                  style={{
+                    background: getPatternPreviewCss(value.hex, value.pattern ?? 'solid', value.gradientDirection),
+                  }}
                 />
               )}
             </Stack>

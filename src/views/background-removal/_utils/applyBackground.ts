@@ -3,7 +3,32 @@
 // 배경 옵션이 'transparent'면 원본 투명 Blob을 그대로 반환한다.
 // 'image'는 호출자(훅)가 fetch한 배경 Blob을 함께 넘긴다 (여러 장 재사용 위해 fetch 분리).
 
-import { OUTPUT_FORMAT, type BackgroundOption, type PatternKind } from '../_constants/backgroundRemoval';
+import {
+  OUTPUT_FORMAT,
+  DEFAULT_GRADIENT_DIRECTION,
+  type BackgroundOption,
+  type PatternKind,
+  type GradientDirection,
+} from '../_constants/backgroundRemoval';
+
+//////////////////// 그라데이션 방향 → 선형 그라데이션 좌표 ////////////////////
+// (x0,y0)=선택 색 시작점, (x1,y1)=흰색 도착점. 방향은 색이 흐르는 쪽.
+function getGradientLine(
+  direction: GradientDirection,
+  width: number,
+  height: number,
+): [number, number, number, number] {
+  switch (direction) {
+    case 'top': return [0, height, 0, 0];
+    case 'top-right': return [0, height, width, 0];
+    case 'right': return [0, 0, width, 0];
+    case 'bottom-right': return [0, 0, width, height];
+    case 'bottom': return [0, 0, 0, height];
+    case 'bottom-left': return [width, 0, 0, height];
+    case 'left': return [width, 0, 0, 0];
+    case 'top-left': return [width, height, 0, 0];
+  }
+}
 
 //////////////////// 패턴 배경 그리기 ////////////////////
 // 선택 색상 + 흰색 2톤. 줄무늬·체크 단위는 이미지 크기에 비례(고해상도에서도 비율 유지).
@@ -15,13 +40,15 @@ function drawPatternBackground(
   height: number,
   hex: string,
   pattern: PatternKind,
+  gradientDirection: GradientDirection,
 ): void {
   const shorterSide = Math.min(width, height);
 
   switch (pattern) {
     case 'gradient': {
-      // 위: 선택 색 → 아래: 흰색
-      const gradient = context.createLinearGradient(0, 0, 0, height);
+      // 선택 색 → 흰색, 지정 방향으로
+      const [x0, y0, x1, y1] = getGradientLine(gradientDirection, width, height);
+      const gradient = context.createLinearGradient(x0, y0, x1, y1);
       gradient.addColorStop(0, hex);
       gradient.addColorStop(1, PATTERN_SECONDARY_COLOR);
       context.fillStyle = gradient;
@@ -93,7 +120,14 @@ export async function applyBackground(
 
   //////////////////// 배경 그리기 ////////////////////
   if (option.kind === 'color') {
-    drawPatternBackground(context, canvas.width, canvas.height, option.hex, option.pattern ?? 'solid');
+    drawPatternBackground(
+      context,
+      canvas.width,
+      canvas.height,
+      option.hex,
+      option.pattern ?? 'solid',
+      option.gradientDirection ?? DEFAULT_GRADIENT_DIRECTION,
+    );
   } else {
     // 이미지 배경: cover-fit(비율 유지, 짧은 변 기준 확대, 중앙 크롭)
     if (!backgroundImageBlob) {
