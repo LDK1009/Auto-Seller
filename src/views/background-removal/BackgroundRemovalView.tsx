@@ -145,7 +145,7 @@ export default function BackgroundRemovalView() {
             <Stack spacing={0.5}>
               <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
                 <Typography variant="caption" color="text.secondary">
-                  {isModelLoading ? '모델 로딩 중 (최초 1회)' : '전체 진행률'}
+                  {isModelLoading ? 'AI 모델 실행 중 (최초 1회)' : '전체 진행률'}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {isModelLoading ? Math.round(modelProgress * 100) : overallProgress}%
