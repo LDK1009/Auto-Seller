@@ -6,6 +6,19 @@ body {
   overflow-x: hidden;
 }
 
+/* 공통 레이아웃 골격: 헤더 + main(flex:1)으로 최소 페이지 높이 보장 */
+body {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 a {
   color: inherit;
   text-decoration: none;

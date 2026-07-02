@@ -4,7 +4,6 @@
 // 업로드 → 배경옵션 → 일괄 처리 → ZIP 다운로드를 조립하는 컨테이너.
 
 import { useState } from 'react';
-import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -16,6 +15,7 @@ import StopCircleIcon from '@mui/icons-material/StopCircle';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import PaletteIcon from '@mui/icons-material/Palette';
 import AnimatedProgressBar from '@/shared/components/AnimatedProgressBar';
+import PageLayout from '@/shared/components/PageLayout';
 import { useBackgroundRemoval } from './_hooks/useBackgroundRemoval';
 import ImageDropzone from './_components/ImageDropzone';
 import BackgroundOptionModal from './_components/BackgroundOptionModal';
@@ -58,18 +58,11 @@ export default function BackgroundRemovalView() {
   const [isBackgroundModalOpen, setIsBackgroundModalOpen] = useState(false);
 
   return (
-    <Container maxWidth="lg">
-      <Stack spacing={3} sx={{ py: 5 }}>
-        {/* 헤더 */}
-        <Stack spacing={0.5}>
-          <Typography variant="h4" sx={{ fontWeight: 700 }}>
-            대량 이미지 누끼
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            여러 상품 이미지의 배경을 한 번에 제거합니다. 처리는 브라우저에서 진행되어 이미지가 서버로 전송되지 않습니다.
-          </Typography>
-        </Stack>
-
+    <PageLayout
+      title="대량 이미지 누끼"
+      description="여러 상품 이미지의 배경을 한 번에 제거합니다. 처리는 브라우저에서 진행되어 이미지가 서버로 전송되지 않습니다."
+    >
+      <Stack spacing={3}>
         {/* 업로드 (이미지가 없을 때만 노출) */}
         {!hasJobs && <ImageDropzone onFilesAdded={addFiles} disabled={isProcessing} />}
 
@@ -194,6 +187,6 @@ export default function BackgroundRemovalView() {
         onCustomColorChange={setCustomColor}
         onClose={() => setIsBackgroundModalOpen(false)}
       />
-    </Container>
+    </PageLayout>
   );
 }
