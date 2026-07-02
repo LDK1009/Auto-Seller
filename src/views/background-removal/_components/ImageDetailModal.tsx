@@ -64,7 +64,8 @@ export default function ImageDetailModal({ jobs, index, onClose, onNavigate }: I
 
   if (!job) return null;
 
-  const imageUrl = job.status === 'done' && job.resultUrl ? job.resultUrl : job.originalUrl;
+  const isDone = job.status === 'done' && Boolean(job.resultUrl);
+  const imageUrl = isDone ? (job.resultUrl as string) : job.originalUrl;
   const statusMeta = STATUS_META[job.status];
 
   return (
@@ -86,7 +87,7 @@ export default function ImageDetailModal({ jobs, index, onClose, onNavigate }: I
           <ChevronLeftIcon />
         </NavButton>
 
-        <Stage>
+        <Stage $showCheckerboard={isDone}>
           <AnimatePresence mode="wait" custom={direction} initial={false}>
             <Slide
               key={job.id}
@@ -147,15 +148,21 @@ const Body = styled.div(({ theme }) => ({
   padding: theme.spacing(1),
 }));
 
-const Stage = styled.div({
+// 완료(투명 배경) 이미지에만 격자무늬 — 투명 영역 확인용
+const CHECKERBOARD =
+  'repeating-conic-gradient(#e9e9e9 0% 25%, #ffffff 0% 50%) 50% / 20px 20px';
+
+const Stage = styled.div<{ $showCheckerboard: boolean }>(({ $showCheckerboard }) => ({
   flex: 1,
   minWidth: 0,
   height: '60vh',
   overflow: 'hidden',
+  borderRadius: 8,
+  background: $showCheckerboard ? CHECKERBOARD : 'none',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-});
+}));
 
 const Slide = styled(motion.div)({
   width: '100%',
