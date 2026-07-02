@@ -127,8 +127,8 @@ export default function BackgroundRemovalView() {
               )}
             </Stack>
 
-            {/* 전체 진행률 (작업 전·중에만) — 모델 로딩은 서클 스피너 + 텍스트로 별도 표시 */}
-            {phase !== 'done' &&
+            {/* 전체 진행률 (작업 중에만) — 모델 로딩은 서클 스피너 + 텍스트로 별도 표시 */}
+            {phase === 'processing' &&
               (isModelLoading ? (
                 <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
                   <CircularProgress size={20} />
