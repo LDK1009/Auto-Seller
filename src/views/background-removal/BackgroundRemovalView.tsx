@@ -8,11 +8,12 @@ import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import Paper from '@mui/material/Paper';
 import Divider from '@mui/material/Divider';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import DownloadIcon from '@mui/icons-material/Download';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
-import DeleteSweepIcon from '@mui/icons-material/DeleteSweep';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import AnimatedProgressBar from '@/shared/components/AnimatedProgressBar';
 import { useBackgroundRemoval } from './_hooks/useBackgroundRemoval';
 import ImageDropzone from './_components/ImageDropzone';
@@ -53,6 +54,13 @@ export default function BackgroundRemovalView() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedIndex = jobs.findIndex((job) => job.id === selectedId);
 
+  // 초기화 버튼 (작업 전·완료 공통)
+  const resetButton = (
+    <Button fullWidth variant="outlined" color="inherit" startIcon={<RestartAltIcon />} onClick={clearAll}>
+      초기화
+    </Button>
+  );
+
   return (
     <Container maxWidth="lg">
       <Stack spacing={3} sx={{ py: 5 }}>
@@ -84,17 +92,20 @@ export default function BackgroundRemovalView() {
 
             {/* 액션 바 — 단계별 버튼 (풀너비) */}
             <Stack spacing={1.5}>
-              {/* 작업 전: 배경 제거 */}
+              {/* 작업 전: 배경 제거 · 초기화 */}
               {phase === 'before' && (
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<AutoFixHighIcon />}
-                  onClick={start}
-                  disabled={pendingCount === 0}
-                >
-                  배경 제거
-                </Button>
+                <>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    startIcon={<AutoFixHighIcon />}
+                    onClick={start}
+                    disabled={pendingCount === 0}
+                  >
+                    배경 제거
+                  </Button>
+                  {resetButton}
+                </>
               )}
               {/* 작업 중: 작업 취소 */}
               {phase === 'processing' && (
@@ -121,14 +132,7 @@ export default function BackgroundRemovalView() {
                   >
                     {isZipping ? '다운로드 중…' : '다운로드'}
                   </Button>
-                  <Button
-                    fullWidth
-                    color="inherit"
-                    startIcon={<DeleteSweepIcon />}
-                    onClick={clearAll}
-                  >
-                    전체 초기화
-                  </Button>
+                  {resetButton}
                 </>
               )}
             </Stack>
@@ -148,16 +152,19 @@ export default function BackgroundRemovalView() {
                 value={isModelLoading ? modelProgress : overallProgress / 100}
                 indeterminate={isModelLoading && modelProgress === 0}
               />
-              {/* 작업 파일 수 — 좌측 개별 박스 */}
-              <Stack direction="row" spacing={1}>
-                <StatBox label="전체" value={jobs.length} />
-                <StatBox label="완료" value={doneCount} />
-              </Stack>
             </Stack>
             )}
 
-            {/* 이미지 그리드 */}
-            <ImageJobGrid jobs={jobs} onRemove={removeJob} onOpen={setSelectedId} />
+            {/* 작업 아이템 컨테이너 (상단: 전체·완료 / 하단: 그리드) */}
+            <Paper variant="outlined" sx={{ p: 2, bgcolor: 'transparent' }}>
+              <Stack spacing={2}>
+                <Stack direction="row" spacing={1}>
+                  <StatBox label="전체" value={jobs.length} />
+                  <StatBox label="완료" value={doneCount} />
+                </Stack>
+                <ImageJobGrid jobs={jobs} onRemove={removeJob} onOpen={setSelectedId} />
+              </Stack>
+            </Paper>
           </>
         )}
       </Stack>
