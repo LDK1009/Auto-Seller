@@ -7,7 +7,14 @@ import { useRef, useState } from 'react';
 import styled from '@emotion/styled';
 import Typography from '@mui/material/Typography';
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
-import { ACCEPT_ATTR } from '../_constants/backgroundRemoval';
+import {
+  ACCEPT_ATTR,
+  MAX_FILE_SIZE,
+  MAX_FILE_COUNT,
+  MAX_TOTAL_SIZE,
+} from '../_constants/backgroundRemoval';
+
+const MB = (bytes: number) => Math.round(bytes / (1024 * 1024));
 
 type ImageDropzoneProps = {
   onFilesAdded: (files: File[] | FileList) => void;
@@ -54,6 +61,9 @@ export default function ImageDropzone({ onFilesAdded, disabled = false }: ImageD
       </Typography>
       <Typography variant="caption" color="text.secondary">
         PNG · JPG · WEBP · 여러 장 동시 선택 가능
+      </Typography>
+      <Typography variant="caption" color="text.disabled">
+        개별 {MB(MAX_FILE_SIZE)}MB · 최대 {MAX_FILE_COUNT}장 · 총 {MB(MAX_TOTAL_SIZE)}MB 까지
       </Typography>
       <HiddenInput
         ref={inputRef}

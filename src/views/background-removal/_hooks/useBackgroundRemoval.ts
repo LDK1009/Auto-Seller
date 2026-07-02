@@ -10,6 +10,9 @@ import { enqueueSnackbar } from 'notistack';
 import {
   ACCEPTED_IMAGE_PREFIX,
   DEFAULT_CUSTOM_COLOR,
+  MAX_FILE_SIZE,
+  MAX_FILE_COUNT,
+  MAX_TOTAL_SIZE,
   type BackgroundOption,
 } from '../_constants/backgroundRemoval';
 import { removeImageBackground } from '../_utils/removeImageBackground';
@@ -58,16 +61,61 @@ export function useBackgroundRemoval() {
   const jobsRef = useRef<ImageJob[]>(jobs);
   jobsRef.current = jobs;
 
-  //////////////////// 파일 추가 ////////////////////
+  //////////////////// 파일 추가 (입력 제한 검증) ////////////////////
   const addFiles = useCallback((files: File[] | FileList) => {
-    const incoming = Array.from(files).filter((file) => file.type.startsWith(ACCEPTED_IMAGE_PREFIX));
-    const rejectedCount = Array.from(files).length - incoming.length;
-    if (rejectedCount > 0) {
-      enqueueSnackbar(`이미지가 아닌 파일 ${rejectedCount}개는 제외했습니다.`, { variant: 'warning' });
-    }
-    if (incoming.length === 0) return;
+    const all = Array.from(files);
+    const rejected = { type: 0, size: 0, count: 0, total: 0 };
 
-    const newJobs: ImageJob[] = incoming.map((file) => ({
+    // 1) 이미지 타입만
+    let candidates = all.filter((file) => {
+      if (file.type.startsWith(ACCEPTED_IMAGE_PREFIX)) return true;
+      rejected.type += 1;
+      return false;
+    });
+    // 2) 개별 파일 크기 상한
+    candidates = candidates.filter((file) => {
+      if (file.size <= MAX_FILE_SIZE) return true;
+      rejected.size += 1;
+      return false;
+    });
+
+    // 3) 장수·총용량 상한 (현재 보유분 기준 누적 검사)
+    const current = jobsRef.current;
+    let runningCount = current.length;
+    let runningTotal = current.reduce((sum, job) => sum + job.file.size, 0);
+
+    const accepted: File[] = [];
+    for (const file of candidates) {
+      if (runningCount >= MAX_FILE_COUNT) {
+        rejected.count += 1;
+        continue;
+      }
+      if (runningTotal + file.size > MAX_TOTAL_SIZE) {
+        rejected.total += 1;
+        continue;
+      }
+      accepted.push(file);
+      runningCount += 1;
+      runningTotal += file.size;
+    }
+
+    // 제외 사유별 안내
+    const mb = (bytes: number) => Math.round(bytes / (1024 * 1024));
+    if (rejected.type > 0) {
+      enqueueSnackbar(`이미지가 아닌 파일 ${rejected.type}개는 제외했습니다.`, { variant: 'warning' });
+    }
+    if (rejected.size > 0) {
+      enqueueSnackbar(`${mb(MAX_FILE_SIZE)}MB를 초과한 파일 ${rejected.size}개는 제외했습니다.`, { variant: 'warning' });
+    }
+    if (rejected.count > 0) {
+      enqueueSnackbar(`최대 ${MAX_FILE_COUNT}장까지 처리할 수 있어 ${rejected.count}개는 제외했습니다.`, { variant: 'warning' });
+    }
+    if (rejected.total > 0) {
+      enqueueSnackbar(`총 ${mb(MAX_TOTAL_SIZE)}MB를 초과해 ${rejected.total}개는 제외했습니다.`, { variant: 'warning' });
+    }
+    if (accepted.length === 0) return;
+
+    const newJobs: ImageJob[] = accepted.map((file) => ({
       id: crypto.randomUUID(),
       file,
       originalUrl: URL.createObjectURL(file),
