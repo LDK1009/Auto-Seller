@@ -9,19 +9,19 @@ const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#03C75A', // 네이버 그린
+      main: '#4F46E5', // 인디고 — 온라인 셀러 자동화 플랫폼(중립·신뢰·스마트)
       contrastText: '#FFFFFF',
     },
     secondary: {
-      main: '#1E88E5',
+      main: '#06B6D4', // 시안 액센트
     },
     background: {
-      default: '#F7F8FA',
+      default: '#F7F8FB',
       paper: '#FFFFFF',
     },
     text: {
-      primary: '#1A1A1A',
-      secondary: '#5F6368',
+      primary: '#1A1D29',
+      secondary: '#5B6472',
     },
   },
 
