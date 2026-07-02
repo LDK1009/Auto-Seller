@@ -9,6 +9,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
+import CircularProgress from '@mui/material/CircularProgress';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import DownloadIcon from '@mui/icons-material/Download';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
@@ -28,7 +29,6 @@ export default function BackgroundRemovalView() {
     isProcessing,
     isCancelling,
     isModelLoading,
-    modelProgress,
     isZipping,
     backgroundOption,
     customColor,
@@ -127,23 +127,28 @@ export default function BackgroundRemovalView() {
               )}
             </Stack>
 
-            {/* 전체 진행률 (작업 전·중에만, 모델 로딩 중엔 모델 다운로드 표시) */}
-            {phase !== 'done' && (
-            <Stack spacing={0.5}>
-              <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="caption" color="text.secondary">
-                  {isModelLoading ? 'AI 모델 실행 중 (최초 1회)' : '전체 진행률'}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {isModelLoading ? Math.round(modelProgress * 100) : overallProgress}%
-                </Typography>
-              </Stack>
-              <AnimatedProgressBar
-                value={isModelLoading ? modelProgress : overallProgress / 100}
-                indeterminate={isModelLoading && modelProgress === 0}
-              />
-            </Stack>
-            )}
+            {/* 전체 진행률 (작업 전·중에만) — 모델 로딩은 서클 스피너 + 텍스트로 별도 표시 */}
+            {phase !== 'done' &&
+              (isModelLoading ? (
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                  <CircularProgress size={20} />
+                  <Typography variant="body2" color="text.secondary">
+                    AI 모델 실행 중 (최초 1회)…
+                  </Typography>
+                </Stack>
+              ) : (
+                <Stack spacing={0.5}>
+                  <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary">
+                      전체 진행률
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {overallProgress}%
+                    </Typography>
+                  </Stack>
+                  <AnimatedProgressBar value={overallProgress / 100} />
+                </Stack>
+              ))}
 
             {/* 작업 아이템 컨테이너 (상단: 전체·완료·초기화 / 하단: 그리드) */}
             <Paper variant="outlined" sx={{ p: 2 }}>

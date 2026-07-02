@@ -32,7 +32,6 @@ type BackgroundRemovalState = {
   isProcessing: boolean;
   isCancelling: boolean; // 취소 요청 후 현재 이미지 마무리 대기
   isModelLoading: boolean; // 모델 다운로드(최초 1회) — 전체 바에 표시
-  modelProgress: number; // 모델 다운로드 비율 0~1
   isZipping: boolean;
   backgroundOption: BackgroundOption;
   customColor: string;
@@ -45,7 +44,6 @@ type BackgroundRemovalState = {
   setIsProcessing: (value: boolean) => void;
   setIsCancelling: (value: boolean) => void;
   setIsModelLoading: (value: boolean) => void;
-  setModelProgress: (value: number) => void;
   setIsZipping: (value: boolean) => void;
   setBackgroundOption: (option: BackgroundOption) => void;
   setCustomColor: (hex: string) => void;
@@ -57,7 +55,6 @@ export const useBackgroundRemovalStore = create<BackgroundRemovalState>((set) =>
   isProcessing: false,
   isCancelling: false,
   isModelLoading: false,
-  modelProgress: 0,
   isZipping: false,
   backgroundOption: { kind: 'transparent' },
   customColor: DEFAULT_CUSTOM_COLOR,
@@ -77,7 +74,6 @@ export const useBackgroundRemovalStore = create<BackgroundRemovalState>((set) =>
   setIsProcessing: (value) => set({ isProcessing: value }),
   setIsCancelling: (value) => set({ isCancelling: value }),
   setIsModelLoading: (value) => set({ isModelLoading: value }),
-  setModelProgress: (value) => set({ modelProgress: value }),
   setIsZipping: (value) => set({ isZipping: value }),
   setBackgroundOption: (option) => set({ backgroundOption: option }),
   setCustomColor: (hex) => set({ customColor: hex }),

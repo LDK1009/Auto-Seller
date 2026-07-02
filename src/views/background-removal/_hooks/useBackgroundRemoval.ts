@@ -30,7 +30,6 @@ export function useBackgroundRemoval() {
   const isProcessing = useBackgroundRemovalStore((state) => state.isProcessing);
   const isCancelling = useBackgroundRemovalStore((state) => state.isCancelling);
   const isModelLoading = useBackgroundRemovalStore((state) => state.isModelLoading);
-  const modelProgress = useBackgroundRemovalStore((state) => state.modelProgress);
   const isZipping = useBackgroundRemovalStore((state) => state.isZipping);
   const backgroundOption = useBackgroundRemovalStore((state) => state.backgroundOption);
   const customColor = useBackgroundRemovalStore((state) => state.customColor);
@@ -141,14 +140,13 @@ export function useBackgroundRemoval() {
     cancelRequestedRef.current = false;
     store.setIsCancelling(false);
     store.setIsModelLoading(false);
-    store.setModelProgress(0);
     store.setIsProcessing(true);
 
     for (const id of pendingIds) {
       // 취소 요청 시 다음 이미지부터 중지 (진행 중인 이미지는 위 반복에서 이미 완료됨)
       if (cancelRequestedRef.current) break;
 
-      const { jobs: latestJobs, patchJob, setIsModelLoading, setModelProgress } =
+      const { jobs: latestJobs, patchJob, setIsModelLoading } =
         useBackgroundRemovalStore.getState();
       const target = latestJobs.find((job) => job.id === id);
       if (!target) continue;
@@ -160,7 +158,6 @@ export function useBackgroundRemoval() {
           // 모델 다운로드는 개별 바가 아니라 전체 로딩바로 표시
           if (phase === 'download') {
             setIsModelLoading(true);
-            setModelProgress(ratio);
             return;
           }
           setIsModelLoading(false);
@@ -292,7 +289,6 @@ export function useBackgroundRemoval() {
     isProcessing,
     isCancelling,
     isModelLoading,
-    modelProgress,
     isZipping,
     backgroundOption,
     customColor,
