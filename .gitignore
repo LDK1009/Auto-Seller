@@ -37,6 +37,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# 테스트용 샘플 이미지 (크롤링 자료 — 배포/저장소 제외)
+/public/samples/
+
+# playwright MCP 산출물
+/.playwright-mcp/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

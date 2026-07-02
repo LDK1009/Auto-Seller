@@ -7,6 +7,8 @@ import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import Link from 'next/link';
 import { APP_NAME, APP_DESCRIPTION } from '@/shared/constants/app';
 
 export default function MainView() {
@@ -19,8 +21,14 @@ export default function MainView() {
         <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400 }}>
           {APP_DESCRIPTION}
         </Typography>
-        <Button variant="contained" size="large">
-          시작하기
+        <Button
+          component={Link}
+          href="/background-removal"
+          variant="contained"
+          size="large"
+          startIcon={<AutoFixHighIcon />}
+        >
+          대량 이미지 누끼
         </Button>
       </Stack>
     </Container>
