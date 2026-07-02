@@ -14,10 +14,11 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import DownloadIcon from '@mui/icons-material/Download';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import PaletteIcon from '@mui/icons-material/Palette';
 import AnimatedProgressBar from '@/shared/components/AnimatedProgressBar';
 import { useBackgroundRemoval } from './_hooks/useBackgroundRemoval';
 import ImageDropzone from './_components/ImageDropzone';
-import BackgroundOptionSelector from './_components/BackgroundOptionSelector';
+import BackgroundOptionModal from './_components/BackgroundOptionModal';
 import ImageJobGrid from './_components/ImageJobGrid';
 import StatBox from './_components/StatBox';
 import ImageDetailModal from './_components/ImageDetailModal';
@@ -54,6 +55,9 @@ export default function BackgroundRemovalView() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedIndex = jobs.findIndex((job) => job.id === selectedId);
 
+  // 배경 선택 모달 열림 (순수 UI 상태)
+  const [isBackgroundModalOpen, setIsBackgroundModalOpen] = useState(false);
+
   // 초기화 버튼 (작업 전·완료 공통)
   const resetButton = (
     <Button fullWidth variant="outlined" color="inherit" startIcon={<RestartAltIcon />} onClick={clearAll}>
@@ -76,15 +80,6 @@ export default function BackgroundRemovalView() {
 
         {/* 업로드 */}
         <ImageDropzone onFilesAdded={addFiles} disabled={isProcessing} />
-
-        {/* 배경 옵션 */}
-        <BackgroundOptionSelector
-          value={backgroundOption}
-          customColor={customColor}
-          onChange={changeBackgroundOption}
-          onCustomColorChange={setCustomColor}
-          disabled={isProcessing}
-        />
 
         {hasJobs && (
           <>
@@ -120,9 +115,17 @@ export default function BackgroundRemovalView() {
                   {isCancelling ? '중지 중…' : '작업 취소'}
                 </Button>
               )}
-              {/* 작업 완료: 다운로드 · 초기화 */}
+              {/* 작업 완료: 배경 선택 · 다운로드 · 초기화 */}
               {phase === 'done' && (
                 <>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    startIcon={<PaletteIcon />}
+                    onClick={() => setIsBackgroundModalOpen(true)}
+                  >
+                    배경 선택
+                  </Button>
                   <Button
                     fullWidth
                     variant="contained"
@@ -175,6 +178,16 @@ export default function BackgroundRemovalView() {
         index={selectedIndex}
         onClose={() => setSelectedId(null)}
         onNavigate={(nextIndex) => setSelectedId(jobs[nextIndex].id)}
+      />
+
+      {/* 배경 선택 모달 */}
+      <BackgroundOptionModal
+        open={isBackgroundModalOpen}
+        value={backgroundOption}
+        customColor={customColor}
+        onChange={changeBackgroundOption}
+        onCustomColorChange={setCustomColor}
+        onClose={() => setIsBackgroundModalOpen(false)}
       />
     </Container>
   );
