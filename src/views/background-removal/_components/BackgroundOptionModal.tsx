@@ -4,7 +4,7 @@
 // 3섹션: [검색] 무료 배경 이미지 검색·적용 / [미리보기] 결과 슬라이드 / [툴] 배경제거·색상.
 // 옵션 변경 시 완료 이미지들이 즉시 재합성된다(훅의 changeBackgroundOption).
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import styled from '@emotion/styled';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -27,6 +27,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import type { BackgroundOption } from '../_constants/backgroundRemoval';
 import type { ImageJob } from '../_store/backgroundRemovalStore';
 import { useBackgroundImageSearch } from '../_hooks/useBackgroundImageSearch';
+import ColorPickerPopover, { getPatternPreviewCss } from './ColorPickerPopover';
 
 type BackgroundOptionModalProps = {
   open: boolean;
@@ -61,7 +62,7 @@ export default function BackgroundOptionModal({
   //////////////////// 미리보기 슬라이드 상태 ////////////////////
   const [rawIndex, setRawIndex] = useState(0);
   const [direction, setDirection] = useState(0);
-  const colorInputRef = useRef<HTMLInputElement>(null);
+  const [colorAnchorEl, setColorAnchorEl] = useState<HTMLElement | null>(null); // 색상 팝오버 앵커
 
   // 이미지 삭제 등으로 개수가 줄었을 때 안전하게 보정
   const index = jobs.length > 0 ? Math.min(rawIndex, jobs.length - 1) : 0;
@@ -234,32 +235,36 @@ export default function BackgroundOptionModal({
                 </ToolButton>
               </Tooltip>
 
-              {/* 배경 색상 */}
+              {/* 배경 색상 (커스텀 팝오버) */}
               <Tooltip title="배경 색상">
                 <ToolButton
                   $isActive={value.kind === 'color'}
-                  onClick={() => colorInputRef.current?.click()}
+                  onClick={(event) => setColorAnchorEl(event.currentTarget)}
                   aria-label="배경 색상"
                 >
                   <PaletteIcon />
                 </ToolButton>
               </Tooltip>
-              <HiddenColorInput
-                ref={colorInputRef}
-                type="color"
-                value={customColor}
-                onChange={(event) => {
-                  onCustomColorChange(event.target.value);
-                  onChange({ kind: 'color', hex: event.target.value });
-                }}
-                aria-label="배경 색상 선택"
-              />
 
-              {/* 현재 색상 표시 */}
-              {value.kind === 'color' && <ColorSwatch style={{ backgroundColor: value.hex }} />}
+              {/* 현재 색상/패턴 표시 */}
+              {value.kind === 'color' && (
+                <ColorSwatch
+                  style={{ background: getPatternPreviewCss(value.hex, value.pattern ?? 'solid') }}
+                />
+              )}
             </Stack>
           </Stack>
         </Stack>
+
+        {/* 색상 선택 팝오버 */}
+        <ColorPickerPopover
+          anchorEl={colorAnchorEl}
+          value={value}
+          customColor={customColor}
+          onChange={onChange}
+          onCustomColorChange={onCustomColorChange}
+          onClose={() => setColorAnchorEl(null)}
+        />
       </DialogContent>
       <DialogActions>
         <Button fullWidth variant="contained" onClick={onClose}>
@@ -385,14 +390,6 @@ const ToolButton = styled(IconButton)<{ $isActive: boolean }>(({ theme, $isActiv
   color: $isActive ? theme.palette.primary.main : theme.palette.text.secondary,
   backgroundColor: $isActive ? theme.palette.action.selected : 'transparent',
 }));
-
-const HiddenColorInput = styled.input({
-  position: 'absolute',
-  width: 1,
-  height: 1,
-  opacity: 0,
-  pointerEvents: 'none',
-});
 
 const ColorSwatch = styled.span(({ theme }) => ({
   width: 24,

@@ -49,10 +49,34 @@ export const STEP_PROGRESS: Record<string, StepProgress> = {
 };
 
 //////////////////// 배경 옵션 ////////////////////
-// 'transparent' = 배경 제거만, 'color' = 단색 배경 합성, 'image' = 검색 이미지 배경 합성
+// 'transparent' = 배경 제거만, 'color' = 색상/패턴 배경 합성, 'image' = 검색 이미지 배경 합성
+// 패턴은 선택 색상 + 흰색 2톤으로 그린다.
+export type PatternKind = 'solid' | 'gradient' | 'stripes-vertical' | 'stripes-horizontal' | 'check';
+
 export type BackgroundOption =
   | { kind: 'transparent' }
-  | { kind: 'color'; hex: string }
+  | { kind: 'color'; hex: string; pattern?: PatternKind } // pattern 미지정 = 단색
   | { kind: 'image'; url: string };
 
 export const DEFAULT_CUSTOM_COLOR = '#F2F2F2';
+
+// 패턴 선택 타일 목록
+export const PATTERN_OPTIONS: { pattern: PatternKind; label: string }[] = [
+  { pattern: 'solid', label: '단색' },
+  { pattern: 'gradient', label: '그라데이션' },
+  { pattern: 'stripes-vertical', label: '세로선' },
+  { pattern: 'stripes-horizontal', label: '가로선' },
+  { pattern: 'check', label: '체크무늬' },
+];
+
+// 셀러 추천 색상 (상품컷에 자주 쓰는 톤)
+export const SELLER_RECOMMENDED_COLORS: { hex: string; label: string }[] = [
+  { hex: '#FFFFFF', label: '흰색' },
+  { hex: '#F7F7F7', label: '라이트그레이' },
+  { hex: '#F5EFE6', label: '아이보리' },
+  { hex: '#FFE8D6', label: '피치' },
+  { hex: '#FDE2E4', label: '연핑크' },
+  { hex: '#E3F2FD', label: '연블루' },
+  { hex: '#E8F5E9', label: '연민트' },
+  { hex: '#212121', label: '블랙' },
+];

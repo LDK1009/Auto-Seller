@@ -3,7 +3,71 @@
 // 배경 옵션이 'transparent'면 원본 투명 Blob을 그대로 반환한다.
 // 'image'는 호출자(훅)가 fetch한 배경 Blob을 함께 넘긴다 (여러 장 재사용 위해 fetch 분리).
 
-import { OUTPUT_FORMAT, type BackgroundOption } from '../_constants/backgroundRemoval';
+import { OUTPUT_FORMAT, type BackgroundOption, type PatternKind } from '../_constants/backgroundRemoval';
+
+//////////////////// 패턴 배경 그리기 ////////////////////
+// 선택 색상 + 흰색 2톤. 줄무늬·체크 단위는 이미지 크기에 비례(고해상도에서도 비율 유지).
+const PATTERN_SECONDARY_COLOR = '#FFFFFF';
+
+function drawPatternBackground(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  hex: string,
+  pattern: PatternKind,
+): void {
+  const shorterSide = Math.min(width, height);
+
+  switch (pattern) {
+    case 'gradient': {
+      // 위: 선택 색 → 아래: 흰색
+      const gradient = context.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, hex);
+      gradient.addColorStop(1, PATTERN_SECONDARY_COLOR);
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, width, height);
+      break;
+    }
+    case 'stripes-vertical': {
+      const unit = Math.max(8, Math.round(shorterSide / 24));
+      context.fillStyle = PATTERN_SECONDARY_COLOR;
+      context.fillRect(0, 0, width, height);
+      context.fillStyle = hex;
+      for (let x = 0; x < width; x += unit * 2) {
+        context.fillRect(x, 0, unit, height);
+      }
+      break;
+    }
+    case 'stripes-horizontal': {
+      const unit = Math.max(8, Math.round(shorterSide / 24));
+      context.fillStyle = PATTERN_SECONDARY_COLOR;
+      context.fillRect(0, 0, width, height);
+      context.fillStyle = hex;
+      for (let y = 0; y < height; y += unit * 2) {
+        context.fillRect(0, y, width, unit);
+      }
+      break;
+    }
+    case 'check': {
+      const unit = Math.max(12, Math.round(shorterSide / 12));
+      context.fillStyle = PATTERN_SECONDARY_COLOR;
+      context.fillRect(0, 0, width, height);
+      context.fillStyle = hex;
+      for (let row = 0; row * unit < height; row += 1) {
+        for (let column = 0; column * unit < width; column += 1) {
+          if ((row + column) % 2 === 0) {
+            context.fillRect(column * unit, row * unit, unit, unit);
+          }
+        }
+      }
+      break;
+    }
+    case 'solid':
+    default:
+      context.fillStyle = hex;
+      context.fillRect(0, 0, width, height);
+  }
+}
 
 export async function applyBackground(
   transparentBlob: Blob,
@@ -29,8 +93,7 @@ export async function applyBackground(
 
   //////////////////// 배경 그리기 ////////////////////
   if (option.kind === 'color') {
-    context.fillStyle = option.hex;
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    drawPatternBackground(context, canvas.width, canvas.height, option.hex, option.pattern ?? 'solid');
   } else {
     // 이미지 배경: cover-fit(비율 유지, 짧은 변 기준 확대, 중앙 크롭)
     if (!backgroundImageBlob) {
