@@ -3,6 +3,7 @@
 //////////////////////////////////////// 대량 이미지 누끼 화면 ////////////////////////////////////////
 // 업로드 → 배경옵션 → 일괄 처리 → ZIP 다운로드를 조립하는 컨테이너.
 
+import { useState } from 'react';
 import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -18,6 +19,7 @@ import ImageDropzone from './_components/ImageDropzone';
 import BackgroundOptionSelector from './_components/BackgroundOptionSelector';
 import ImageJobGrid from './_components/ImageJobGrid';
 import StatBox from './_components/StatBox';
+import ImageDetailModal from './_components/ImageDetailModal';
 
 export default function BackgroundRemovalView() {
   const {
@@ -46,6 +48,10 @@ export default function BackgroundRemovalView() {
 
   // 작업 단계: 처리 중 / 작업 전(대기·오류 남음) / 작업 완료(전부 처리됨)
   const phase = isProcessing ? 'processing' : pendingCount > 0 ? 'before' : 'done';
+
+  // 상세 모달 선택 상태 (순수 UI 상태) — id로 보관해 삭제 시 안전
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedIndex = jobs.findIndex((job) => job.id === selectedId);
 
   return (
     <Container maxWidth="lg">
@@ -151,10 +157,18 @@ export default function BackgroundRemovalView() {
             )}
 
             {/* 이미지 그리드 */}
-            <ImageJobGrid jobs={jobs} onRemove={removeJob} />
+            <ImageJobGrid jobs={jobs} onRemove={removeJob} onOpen={setSelectedId} />
           </>
         )}
       </Stack>
+
+      {/* 상세보기 모달 */}
+      <ImageDetailModal
+        jobs={jobs}
+        index={selectedIndex}
+        onClose={() => setSelectedId(null)}
+        onNavigate={(nextIndex) => setSelectedId(jobs[nextIndex].id)}
+      />
     </Container>
   );
 }

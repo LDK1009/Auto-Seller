@@ -9,13 +9,14 @@ import ImageJobCard from './ImageJobCard';
 type ImageJobGridProps = {
   jobs: ImageJob[];
   onRemove: (id: string) => void;
+  onOpen: (id: string) => void;
 };
 
-export default function ImageJobGrid({ jobs, onRemove }: ImageJobGridProps) {
+export default function ImageJobGrid({ jobs, onRemove, onOpen }: ImageJobGridProps) {
   return (
     <Grid>
       {jobs.map((job) => (
-        <ImageJobCard key={job.id} job={job} onRemove={onRemove} />
+        <ImageJobCard key={job.id} job={job} onRemove={onRemove} onOpen={onOpen} />
       ))}
     </Grid>
   );

@@ -16,22 +16,23 @@ import type { ImageJob, ProcessStatus } from '../_hooks/useBackgroundRemoval';
 type ImageJobCardProps = {
   job: ImageJob;
   onRemove: (id: string) => void;
+  onOpen: (id: string) => void;
 };
 
-// 상태별 배지 라벨/색상
-const STATUS_META: Record<ProcessStatus, { label: string; color: 'default' | 'info' | 'success' | 'error' }> = {
+// 상태별 배지 라벨/색상 (상세 모달에서도 재사용)
+export const STATUS_META: Record<ProcessStatus, { label: string; color: 'default' | 'info' | 'success' | 'error' }> = {
   pending: { label: '대기', color: 'default' },
   processing: { label: '작업 중', color: 'info' },
   done: { label: '완료', color: 'success' },
   error: { label: '오류', color: 'error' },
 };
 
-export default function ImageJobCard({ job, onRemove }: ImageJobCardProps) {
+export default function ImageJobCard({ job, onRemove, onOpen }: ImageJobCardProps) {
   const thumbnailUrl = job.status === 'done' && job.resultUrl ? job.resultUrl : job.originalUrl;
   const statusMeta = STATUS_META[job.status];
 
   return (
-    <Row>
+    <Row onClick={() => onOpen(job.id)}>
       {/* 썸네일 (투명 확인용 체커보드) */}
       <ThumbBox>
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -71,8 +72,15 @@ export default function ImageJobCard({ job, onRemove }: ImageJobCardProps) {
         </BottomRow>
       </Info>
 
-      {/* 삭제 */}
-      <RemoveButton size="small" onClick={() => onRemove(job.id)} aria-label="삭제">
+      {/* 삭제 (카드 클릭 전파 방지) */}
+      <RemoveButton
+        size="small"
+        onClick={(event) => {
+          event.stopPropagation();
+          onRemove(job.id);
+        }}
+        aria-label="삭제"
+      >
         <CloseIcon fontSize="small" />
       </RemoveButton>
     </Row>
@@ -92,6 +100,9 @@ const Row = styled.div(({ theme }) => ({
   border: `1px solid ${theme.palette.divider}`,
   borderRadius: theme.shape.borderRadius,
   backgroundColor: theme.palette.background.paper,
+  cursor: 'pointer',
+  transition: 'border-color 0.15s',
+  '&:hover': { borderColor: theme.palette.primary.main },
 }));
 
 const ThumbBox = styled.div({
