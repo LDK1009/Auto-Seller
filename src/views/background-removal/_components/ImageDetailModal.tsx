@@ -15,6 +15,7 @@ import styled from '@emotion/styled';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { ImageJob } from '../_store/backgroundRemovalStore';
 import { STATUS_META } from './ImageJobCard';
+import { transientOptions } from '@/shared/utils/emotionTransientProps';
 
 type ImageDetailModalProps = {
   jobs: ImageJob[];
@@ -182,7 +183,7 @@ const Img = styled.img({
   pointerEvents: 'none',
 });
 
-const NavButton = styled(IconButton)<{ $side: 'left' | 'right' }>(({ theme, $side }) => ({
+const NavButton = styled(IconButton, transientOptions)<{ $side: 'left' | 'right' }>(({ theme, $side }) => ({
   position: 'absolute',
   top: '50%',
   transform: 'translateY(-50%)',

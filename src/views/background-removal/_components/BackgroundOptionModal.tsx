@@ -28,6 +28,7 @@ import type { BackgroundOption } from '../_constants/backgroundRemoval';
 import type { ImageJob } from '../_store/backgroundRemovalStore';
 import { useBackgroundImageSearch } from '../_hooks/useBackgroundImageSearch';
 import ColorPickerPopover, { getPatternPreviewCss } from './ColorPickerPopover';
+import { transientOptions } from '@/shared/utils/emotionTransientProps';
 
 type BackgroundOptionModalProps = {
   open: boolean;
@@ -359,7 +360,7 @@ const Img = styled.img({
   pointerEvents: 'none',
 });
 
-const NavButton = styled(IconButton)<{ $side: 'left' | 'right' }>(({ theme, $side }) => ({
+const NavButton = styled(IconButton, transientOptions)<{ $side: 'left' | 'right' }>(({ theme, $side }) => ({
   position: 'absolute',
   top: '50%',
   transform: 'translateY(-50%)',
@@ -386,7 +387,7 @@ const FileName = styled(Typography)({
 });
 
 //////////////////// 툴 섹션 ////////////////////
-const ToolButton = styled(IconButton)<{ $isActive: boolean }>(({ theme, $isActive }) => ({
+const ToolButton = styled(IconButton, transientOptions)<{ $isActive: boolean }>(({ theme, $isActive }) => ({
   border: `1px solid ${$isActive ? theme.palette.primary.main : theme.palette.divider}`,
   borderRadius: 8,
   color: $isActive ? theme.palette.primary.main : theme.palette.text.secondary,
