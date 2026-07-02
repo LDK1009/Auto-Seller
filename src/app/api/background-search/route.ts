@@ -36,6 +36,7 @@ export async function GET(request: Request) {
     key: apiKey,
     q: query,
     image_type: 'photo',
+    category: 'backgrounds', // 배경으로 분류된 이미지만 (인물·사물 사진 제외)
     per_page: String(PER_PAGE),
     page: String(Number.isFinite(page) && page > 0 ? page : 1),
     safesearch: 'true',
