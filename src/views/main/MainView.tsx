@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import AspectRatioIcon from '@mui/icons-material/AspectRatio';
 import CalculateIcon from '@mui/icons-material/Calculate';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
 import { APP_NAME, APP_DESCRIPTION } from '@/shared/constants/app';
 
 //////////////////// 도구 목록 ////////////////////
@@ -32,6 +33,12 @@ const TOOLS = [
     icon: <CalculateIcon color="primary" fontSize="large" />,
     title: '마진 계산기',
     description: '판매가·원가·수수료·배송비로 개당 순이익과 마진율 계산',
+  },
+  {
+    href: '/image-check',
+    icon: <FactCheckIcon color="primary" fontSize="large" />,
+    title: '이미지 규정 검사',
+    description: '대표이미지가 마켓 규정(해상도·비율·용량)에 맞는지 즉시 검사',
   },
 ];
 
