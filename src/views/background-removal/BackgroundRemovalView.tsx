@@ -26,7 +26,8 @@ import ImageDropzone from '@/shared/components/ImageDropzone';
 import BackgroundOptionModal from './_components/BackgroundOptionModal';
 import ImageJobGrid from './_components/ImageJobGrid';
 import StatBox from '@/shared/components/StatBox';
-import ImageDetailModal from './_components/ImageDetailModal';
+import ImagePreviewModal, { type PreviewImage } from '@/shared/components/ImagePreviewModal';
+import { STATUS_META } from './_components/ImageJobCard';
 
 export default function BackgroundRemovalView() {
   const {
@@ -58,6 +59,15 @@ export default function BackgroundRemovalView() {
   // 상세 모달 선택 상태 (순수 UI 상태) — id로 보관해 삭제 시 안전
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedIndex = jobs.findIndex((job) => job.id === selectedId);
+
+  // 미리보기 모달용 이미지 목록 (완료면 결과+격자, 아니면 원본)
+  const previewImages: PreviewImage[] = jobs.map((job) => ({
+    id: job.id,
+    name: job.file.name,
+    url: job.status === 'done' && job.resultUrl ? job.resultUrl : job.originalUrl,
+    badge: { label: STATUS_META[job.status].label, color: STATUS_META[job.status].color },
+    showCheckerboard: job.status === 'done',
+  }));
 
   // 배경 선택 모달 열림 (순수 UI 상태)
   const [isBackgroundModalOpen, setIsBackgroundModalOpen] = useState(false);
@@ -215,9 +225,9 @@ export default function BackgroundRemovalView() {
         )}
       </Stack>
 
-      {/* 상세보기 모달 */}
-      <ImageDetailModal
-        jobs={jobs}
+      {/* 상세보기(미리보기) 모달 */}
+      <ImagePreviewModal
+        images={previewImages}
         index={selectedIndex}
         onClose={() => setSelectedId(null)}
         onNavigate={(nextIndex) => setSelectedId(jobs[nextIndex].id)}

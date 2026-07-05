@@ -1,7 +1,7 @@
 'use client';
 
-//////////////////////////////////////// 이미지 상세 모달 ////////////////////////////////////////
-// 큰 이미지 미리보기 + 좌우 화살표/키보드(←→)/드래그 슬라이드로 이전·다음 이동.
+//////////////////////////////////////// 이미지 미리보기 모달 (공통) ////////////////////////////////////////
+// 큰 이미지 미리보기 + 좌우 화살표/키보드(←→)/드래그 슬라이드. 이미지 도구 공용.
 
 import { useCallback, useEffect, useState } from 'react';
 import Dialog from '@mui/material/Dialog';
@@ -13,12 +13,18 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import styled from '@emotion/styled';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { ImageJob } from '../_store/backgroundRemovalStore';
-import { STATUS_META } from './ImageJobCard';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
 
-type ImageDetailModalProps = {
-  jobs: ImageJob[];
+export type PreviewImage = {
+  id: string;
+  name: string;
+  url: string;
+  badge?: { label: string; color?: 'default' | 'info' | 'success' | 'error' | 'warning' };
+  showCheckerboard?: boolean; // 투명 확인용 격자 배경
+};
+
+type ImagePreviewModalProps = {
+  images: PreviewImage[];
   index: number; // 현재 인덱스 (0 이상이면 열림)
   onClose: () => void;
   onNavigate: (nextIndex: number) => void;
@@ -31,11 +37,11 @@ const slideVariants = {
   exit: (dir: number) => ({ x: dir > 0 ? -80 : 80, opacity: 0 }),
 };
 
-export default function ImageDetailModal({ jobs, index, onClose, onNavigate }: ImageDetailModalProps) {
-  const open = index >= 0 && index < jobs.length;
-  const job = open ? jobs[index] : null;
+export default function ImagePreviewModal({ images, index, onClose, onNavigate }: ImagePreviewModalProps) {
+  const open = index >= 0 && index < images.length;
+  const image = open ? images[index] : null;
   const hasPrev = index > 0;
-  const hasNext = index >= 0 && index < jobs.length - 1;
+  const hasNext = index >= 0 && index < images.length - 1;
   const [direction, setDirection] = useState(0);
 
   const goPrev = useCallback(() => {
@@ -63,20 +69,18 @@ export default function ImageDetailModal({ jobs, index, onClose, onNavigate }: I
     return () => window.removeEventListener('keydown', onKey);
   }, [open, goPrev, goNext]);
 
-  if (!job) return null;
-
-  const isDone = job.status === 'done' && Boolean(job.resultUrl);
-  const imageUrl = isDone ? (job.resultUrl as string) : job.originalUrl;
-  const statusMeta = STATUS_META[job.status];
+  if (!image) return null;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       {/* 헤더 */}
       <Header>
-        <FileName variant="body2" title={job.file.name}>
-          {job.file.name}
+        <FileName variant="body2" title={image.name}>
+          {image.name}
         </FileName>
-        <Chip size="small" label={statusMeta.label} color={statusMeta.color} variant="outlined" />
+        {image.badge && (
+          <Chip size="small" label={image.badge.label} color={image.badge.color ?? 'default'} variant="outlined" />
+        )}
         <IconButton size="small" onClick={onClose} aria-label="닫기">
           <CloseIcon fontSize="small" />
         </IconButton>
@@ -88,10 +92,10 @@ export default function ImageDetailModal({ jobs, index, onClose, onNavigate }: I
           <ChevronLeftIcon />
         </NavButton>
 
-        <Stage $showCheckerboard={isDone}>
+        <Stage $showCheckerboard={Boolean(image.showCheckerboard)}>
           <AnimatePresence mode="wait" custom={direction} initial={false}>
             <Slide
-              key={job.id}
+              key={image.id}
               custom={direction}
               variants={slideVariants}
               initial="enter"
@@ -107,7 +111,7 @@ export default function ImageDetailModal({ jobs, index, onClose, onNavigate }: I
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <Img src={imageUrl} alt={job.file.name} draggable={false} />
+              <Img src={image.url} alt={image.name} draggable={false} />
             </Slide>
           </AnimatePresence>
         </Stage>
@@ -119,13 +123,17 @@ export default function ImageDetailModal({ jobs, index, onClose, onNavigate }: I
 
       {/* 위치 표시 */}
       <Footer variant="caption" color="text.secondary">
-        {index + 1} / {jobs.length}
+        {index + 1} / {images.length}
       </Footer>
     </Dialog>
   );
 }
 
 //////////////////////////////////////// 스타일 ////////////////////////////////////////
+// 투명 배경 확인용 격자무늬
+const CHECKERBOARD =
+  'repeating-conic-gradient(#e9e9e9 0% 25%, #ffffff 0% 50%) 50% / 20px 20px';
+
 const Header = styled.div(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -148,10 +156,6 @@ const Body = styled.div(({ theme }) => ({
   alignItems: 'center',
   padding: theme.spacing(1),
 }));
-
-// 완료(투명 배경) 이미지에만 격자무늬 — 투명 영역 확인용
-const CHECKERBOARD =
-  'repeating-conic-gradient(#e9e9e9 0% 25%, #ffffff 0% 50%) 50% / 20px 20px';
 
 const Stage = styled.div<{ $showCheckerboard: boolean }>(({ $showCheckerboard }) => ({
   flex: 1,

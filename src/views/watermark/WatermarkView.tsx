@@ -3,6 +3,7 @@
 //////////////////////////////////////// 워터마크 일괄 삽입 화면 ////////////////////////////////////////
 // 업로드 → 워터마크 설정(텍스트/로고·위치·투명도·크기) → 일괄 합성 → ZIP.
 
+import { useState } from 'react';
 import styled from '@emotion/styled';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -11,6 +12,8 @@ import Paper from '@mui/material/Paper';
 import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
 import DownloadIcon from '@mui/icons-material/Download';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import ImagePreviewModal, { type PreviewImage } from '@/shared/components/ImagePreviewModal';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
 import ImageDropzone from '@/shared/components/ImageDropzone';
@@ -39,6 +42,19 @@ export default function WatermarkView() {
 
   const hasJobs = jobs.length > 0;
   const overallProgress = hasJobs ? processedCount / jobs.length : 0;
+
+  // 미리보기 모달 (순수 UI 상태)
+  const [previewIndex, setPreviewIndex] = useState(-1);
+  const previewImages: PreviewImage[] = jobs.map((job) => ({
+    id: job.id,
+    name: job.file.name,
+    url: job.status === 'done' && job.resultUrl ? job.resultUrl : job.originalUrl,
+    badge:
+      job.status === 'done'
+        ? { label: '적용 후', color: 'success' }
+        : { label: '원본', color: 'default' },
+    showCheckerboard: job.file.type === 'image/png',
+  }));
 
   return (
     <PageLayout
@@ -117,16 +133,27 @@ export default function WatermarkView() {
                     <StatBox label="전체" value={jobs.length} />
                     <StatBox label="완료" value={doneCount} />
                   </Stack>
-                  <Button
-                    variant="outlined"
-                    color="inherit"
-                    size="small"
-                    startIcon={<RestartAltIcon />}
-                    onClick={clearAll}
-                    disabled={isProcessing}
-                  >
-                    초기화
-                  </Button>
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<VisibilityIcon />}
+                      onClick={() => setPreviewIndex(0)}
+                      disabled={isProcessing}
+                    >
+                      미리보기
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="inherit"
+                      size="small"
+                      startIcon={<RestartAltIcon />}
+                      onClick={clearAll}
+                      disabled={isProcessing}
+                    >
+                      초기화
+                    </Button>
+                  </Stack>
                 </Stack>
                 <Grid>
                   {jobs.map((job) => (
@@ -138,6 +165,14 @@ export default function WatermarkView() {
           </>
         )}
       </Stack>
+
+      {/* 미리보기 모달 */}
+      <ImagePreviewModal
+        images={previewImages}
+        index={previewIndex}
+        onClose={() => setPreviewIndex(-1)}
+        onNavigate={setPreviewIndex}
+      />
     </PageLayout>
   );
 }
