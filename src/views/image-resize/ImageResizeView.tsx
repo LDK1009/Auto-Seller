@@ -14,6 +14,8 @@ import DownloadIcon from '@mui/icons-material/Download';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import ImagePreviewModal, { type PreviewImage } from '@/shared/components/ImagePreviewModal';
+import { useTransformedPreview } from '@/shared/hooks/useTransformedPreview';
+import { resizeImage } from './_utils/resizeImage';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
 import ImageDropzone from '@/shared/components/ImageDropzone';
@@ -42,16 +44,34 @@ export default function ImageResizeView() {
   const hasJobs = jobs.length > 0;
   const overallProgress = hasJobs ? processedCount / jobs.length : 0;
 
-  // 미리보기 모달 (순수 UI 상태)
+  // 미리보기 모달 (순수 UI 상태) — 현재 설정으로 즉석 변환한 "예상 결과"를 보여준다
   const [previewIndex, setPreviewIndex] = useState(-1);
-  const previewImages: PreviewImage[] = jobs.map((job) => ({
+  const {
+    previewUrl,
+    isGenerating,
+    hasError: previewError,
+  } = useTransformedPreview({
+    activeIndex: previewIndex,
+    sources: jobs.map((job) => ({ id: job.id, blob: job.file })),
+    settings,
+    settingsKey: JSON.stringify(settings),
+    transform: resizeImage,
+  });
+  const previewImages: PreviewImage[] = jobs.map((job, jobIndex) => ({
     id: job.id,
     name: job.file.name,
-    url: job.status === 'done' && job.resultUrl ? job.resultUrl : job.originalUrl,
-    badge:
-      job.status === 'done'
-        ? { label: '변환 후', color: 'success' }
-        : { label: '원본', color: 'default' },
+    // 현재 슬라이드만 즉석 생성 (생성 중엔 null → 스피너, 실패 시 원본 폴백)
+    url:
+      jobIndex === previewIndex
+        ? previewError
+          ? job.originalUrl
+          : isGenerating
+            ? null
+            : previewUrl
+        : null,
+    badge: previewError
+      ? { label: '원본 (변환 실패)', color: 'error' }
+      : { label: `예상 결과 ${settings.width}×${settings.height}`, color: 'info' },
   }));
 
   return (

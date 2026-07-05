@@ -8,6 +8,7 @@ import Dialog from '@mui/material/Dialog';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
 import CloseIcon from '@mui/icons-material/Close';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -18,7 +19,7 @@ import { transientOptions } from '@/shared/utils/emotionTransientProps';
 export type PreviewImage = {
   id: string;
   name: string;
-  url: string;
+  url: string | null; // null = 생성 중 (스피너 표시)
   badge?: { label: string; color?: 'default' | 'info' | 'success' | 'error' | 'warning' };
   showCheckerboard?: boolean; // 투명 확인용 격자 배경
 };
@@ -110,8 +111,12 @@ export default function ImagePreviewModal({ images, index, onClose, onNavigate }
                 else if (info.offset.x > 80) goPrev();
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <Img src={image.url} alt={image.name} draggable={false} />
+              {image.url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <Img src={image.url} alt={image.name} draggable={false} />
+              ) : (
+                <CircularProgress size={32} />
+              )}
             </Slide>
           </AnimatePresence>
         </Stage>
