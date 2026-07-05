@@ -13,6 +13,7 @@ import AspectRatioIcon from '@mui/icons-material/AspectRatio';
 import CalculateIcon from '@mui/icons-material/Calculate';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
+import VerticalSplitIcon from '@mui/icons-material/VerticalSplit';
 import { APP_NAME, APP_DESCRIPTION } from '@/shared/constants/app';
 
 //////////////////// 도구 목록 ////////////////////
@@ -46,6 +47,12 @@ const TOOLS = [
     icon: <BrandingWatermarkIcon color="primary" fontSize="large" />,
     title: '워터마크 일괄 삽입',
     description: '텍스트/로고 워터마크를 여러 이미지에 한 번에 합성 (도용 방지)',
+  },
+  {
+    href: '/image-split',
+    icon: <VerticalSplitIcon color="primary" fontSize="large" />,
+    title: '상세페이지 분할',
+    description: '긴 상세 이미지를 마켓 높이 제한에 맞춰 순서대로 자동 분할',
   },
 ];
 
