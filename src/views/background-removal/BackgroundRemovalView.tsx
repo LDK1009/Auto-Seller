@@ -17,12 +17,12 @@ import PaletteIcon from '@mui/icons-material/Palette';
 import AnimatedProgressBar from '@/shared/components/AnimatedProgressBar';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
-import { MAX_FILE_SIZE, MAX_FILE_COUNT, MAX_TOTAL_SIZE } from './_constants/backgroundRemoval';
+import { IMAGE_LIMIT_HELPER_TEXT } from '@/shared/constants/imageLimits';
 import { useBackgroundRemoval } from './_hooks/useBackgroundRemoval';
-import ImageDropzone from './_components/ImageDropzone';
+import ImageDropzone from '@/shared/components/ImageDropzone';
 import BackgroundOptionModal from './_components/BackgroundOptionModal';
 import ImageJobGrid from './_components/ImageJobGrid';
-import StatBox from './_components/StatBox';
+import StatBox from '@/shared/components/StatBox';
 import ImageDetailModal from './_components/ImageDetailModal';
 
 export default function BackgroundRemovalView() {
@@ -76,8 +76,7 @@ export default function BackgroundRemovalView() {
             </Typography>
             <Typography variant="body2">④ [다운로드]를 누르면 전체 결과가 ZIP으로 저장됩니다</Typography>
             <Typography variant="caption" color="text.secondary">
-              개별 {Math.round(MAX_FILE_SIZE / (1024 * 1024))}MB · 최대 {MAX_FILE_COUNT}장 · 총{' '}
-              {Math.round(MAX_TOTAL_SIZE / (1024 * 1024))}MB까지 / 이미지는 서버로 전송되지 않습니다
+              {IMAGE_LIMIT_HELPER_TEXT} / 이미지는 서버로 전송되지 않습니다
             </Typography>
           </Stack>
         </HelpPanel>

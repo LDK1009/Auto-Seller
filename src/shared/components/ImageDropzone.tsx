@@ -1,27 +1,27 @@
 'use client';
 
-//////////////////////////////////////// 이미지 드롭존 ////////////////////////////////////////
-// 드래그앤드롭 + 클릭 파일선택(다중)으로 이미지를 추가한다.
+//////////////////////////////////////// 이미지 드롭존 (공통) ////////////////////////////////////////
+// 드래그앤드롭 + 클릭 파일선택(다중)으로 이미지를 추가한다. 이미지 도구 공용.
 
 import { useRef, useState } from 'react';
 import styled from '@emotion/styled';
 import Typography from '@mui/material/Typography';
 import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
-import {
-  ACCEPT_ATTR,
-  MAX_FILE_SIZE,
-  MAX_FILE_COUNT,
-  MAX_TOTAL_SIZE,
-} from '../_constants/backgroundRemoval';
-
-const MB = (bytes: number) => Math.round(bytes / (1024 * 1024));
+import { ACCEPT_ATTR, IMAGE_LIMIT_HELPER_TEXT } from '@/shared/constants/imageLimits';
 
 type ImageDropzoneProps = {
   onFilesAdded: (files: File[] | FileList) => void;
   disabled?: boolean;
+  multiple?: boolean;
+  helperText?: string; // 제한 안내 (기본: 공통 제한 문구)
 };
 
-export default function ImageDropzone({ onFilesAdded, disabled = false }: ImageDropzoneProps) {
+export default function ImageDropzone({
+  onFilesAdded,
+  disabled = false,
+  multiple = true,
+  helperText = IMAGE_LIMIT_HELPER_TEXT,
+}: ImageDropzoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false); // 순수 UI 상태
 
@@ -60,16 +60,18 @@ export default function ImageDropzone({ onFilesAdded, disabled = false }: ImageD
         이미지를 드래그하거나 클릭해서 업로드
       </Typography>
       <Typography variant="body2" color="text.secondary">
-        PNG · JPG · WEBP · 여러 장 동시 선택 가능
+        PNG · JPG · WEBP {multiple && '· 여러 장 동시 선택 가능'}
       </Typography>
-      <Typography variant="body2" color="text.disabled">
-        개별 {MB(MAX_FILE_SIZE)}MB · 최대 {MAX_FILE_COUNT}장 · 총 {MB(MAX_TOTAL_SIZE)}MB 까지
-      </Typography>
+      {helperText && (
+        <Typography variant="body2" color="text.disabled">
+          {helperText}
+        </Typography>
+      )}
       <HiddenInput
         ref={inputRef}
         type="file"
         accept={ACCEPT_ATTR}
-        multiple
+        multiple={multiple}
         onChange={handleSelect}
         disabled={disabled}
       />
