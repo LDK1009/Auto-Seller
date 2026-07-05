@@ -10,6 +10,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import AspectRatioIcon from '@mui/icons-material/AspectRatio';
+import CalculateIcon from '@mui/icons-material/Calculate';
 import { APP_NAME, APP_DESCRIPTION } from '@/shared/constants/app';
 
 //////////////////// 도구 목록 ////////////////////
@@ -25,6 +26,12 @@ const TOOLS = [
     icon: <AspectRatioIcon color="primary" fontSize="large" />,
     title: '이미지 규격 변환',
     description: '마켓별 대표이미지 규격(1000×1000 등)에 맞춰 일괄 변환',
+  },
+  {
+    href: '/margin-calculator',
+    icon: <CalculateIcon color="primary" fontSize="large" />,
+    title: '마진 계산기',
+    description: '판매가·원가·수수료·배송비로 개당 순이익과 마진율 계산',
   },
 ];
 
