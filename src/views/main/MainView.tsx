@@ -12,6 +12,7 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import AspectRatioIcon from '@mui/icons-material/AspectRatio';
 import CalculateIcon from '@mui/icons-material/Calculate';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
+import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
 import { APP_NAME, APP_DESCRIPTION } from '@/shared/constants/app';
 
 //////////////////// 도구 목록 ////////////////////
@@ -39,6 +40,12 @@ const TOOLS = [
     icon: <FactCheckIcon color="primary" fontSize="large" />,
     title: '이미지 규정 검사',
     description: '대표이미지가 마켓 규정(해상도·비율·용량)에 맞는지 즉시 검사',
+  },
+  {
+    href: '/watermark',
+    icon: <BrandingWatermarkIcon color="primary" fontSize="large" />,
+    title: '워터마크 일괄 삽입',
+    description: '텍스트/로고 워터마크를 여러 이미지에 한 번에 합성 (도용 방지)',
   },
 ];
 
