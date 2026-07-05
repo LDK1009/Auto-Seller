@@ -107,8 +107,17 @@ export default function WatermarkView() {
               />
             </Paper>
 
-            {/* 액션 */}
+            {/* 액션 — 설정 → 미리보기 → 적용 흐름 */}
             <Stack spacing={1.5}>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<VisibilityIcon />}
+                onClick={() => setPreviewIndex(0)}
+                disabled={isProcessing}
+              >
+                미리보기 (현재 설정 예상 결과)
+              </Button>
               <Button
                 fullWidth
                 variant="contained"
@@ -154,27 +163,16 @@ export default function WatermarkView() {
                     <StatBox label="전체" value={jobs.length} />
                     <StatBox label="완료" value={doneCount} />
                   </Stack>
-                  <Stack direction="row" spacing={1}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={<VisibilityIcon />}
-                      onClick={() => setPreviewIndex(0)}
-                      disabled={isProcessing}
-                    >
-                      미리보기
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="inherit"
-                      size="small"
-                      startIcon={<RestartAltIcon />}
-                      onClick={clearAll}
-                      disabled={isProcessing}
-                    >
-                      초기화
-                    </Button>
-                  </Stack>
+                  <Button
+                    variant="outlined"
+                    color="inherit"
+                    size="small"
+                    startIcon={<RestartAltIcon />}
+                    onClick={clearAll}
+                    disabled={isProcessing}
+                  >
+                    초기화
+                  </Button>
                 </Stack>
                 <Grid>
                   {jobs.map((job) => (
