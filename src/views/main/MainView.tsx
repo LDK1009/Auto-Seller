@@ -1,36 +1,84 @@
 'use client';
 
 //////////////////////////////////////// 메인 화면 ////////////////////////////////////////
-// 라우트 진입 컴포넌트(컨테이너). 실제 화면 로직은 이 View에서 조립한다.
+// 서비스 소개 + 도구 목록 그리드.
 
+import styled from '@emotion/styled';
+import Link from 'next/link';
 import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
-import Link from 'next/link';
+import AspectRatioIcon from '@mui/icons-material/AspectRatio';
 import { APP_NAME, APP_DESCRIPTION } from '@/shared/constants/app';
+
+//////////////////// 도구 목록 ////////////////////
+const TOOLS = [
+  {
+    href: '/background-removal',
+    icon: <AutoFixHighIcon color="primary" fontSize="large" />,
+    title: '대량 이미지 누끼',
+    description: '여러 상품 이미지의 배경을 한 번에 제거하고 원하는 배경으로 교체',
+  },
+  {
+    href: '/image-resize',
+    icon: <AspectRatioIcon color="primary" fontSize="large" />,
+    title: '이미지 규격 변환',
+    description: '마켓별 대표이미지 규격(1000×1000 등)에 맞춰 일괄 변환',
+  },
+];
 
 export default function MainView() {
   return (
     <Container maxWidth="md">
-      <Stack spacing={3} sx={{ py: 12, alignItems: 'flex-start' }}>
-        <Typography variant="h3" sx={{ fontWeight: 700 }}>
-          {APP_NAME}
-        </Typography>
-        <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400 }}>
-          {APP_DESCRIPTION}
-        </Typography>
-        <Button
-          component={Link}
-          href="/background-removal"
-          variant="contained"
-          size="large"
-          startIcon={<AutoFixHighIcon />}
-        >
-          대량 이미지 누끼
-        </Button>
+      <Stack spacing={5} sx={{ py: 10 }}>
+        {/* 히어로 */}
+        <Stack spacing={1.5}>
+          <Typography variant="h3" sx={{ fontWeight: 700 }}>
+            {APP_NAME}
+          </Typography>
+          <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400 }}>
+            {APP_DESCRIPTION}
+          </Typography>
+        </Stack>
+
+        {/* 도구 그리드 */}
+        <ToolGrid>
+          {TOOLS.map((tool) => (
+            <ToolCard key={tool.href} href={tool.href}>
+              {tool.icon}
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                {tool.title}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {tool.description}
+              </Typography>
+            </ToolCard>
+          ))}
+        </ToolGrid>
       </Stack>
     </Container>
   );
 }
+
+//////////////////////////////////////// 스타일 ////////////////////////////////////////
+const ToolGrid = styled.div(({ theme }) => ({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+  gap: theme.spacing(2),
+}));
+
+const ToolCard = styled(Link)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: theme.spacing(1),
+  padding: theme.spacing(3),
+  border: `1px solid ${theme.palette.divider}`,
+  borderRadius: theme.shape.borderRadius,
+  backgroundColor: theme.palette.background.paper,
+  transition: 'border-color 0.15s, transform 0.15s',
+  '&:hover': {
+    borderColor: theme.palette.primary.main,
+    transform: 'translateY(-2px)',
+  },
+}));

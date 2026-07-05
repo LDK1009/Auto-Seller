@@ -4,6 +4,7 @@
 // 업로드 → 배경옵션 → 일괄 처리 → ZIP 다운로드를 조립하는 컨테이너.
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -14,6 +15,8 @@ import DownloadIcon from '@mui/icons-material/Download';
 import StopCircleIcon from '@mui/icons-material/StopCircle';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import PaletteIcon from '@mui/icons-material/Palette';
+import AspectRatioIcon from '@mui/icons-material/AspectRatio';
+import { useImageHandoffStore } from '@/shared/store/imageHandoffStore';
 import AnimatedProgressBar from '@/shared/components/AnimatedProgressBar';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
@@ -58,6 +61,20 @@ export default function BackgroundRemovalView() {
 
   // 배경 선택 모달 열림 (순수 UI 상태)
   const [isBackgroundModalOpen, setIsBackgroundModalOpen] = useState(false);
+
+  // 파이프라인 연결: 완료 결과를 규격 변환으로 넘기기
+  const router = useRouter();
+  const handleSendToResize = () => {
+    const doneJobs = jobs.filter((job) => job.status === 'done' && job.resultBlob);
+    if (doneJobs.length === 0) return;
+    useImageHandoffStore.getState().setImages(
+      doneJobs.map((job) => ({
+        name: `${job.file.name.replace(/\.[^.]+$/, '')}_누끼.png`,
+        blob: job.resultBlob as Blob,
+      })),
+    );
+    router.push('/image-resize');
+  };
 
   return (
     <PageLayout
@@ -135,6 +152,15 @@ export default function BackgroundRemovalView() {
                     disabled={isZipping || doneCount === 0}
                   >
                     {isZipping ? '다운로드 중…' : '다운로드'}
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    startIcon={<AspectRatioIcon />}
+                    onClick={handleSendToResize}
+                    disabled={doneCount === 0}
+                  >
+                    규격 변환으로 보내기
                   </Button>
                 </>
               )}
