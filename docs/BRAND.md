@@ -108,7 +108,7 @@
 ### 구현 방식
 
 - 디자인 시스템 = **코드** (MUI 중앙 테마 토큰 + `shared/components`) — 별도 Figma 없이 테마가 단일 진실
-- **Toss 스킨 토큰 이식**: `docs/design/toss-skin-tokens.css`의 텍스트 위계·서피스·그림자·라운드 체계를 MUI 테마로 번역 (Tailwind 변수 직접 사용 ❌, 브랜드 컬러는 인디고 유지 — Toss 퍼플 ❌)
+- **Toss 스킨 토큰 이식 완료(07-06)**: `docs/design/toss-skin-tokens.css`의 텍스트 위계·서피스·그림자·라운드 체계를 MUI 테마로 번역 (Tailwind 변수 직접 사용 ❌, 브랜드 컬러는 인디고 계열 유지 — Toss 퍼플 ❌)
 - 토큰 수술 대상: 그림자 스케일(card/hover/elevated/modal), 라운드 통일(0.625rem 기준), 텍스트 3위계(primary/secondary/tertiary), 인디고 틴트(`brand-tint` 상당), 숫자 tabular figure
 - 품질 관리: UI 작업 시 DESIGN-LANGUAGE 규칙(특히 §3 위계·§12 그림자·§18 금지 규칙) 기본 준수 — 별도 스킬 없음
 
@@ -116,7 +116,7 @@
 
 | 토큰 | 값 | 위치 |
 |------|-----|------|
-| Primary | 인디고 `#4F46E5` — ⚠️ L-3에서 톤 튜닝 A/B 후 확정 (A: 현행 / B: 밝은 소프트 인디고 계열. 실화면 비교로 대표 결정. 계열 교체는 없음 — 편안함은 서피스·여백·카피 운용으로 구현) | [theme.ts](../src/shared/theme/theme.ts) |
+| Primary | 소프트 인디고 `#6366F1` (2026-07-06 A/B 실화면 비교 후 대표 확정 — 조용한 서피스와 온도를 맞춘 밝은 인디고) | [theme.ts](../src/shared/theme/theme.ts) |
 | Secondary | 시안 `#06B6D4` | 〃 |
 | 배경/페이퍼 | `#FFFFFF` / `#F7F8FB` | 〃 |
 | 서체 | Pretendard (변수 폰트 self-host) | [pretendard.ts](../src/shared/theme/pretendard.ts) |

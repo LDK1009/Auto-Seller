@@ -7,14 +7,9 @@
 
 import { createTheme, type Theme } from '@mui/material/styles';
 
-//////////////////// 브랜드 컬러 A/B (L-3 톤 튜닝 — 실화면 비교 후 하나로 확정) ////////////////////
-export const PRIMARY_VARIANTS = {
-  A: { label: 'A · 인디고 (현행)', main: '#4F46E5' },
-  B: { label: 'B · 소프트 인디고', main: '#6366F1' },
-} as const;
-
-export type PrimaryVariantKey = keyof typeof PRIMARY_VARIANTS;
-export const DEFAULT_PRIMARY_VARIANT: PrimaryVariantKey = 'A';
+//////////////////// 브랜드 컬러 (2026-07-06 대표 확정 — 소프트 인디고) ////////////////////
+// A/B 실화면 비교 후 B안 확정. 조용한 서피스와 온도를 맞춘 밝은 인디고.
+const PRIMARY_MAIN = '#6366F1';
 
 //////////////////// Toss 그림자 스케일 (toss-skin-tokens.css) ////////////////////
 const SHADOW_CARD = '0 1px 3px rgba(0,0,0,0.04)';
@@ -35,13 +30,13 @@ function buildShadows(): Theme['shadows'] {
   return shadows;
 }
 
-//////////////////// 테마 팩토리 ////////////////////
-export function createAppTheme(variant: PrimaryVariantKey = DEFAULT_PRIMARY_VARIANT) {
+//////////////////// 테마 ////////////////////
+function createAppTheme() {
   return createTheme({
     palette: {
       mode: 'light',
       primary: {
-        main: PRIMARY_VARIANTS[variant].main, // 인디고 — 플랫폼 중립·신뢰·자동화
+        main: PRIMARY_MAIN, // 인디고 — 플랫폼 중립·신뢰·자동화
         contrastText: '#FFFFFF',
       },
       secondary: {
@@ -144,6 +139,5 @@ export function createAppTheme(variant: PrimaryVariantKey = DEFAULT_PRIMARY_VARI
   });
 }
 
-// 기본 테마 (A안) — ThemeRegistry가 변형 선택을 관리한다
-const theme = createAppTheme(DEFAULT_PRIMARY_VARIANT);
+const theme = createAppTheme();
 export default theme;
