@@ -3,8 +3,8 @@
 //////////////////////////////////////// 도매매 가져오기 화면 ////////////////////////////////////////
 // 여정: 링크/상품번호 입력 → 상품 조회 → 공급사 사용 조건 확인 게이트 → 이미지 선택 → 누끼/규격 변환 투입.
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import styled from '@emotion/styled';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -46,16 +46,29 @@ export default function DomemeImportView() {
   const [downloadProgress, setDownloadProgress] = useState<string | null>(null);
 
   ////////// 조회 (성공 시 기본 선택 = 대표이미지만)
-  const handleLookup = async () => {
+  const handleLookup = async (input: string) => {
     setLicenseConfirmed(false);
     setSelectedUrls(new Set());
-    const fetched = await lookup(rawInput);
+    const fetched = await lookup(input);
     trackEvent('domeme_lookup', { result: fetched ? 'success' : 'fail' });
     if (fetched) {
       const thumbUrls = fetched.images.filter((image) => image.kind === 'thumb').map((image) => image.url);
       setSelectedUrls(new Set(thumbUrls));
     }
   };
+
+  ////////// 메인 히어로에서 링크 들고 진입 시 자동 조회 (?input=)
+  const searchParams = useSearchParams();
+  const hasAutoLookedUp = useRef(false);
+  useEffect(() => {
+    if (hasAutoLookedUp.current) return;
+    const initialInput = searchParams.get('input');
+    if (!initialInput) return;
+    hasAutoLookedUp.current = true;
+    setRawInput(initialInput);
+    handleLookup(initialInput);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   ////////// 이미지 선택 조작
   const toggleUrl = (url: string) => {
@@ -122,12 +135,12 @@ export default function DomemeImportView() {
               value={rawInput}
               onChange={(event) => setRawInput(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === 'Enter' && !isBusy) handleLookup();
+                if (event.key === 'Enter' && !isBusy) handleLookup(rawInput);
               }}
             />
             <Button
               variant="contained"
-              onClick={handleLookup}
+              onClick={() => handleLookup(rawInput)}
               disabled={isBusy || rawInput.trim().length === 0}
               startIcon={status === 'loading' ? <CircularProgress size={16} color="inherit" /> : <SearchIcon />}
               sx={{ flexShrink: 0 }}
