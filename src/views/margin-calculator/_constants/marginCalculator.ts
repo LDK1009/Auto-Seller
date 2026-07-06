@@ -15,3 +15,9 @@ export const FEE_DISCLAIMER =
 // 마진율 판정 기준 (%) — 결과 색상 표시용
 export const MARGIN_RATE_GOOD = 20; // 이상: 양호
 export const MARGIN_RATE_WARN = 10; // 이상: 주의, 미만: 위험
+
+// 역산 모드: 목표 마진율 프리셋 (%)
+export const TARGET_MARGIN_PRESETS = [10, 15, 20, 30];
+
+// 역산 판매가 올림 단위 (원) — 최소가 보장을 위해 항상 올림
+export const PRICE_ROUND_UNIT = 10;
