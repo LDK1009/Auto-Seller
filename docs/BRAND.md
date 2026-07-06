@@ -94,7 +94,7 @@
 ## 7. 디자인 원칙 (2026-07-06 확정 — 토스 디자인 시스템 적용)
 
 > **경쟁사(윈들리·드랩아트 등) 디자인은 참고하지 않는다.** 대신 이업종 선진 사례인 **토스의 UI/UX 노하우를 적극 차용**한다 — 단, 브랜드 얼굴(인디고·체커보드)은 우리 것 유지.
-> 실행 기반: [docs/design/](./design/README.md)에 벤더링한 StyleSeed(MIT) — 토스류 디자인 규칙 74개(`DESIGN-LANGUAGE.md`) + Toss 스킨 토큰. 리뷰는 `/design-review` 스킬 사용.
+> 실행 기반: [docs/design/](./design/README.md) — 토스 공식 TDS 문서(1차 소스) + 벤더링 규칙집(`DESIGN-LANGUAGE.md`)·Toss 토큰. **별도 스킬 없이 UI 작업 시 이 규칙을 기본 준수한다.**
 
 ### 원칙 6개
 
@@ -110,7 +110,7 @@
 - 디자인 시스템 = **코드** (MUI 중앙 테마 토큰 + `shared/components`) — 별도 Figma 없이 테마가 단일 진실
 - **Toss 스킨 토큰 이식**: `docs/design/toss-skin-tokens.css`의 텍스트 위계·서피스·그림자·라운드 체계를 MUI 테마로 번역 (Tailwind 변수 직접 사용 ❌, 브랜드 컬러는 인디고 유지 — Toss 퍼플 ❌)
 - 토큰 수술 대상: 그림자 스케일(card/hover/elevated/modal), 라운드 통일(0.625rem 기준), 텍스트 3위계(primary/secondary/tertiary), 인디고 틴트(`brand-tint` 상당), 숫자 tabular figure
-- 품질 게이트: UI 작업 후 `/design-review` 로 규칙 준수 점검
+- 품질 관리: UI 작업 시 DESIGN-LANGUAGE 규칙(특히 §3 위계·§12 그림자·§18 금지 규칙) 기본 준수 — 별도 스킬 없음
 
 ### 비주얼 토큰 (현행)
 
