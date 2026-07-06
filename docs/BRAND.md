@@ -116,7 +116,7 @@
 
 | 토큰 | 값 | 위치 |
 |------|-----|------|
-| Primary | 인디고 `#4F46E5` | [theme.ts](../src/shared/theme/theme.ts) |
+| Primary | 인디고 `#4F46E5` — ⚠️ L-3에서 톤 튜닝 A/B 후 확정 (A: 현행 / B: 밝은 소프트 인디고 계열. 실화면 비교로 대표 결정. 계열 교체는 없음 — 편안함은 서피스·여백·카피 운용으로 구현) | [theme.ts](../src/shared/theme/theme.ts) |
 | Secondary | 시안 `#06B6D4` | 〃 |
 | 배경/페이퍼 | `#FFFFFF` / `#F7F8FB` | 〃 |
 | 서체 | Pretendard (변수 폰트 self-host) | [pretendard.ts](../src/shared/theme/pretendard.ts) |
