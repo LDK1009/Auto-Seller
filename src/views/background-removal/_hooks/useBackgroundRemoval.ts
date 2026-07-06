@@ -64,18 +64,6 @@ export function useBackgroundRemoval() {
     addJobs(newJobs);
   }, []);
 
-  //////////////////// 도매매 가져오기 등 다른 도구에서 넘어온 이미지 수신 ////////////////////
-  useEffect(() => {
-    const { images, clear } = useImageHandoffStore.getState();
-    if (images.length === 0) return;
-    clear();
-    const files = images.map(
-      (image) => new File([image.blob], image.name, { type: image.blob.type || 'image/png' }),
-    );
-    addFiles(files);
-    enqueueSnackbar(`이미지 ${files.length}장을 이어받았습니다.`, { variant: 'info' });
-  }, [addFiles]);
-
   //////////////////// 개별 삭제 (objectURL 정리 포함) ////////////////////
   const removeJob = useCallback((id: string) => {
     const { jobs: currentJobs, removeJob: removeFromStore } = useBackgroundRemovalStore.getState();
@@ -168,6 +156,24 @@ export function useBackgroundRemoval() {
       enqueueSnackbar('누끼 처리가 완료되었습니다.', { variant: 'success' });
     }
   }, []);
+
+  //////////////////// 도매매 가져오기 등 다른 도구에서 넘어온 이미지 수신 ////////////////////
+  // autoStart 플래그가 켜져 있으면(원클릭 이어달리기) 도착 즉시 배경 제거를 시작한다.
+  useEffect(() => {
+    const { images, autoStart, clear } = useImageHandoffStore.getState();
+    if (images.length === 0) return;
+    clear();
+    const files = images.map(
+      (image) => new File([image.blob], image.name, { type: image.blob.type || 'image/png' }),
+    );
+    addFiles(files);
+    if (autoStart) {
+      enqueueSnackbar(`이미지 ${files.length}장을 이어받아 배경 제거를 시작합니다.`, { variant: 'info' });
+      start();
+    } else {
+      enqueueSnackbar(`이미지 ${files.length}장을 이어받았습니다.`, { variant: 'info' });
+    }
+  }, [addFiles, start]);
 
   //////////////////// 처리 취소 요청 ////////////////////
   // 진행 중 이미지의 추론은 중단 불가 → 현재 이미지 완료 후 나머지 중지(협조적 취소).

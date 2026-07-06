@@ -28,10 +28,22 @@ import { useDomemeItem } from './_hooks/useDomemeItem';
 import LicenseGate from './_components/LicenseGate';
 import ImageSelectGrid from './_components/ImageSelectGrid';
 
-// 핸드오프 대상 도구
+// 핸드오프 대상 도구 — autoStart: 도착 즉시 작업 자동 시작 (원클릭 이어달리기)
 const HANDOFF_TARGETS = [
-  { key: 'background-removal', label: '누끼로 보내기', path: '/background-removal', icon: <AutoFixHighIcon /> },
-  { key: 'image-resize', label: '규격 변환으로 보내기', path: '/image-resize', icon: <AspectRatioIcon /> },
+  {
+    key: 'background-removal',
+    label: '누끼 바로 시작',
+    path: '/background-removal',
+    icon: <AutoFixHighIcon />,
+    autoStart: true,
+  },
+  {
+    key: 'image-resize',
+    label: '규격 변환으로 보내기',
+    path: '/image-resize',
+    icon: <AspectRatioIcon />,
+    autoStart: false, // 규격 변환은 프리셋 선택이 먼저라 자동 시작하지 않음
+  },
 ];
 
 export default function DomemeImportView() {
@@ -81,7 +93,7 @@ export default function DomemeImportView() {
   };
 
   ////////// 선택 이미지 → 도구 핸드오프
-  const handleSendTo = async (path: string) => {
+  const handleSendTo = async (path: string, autoStart: boolean) => {
     if (!item) return;
     const selectedImages = item.images.filter((image) => selectedUrls.has(image.url));
     if (selectedImages.length === 0) return;
@@ -90,7 +102,7 @@ export default function DomemeImportView() {
       const files = await downloadDomemeImages(selectedImages, item.no, (done, total) =>
         setDownloadProgress(`이미지 내려받는 중… ${done}/${total}`),
       );
-      useImageHandoffStore.getState().setImages(files);
+      useImageHandoffStore.getState().setImages(files, autoStart);
       trackEvent('handoff', { from: 'domeme-import', to: path.replace('/', '') });
       router.push(path);
     } catch (error) {
@@ -205,7 +217,7 @@ export default function DomemeImportView() {
                             variant="contained"
                             startIcon={target.icon}
                             disabled={selectedUrls.size === 0 || isBusy}
-                            onClick={() => handleSendTo(target.path)}
+                            onClick={() => handleSendTo(target.path, target.autoStart)}
                           >
                             {target.label}
                           </Button>
