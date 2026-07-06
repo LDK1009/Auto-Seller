@@ -143,9 +143,6 @@ export default function MainView() {
                 시작하기
               </Button>
             </ActionCard>
-            <Typography variant="caption" color="text.secondary">
-              무료 · 가입 없음 · 내가 올린 이미지는 서버로 가지 않습니다
-            </Typography>
           </Stack>
         </Container>
       </HeroSection>
@@ -283,14 +280,9 @@ export default function MainView() {
           {/* 푸터 */}
           <Stack spacing={2}>
             <Divider />
-            <Stack direction="row" sx={{ justifyContent: 'space-between', flexWrap: 'wrap' }} useFlexGap>
-              <Typography variant="caption" color="text.secondary">
-                © 2026 {APP_NAME_EN}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                내가 올린 이미지는 서버로 가지 않습니다
-              </Typography>
-            </Stack>
+            <Typography variant="caption" color="text.secondary">
+              © 2026 {APP_NAME_EN}
+            </Typography>
           </Stack>
         </Stack>
       </Container>
