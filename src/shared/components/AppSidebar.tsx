@@ -11,7 +11,8 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import StorefrontIcon from '@mui/icons-material/Storefront';
-import { TOOLS, TOOL_GROUPS } from '@/shared/constants/tools';
+import BoltIcon from '@mui/icons-material/Bolt';
+import { TOOLS, TOOL_GROUPS, FLAGSHIP_TOOL } from '@/shared/constants/tools';
 import { HEADER_HEIGHT, SIDEBAR_WIDTH } from '@/shared/constants/layout';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
 
@@ -25,6 +26,23 @@ export function SidebarNav({ onNavigate }: SidebarNavProps) {
 
   return (
     <Stack spacing={3} sx={{ p: 2 }}>
+      {/* 플래그십: 원링크 — 주 사용 동선, 최상단 고정 */}
+      <FlagshipItem
+        href={FLAGSHIP_TOOL.href}
+        $isActive={pathname === FLAGSHIP_TOOL.href}
+        onClick={onNavigate}
+      >
+        <BoltIcon fontSize="small" />
+        <Stack spacing={0}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
+            {FLAGSHIP_TOOL.title}
+          </Typography>
+          <Typography variant="caption" sx={{ opacity: 0.85 }}>
+            {FLAGSHIP_TOOL.description}
+          </Typography>
+        </Stack>
+      </FlagshipItem>
+
       {TOOL_GROUPS.map((group) => (
         <Stack key={group.key} spacing={0.5}>
           <GroupLabel variant="caption">
@@ -90,6 +108,23 @@ const GroupLabel = styled(Typography)(({ theme }) => ({
   fontWeight: 700,
   padding: theme.spacing(0, 1.5),
   marginBottom: theme.spacing(0.5),
+}));
+
+// 플래그십 슬롯: 인디고 강조 (활성 시 채움, 평시 틴트)
+const FlagshipItem = styled(Link, transientOptions)<{ $isActive: boolean }>(({ theme, $isActive }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1.25),
+  padding: theme.spacing(1.5),
+  borderRadius: theme.shape.borderRadius,
+  textDecoration: 'none',
+  color: $isActive ? theme.palette.primary.contrastText : theme.palette.primary.main,
+  backgroundColor: $isActive ? theme.palette.primary.main : theme.palette.action.selected,
+  border: `1px solid ${$isActive ? theme.palette.primary.main : theme.palette.divider}`,
+  transition: 'background-color 0.15s',
+  '&:hover': {
+    backgroundColor: $isActive ? theme.palette.primary.dark : theme.palette.action.hover,
+  },
 }));
 
 const NavItem = styled(Link, transientOptions)<{ $isActive: boolean }>(({ theme, $isActive }) => ({

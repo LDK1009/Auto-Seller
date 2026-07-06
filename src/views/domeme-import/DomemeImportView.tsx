@@ -1,6 +1,7 @@
 'use client';
 
-//////////////////////////////////////// 도매매 가져오기 화면 ////////////////////////////////////////
+//////////////////////////////////////// 원링크 화면 (플래그십) ////////////////////////////////////////
+// 골: 도매매 URL 하나 → 네이버 상품등록까지. 현재 범위는 등록 "준비"(이미지 자동 가공)까지.
 // 여정: 링크/상품번호 입력 → 상품 조회 → 공급사 사용 조건 확인 게이트 → 이미지 선택 → 누끼/규격 변환 투입.
 
 import { useEffect, useRef, useState } from 'react';
@@ -118,8 +119,8 @@ export default function DomemeImportView() {
 
   return (
     <PageLayout
-      title="도매매 가져오기"
-      description="도매매 상품 링크 하나로 대표·상세 이미지를 모아 이미지 작업에 바로 투입합니다."
+      title="원링크"
+      description="도매매 링크 하나로 — 이미지 완성까지 자동으로 준비합니다."
       maxWidth="md"
       help={
         <HelpPanel storageKey="domeme-import">

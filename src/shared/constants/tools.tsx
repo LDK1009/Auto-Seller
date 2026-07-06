@@ -9,7 +9,6 @@ import CalculateIcon from '@mui/icons-material/Calculate';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
 import VerticalSplitIcon from '@mui/icons-material/VerticalSplit';
-import LinkIcon from '@mui/icons-material/Link';
 
 export type ToolGroupKey = 'sourcing' | 'image';
 
@@ -21,21 +20,24 @@ export type ToolInfo = {
   group: ToolGroupKey;
 };
 
+//////////////////// 플래그십: 원링크 ////////////////////
+// 골(SERVICE 킬러 시나리오): 도매매 URL 하나 → 네이버 상품등록까지.
+// 현재 구현 범위는 "등록 준비"(이미지 자동 가공)까지 — 사이드바 최상단 고정, 개별 도구와 분리 노출.
+export const FLAGSHIP_TOOL = {
+  href: '/domeme-import',
+  title: '원링크',
+  description: '링크 하나로 등록 준비까지',
+};
+
 // 플로우 그룹 정의 (표시 순서 = 작업 순서)
 export const TOOL_GROUPS: { key: ToolGroupKey; step: string; label: string; description: string }[] = [
   { key: 'sourcing', step: '1', label: '소싱', description: '뭘 팔지 정하고, 남는 장사인지 확인합니다' },
   { key: 'image', step: '2', label: '이미지 준비', description: '등록용 이미지를 가공 순서대로 완성합니다' },
 ];
 
+// 개별 도구 목록 (원링크는 FLAGSHIP_TOOL로 별도 — 같은 페이지 중복 노출 방지 위해 여기선 제외)
 export const TOOLS: ToolInfo[] = [
   //////////////////// ① 소싱 ////////////////////
-  {
-    href: '/domeme-import',
-    icon: <LinkIcon color="primary" fontSize="large" />,
-    title: '도매매 가져오기',
-    description: '상품 링크 하나로 대표·상세 이미지를 모아 이미지 작업에 바로 투입',
-    group: 'sourcing',
-  },
   {
     href: '/margin-calculator',
     icon: <CalculateIcon color="primary" fontSize="large" />,
