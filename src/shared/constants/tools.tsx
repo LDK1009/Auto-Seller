@@ -1,5 +1,6 @@
 //////////////////////////////////////// 도구 목록 (전역 공유) ////////////////////////////////////////
-// 랜딩 카드 그리드·헤더 GNB 메뉴가 함께 사용한다. 추가·삭제는 여기 한 곳에서.
+// 랜딩 그리드·헤더 GNB가 함께 사용. 배치 원칙: 셀러 작업 플로우 순서 (SERVICE 6장)
+// ① 소싱 (뭘 팔지 정하고 마진 판단) → ② 이미지 준비 (가공 파이프라인 순) → ③ 등록 (준비 중)
 
 import type { ReactNode } from 'react';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
@@ -10,15 +11,24 @@ import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
 import VerticalSplitIcon from '@mui/icons-material/VerticalSplit';
 import LinkIcon from '@mui/icons-material/Link';
 
+export type ToolGroupKey = 'sourcing' | 'image';
+
 export type ToolInfo = {
   href: string;
   icon: ReactNode;
   title: string;
   description: string;
-  group: 'sourcing' | 'image' | 'calculator';
+  group: ToolGroupKey;
 };
 
+// 플로우 그룹 정의 (표시 순서 = 작업 순서)
+export const TOOL_GROUPS: { key: ToolGroupKey; step: string; label: string; description: string }[] = [
+  { key: 'sourcing', step: '1', label: '소싱', description: '뭘 팔지 정하고, 남는 장사인지 확인합니다' },
+  { key: 'image', step: '2', label: '이미지 준비', description: '등록용 이미지를 가공 순서대로 완성합니다' },
+];
+
 export const TOOLS: ToolInfo[] = [
+  //////////////////// ① 소싱 ////////////////////
   {
     href: '/domeme-import',
     icon: <LinkIcon color="primary" fontSize="large" />,
@@ -26,6 +36,14 @@ export const TOOLS: ToolInfo[] = [
     description: '상품 링크 하나로 대표·상세 이미지를 모아 이미지 작업에 바로 투입',
     group: 'sourcing',
   },
+  {
+    href: '/margin-calculator',
+    icon: <CalculateIcon color="primary" fontSize="large" />,
+    title: '마진 계산기',
+    description: '순이익 계산과 목표 마진 최소 판매가 역산',
+    group: 'sourcing',
+  },
+  //////////////////// ② 이미지 준비 (파이프라인 순) ////////////////////
   {
     href: '/background-removal',
     icon: <AutoFixHighIcon color="primary" fontSize="large" />,
@@ -60,12 +78,5 @@ export const TOOLS: ToolInfo[] = [
     title: '상세페이지 분할',
     description: '긴 상세 이미지를 마켓 높이 제한에 맞춰 순서대로 자동 분할',
     group: 'image',
-  },
-  {
-    href: '/margin-calculator',
-    icon: <CalculateIcon color="primary" fontSize="large" />,
-    title: '마진 계산기',
-    description: '순이익 계산과 목표 마진 최소 판매가 역산',
-    group: 'calculator',
   },
 ];

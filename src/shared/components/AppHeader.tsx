@@ -1,7 +1,8 @@
 'use client';
 
 //////////////////////////////////////// 공통 헤더 (GNB) ////////////////////////////////////////
-// 모든 페이지 상단 고정. 로고(홈) + 도매매 가져오기 + 이미지 도구 드롭다운 + 계산기.
+// 모든 페이지 상단 고정. 메뉴 배치 = 셀러 작업 플로우 순서 (① 소싱 → ② 이미지 가공).
+// Menu에 disableScrollLock — 열릴 때 body 스크롤 잠금으로 스크롤바가 사라지며 레이아웃이 흔들리는 MUI 기본 동작 방지.
 
 import { useState } from 'react';
 import styled from '@emotion/styled';
@@ -13,58 +14,56 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ListItemText from '@mui/material/ListItemText';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import { APP_NAME_EN } from '@/shared/constants/app';
-import { TOOLS } from '@/shared/constants/tools';
-
-const IMAGE_TOOLS = TOOLS.filter((tool) => tool.group === 'image');
+import { TOOLS, TOOL_GROUPS, type ToolGroupKey } from '@/shared/constants/tools';
 
 export default function AppHeader() {
-  // 이미지 도구 드롭다운 (순수 UI 상태)
+  // 열려 있는 그룹 메뉴 (순수 UI 상태)
+  const [openGroup, setOpenGroup] = useState<ToolGroupKey | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+
+  const closeMenu = () => {
+    setOpenGroup(null);
+    setMenuAnchor(null);
+  };
 
   return (
     <HeaderBar>
       <Container maxWidth="lg">
         <Inner>
-          {/* 로고 → 홈 (영문 표기 — BRAND 2장) */}
+          {/* 로고 → 홈 (텍스트만 — 아이콘 없음) */}
           <LogoLink href="/">
-            <AutoFixHighIcon color="primary" fontSize="small" />
             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
               {APP_NAME_EN}
             </Typography>
           </LogoLink>
 
-          {/* 우측 네비 */}
+          {/* 작업 플로우 순서 네비 */}
           <Nav>
-            <NavButton component={Link} href="/domeme-import">
-              도매매 가져오기
-            </NavButton>
-            <NavButton
-              endIcon={<KeyboardArrowDownIcon />}
-              onClick={(event) => setMenuAnchor(event.currentTarget)}
-            >
-              이미지 도구
-            </NavButton>
+            {TOOL_GROUPS.map((group) => (
+              <NavButton
+                key={group.key}
+                endIcon={<KeyboardArrowDownIcon />}
+                onClick={(event) => {
+                  setOpenGroup(group.key);
+                  setMenuAnchor(event.currentTarget);
+                }}
+              >
+                {group.step}. {group.label}
+              </NavButton>
+            ))}
             <Menu
               anchorEl={menuAnchor}
-              open={menuAnchor !== null}
-              onClose={() => setMenuAnchor(null)}
+              open={openGroup !== null}
+              onClose={closeMenu}
+              disableScrollLock
             >
-              {IMAGE_TOOLS.map((tool) => (
-                <MenuItem
-                  key={tool.href}
-                  component={Link}
-                  href={tool.href}
-                  onClick={() => setMenuAnchor(null)}
-                >
+              {TOOLS.filter((tool) => tool.group === openGroup).map((tool) => (
+                <MenuItem key={tool.href} component={Link} href={tool.href} onClick={closeMenu}>
                   <ListItemText primary={tool.title} />
                 </MenuItem>
               ))}
             </Menu>
-            <NavButton component={Link} href="/margin-calculator">
-              계산기
-            </NavButton>
           </Nav>
         </Inner>
       </Container>
@@ -93,7 +92,6 @@ const Inner = styled.div({
 const LogoLink = styled(Link)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  gap: theme.spacing(1),
   color: theme.palette.text.primary,
   textDecoration: 'none',
 }));
