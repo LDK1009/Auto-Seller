@@ -18,6 +18,7 @@ import {
   notifyRejectedImageFiles,
 } from '@/shared/utils/imageFileValidation';
 import { useBackgroundRemovalStore, type ImageJob } from '../_store/backgroundRemovalStore';
+import { useImageHandoffStore } from '@/shared/store/imageHandoffStore';
 
 // 컴포넌트 호환을 위한 타입 재노출
 export type { ImageJob, ProcessStatus } from '../_store/backgroundRemovalStore';
@@ -61,6 +62,18 @@ export function useBackgroundRemoval() {
     }));
     addJobs(newJobs);
   }, []);
+
+  //////////////////// 도매매 가져오기 등 다른 도구에서 넘어온 이미지 수신 ////////////////////
+  useEffect(() => {
+    const { images, clear } = useImageHandoffStore.getState();
+    if (images.length === 0) return;
+    clear();
+    const files = images.map(
+      (image) => new File([image.blob], image.name, { type: image.blob.type || 'image/png' }),
+    );
+    addFiles(files);
+    enqueueSnackbar(`이미지 ${files.length}장을 이어받았습니다.`, { variant: 'info' });
+  }, [addFiles]);
 
   //////////////////// 개별 삭제 (objectURL 정리 포함) ////////////////////
   const removeJob = useCallback((id: string) => {

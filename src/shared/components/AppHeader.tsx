@@ -23,8 +23,14 @@ export default function AppHeader() {
             </Typography>
           </LogoLink>
 
-          {/* 우측 자리 (향후 네비·로그인) */}
-          <RightSlot />
+          {/* 우측 네비 */}
+          <RightSlot>
+            <NavLink href="/domeme-import">
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                도매매 가져오기
+              </Typography>
+            </NavLink>
+          </RightSlot>
         </Inner>
       </Container>
     </HeaderBar>
@@ -60,3 +66,12 @@ const RightSlot = styled.div({
   display: 'flex',
   alignItems: 'center',
 });
+
+const NavLink = styled(Link)(({ theme }) => ({
+  color: theme.palette.text.primary,
+  padding: theme.spacing(1, 1.5),
+  borderRadius: theme.shape.borderRadius,
+  '&:hover': {
+    backgroundColor: theme.palette.action.hover,
+  },
+}));
