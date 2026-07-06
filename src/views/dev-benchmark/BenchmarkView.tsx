@@ -4,7 +4,7 @@
 // L-1 실측 도구 — R-1(아하 모먼트 성립) 판정용. 네비게이션에 노출하지 않는다.
 // 시나리오: GPU+fp16(현행) / CPU+fp16(WebGPU 없는 환경 시뮬) / CPU+quint8(경량 대안)
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
 import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
@@ -60,7 +60,11 @@ export default function BenchmarkView() {
   const [runningKey, setRunningKey] = useState<string | null>(null);
   const [results, setResults] = useState<BenchResult[]>([]);
 
-  const hasWebGpu = typeof navigator !== 'undefined' && 'gpu' in navigator;
+  // SSR-클라이언트 하이드레이션 불일치 방지 — navigator는 마운트 후에만 읽는다
+  const [hasWebGpu, setHasWebGpu] = useState<boolean | null>(null);
+  useEffect(() => {
+    setHasWebGpu('gpu' in navigator);
+  }, []);
 
   ////////// 샘플 로드 (public/samples 로컬 전용)
   const loadSamples = async () => {
@@ -148,7 +152,8 @@ export default function BenchmarkView() {
             아하 모먼트(10장 일괄 ZIP) 성립 판정 — 웜 기준 10장 3분 이하 성립 / 6분 이하 경계 / 초과 위험
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            WebGPU 지원: {hasWebGpu ? '✅ 사용 가능' : '❌ 없음 (GPU 시나리오도 CPU로 폴백됨)'}
+            WebGPU 지원:{' '}
+            {hasWebGpu === null ? '확인 중…' : hasWebGpu ? '✅ 사용 가능' : '❌ 없음 (GPU 시나리오도 CPU로 폴백됨)'}
           </Typography>
         </Stack>
 
