@@ -1,11 +1,13 @@
 'use client';
 
 //////////////////////////////////////// 메인 화면 (랜딩) ////////////////////////////////////////
-// 구성: 히어로(슬로건 + 메인 액션 = 도매매 링크 입력) → 진행 3단계 → STEP별 도구 → 약속 → FAQ → 푸터.
-// 레이아웃 원칙: 가로 그리드 대신 세로 리스트 — 항목마다 [왼쪽 순번/아이콘 + 오른쪽 제목·설명] 한 덩어리로 강조.
-// 문구는 docs/BRAND.md 준수 (검증 안 된 수치·과장 금지).
+// 구성: 히어로(슬로건 + 링크 입력) → 진행 3단계(타임라인) → STEP별 도구 → 약속 → FAQ → 하단 CTA → 푸터.
+// 레이아웃 원칙:
+// - 세로 리스트, 항목 = [왼쪽 순번/아이콘 + 오른쪽 제목·설명] 한 덩어리
+// - 흰/회색 밴드 교차로 섹션 호흡 (토스식 리듬)
+// - 문구는 docs/BRAND.md 준수 (검증 안 된 수치·과장 금지)
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styled from '@emotion/styled';
 import Link from 'next/link';
@@ -26,8 +28,9 @@ import MoneyOffIcon from '@mui/icons-material/MoneyOff';
 import NoAccountsIcon from '@mui/icons-material/NoAccounts';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import StorefrontIcon from '@mui/icons-material/Storefront';
-import { APP_NAME_EN, SLOGAN_LINES } from '@/shared/constants/app';
+import { APP_NAME, APP_NAME_EN, APP_DESCRIPTION, SLOGAN_LINES } from '@/shared/constants/app';
 import { TOOLS, TOOL_GROUPS } from '@/shared/constants/tools';
+import { transientOptions } from '@/shared/utils/emotionTransientProps';
 
 //////////////////// 진행 3단계 (여정 메시지 — 도구 나열이 아니라 흐름) ////////////////////
 const JOURNEY_STEPS = [
@@ -91,20 +94,10 @@ const FAQS = [
 ];
 
 export default function MainView() {
-  const router = useRouter();
-  const [linkInput, setLinkInput] = useState('');
-
-  ////////// 메인 액션: 링크 입력 → 도매매 가져오기 자동 조회 진입
-  const startWithLink = () => {
-    const trimmed = linkInput.trim();
-    if (trimmed.length === 0) return;
-    router.push(`/domeme-import?input=${encodeURIComponent(trimmed)}`);
-  };
-
   return (
     <>
       {/* 히어로 — 슬로건 + 메인 액션 */}
-      <HeroSection>
+      <HeroBand>
         <CheckerboardLayer aria-hidden />
         <Container maxWidth="md">
           <Stack spacing={4} sx={{ position: 'relative', alignItems: 'center', textAlign: 'center' }}>
@@ -119,57 +112,41 @@ export default function MainView() {
             <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400, maxWidth: 560 }}>
               도매매 링크 하나로 — 이미지 가공부터 다운로드까지.
             </Typography>
-
-            {/* 메인 액션: 링크 입력 */}
-            <ActionCard>
-              <TextField
-                fullWidth
-                size="medium"
-                placeholder="도매매 상품 링크를 붙여넣으세요"
-                value={linkInput}
-                onChange={(event) => setLinkInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') startWithLink();
-                }}
-              />
-              <Button
-                variant="contained"
-                size="large"
-                endIcon={<ArrowForwardIcon />}
-                onClick={startWithLink}
-                disabled={linkInput.trim().length === 0}
-                sx={{ flexShrink: 0 }}
-              >
-                시작하기
-              </Button>
-            </ActionCard>
+            <LinkForm />
           </Stack>
         </Container>
-      </HeroSection>
+      </HeroBand>
 
-      <Container maxWidth="md">
-        <Stack spacing={9} sx={{ pb: 10 }}>
-          {/* 진행 3단계 — 세로 스택, 왼쪽 순번 + 오른쪽 설명 */}
+      {/* 진행 3단계 — 타임라인 (흰 밴드) */}
+      <Band $tone="paper">
+        <Container maxWidth="md">
           <SectionColumn>
             <Typography variant="h5" sx={{ textAlign: 'center' }}>
               밤에 하던 노가다, 세 단계로 끝냅니다
             </Typography>
-            <Stack spacing={1.5}>
-              {JOURNEY_STEPS.map((item) => (
-                <ItemRow key={item.step}>
-                  <StepNumber>{item.step}</StepNumber>
-                  <Stack spacing={0.5}>
+            <Stack>
+              {JOURNEY_STEPS.map((item, index) => (
+                <TimelineRow key={item.step}>
+                  <TimelineRail>
+                    <StepNumber>{item.step}</StepNumber>
+                    {index < JOURNEY_STEPS.length - 1 && <TimelineConnector />}
+                  </TimelineRail>
+                  <Stack spacing={0.5} sx={{ pb: index < JOURNEY_STEPS.length - 1 ? 4 : 0 }}>
                     <Typography variant="h6">{item.title}</Typography>
                     <Typography variant="body2" color="text.secondary">
                       {item.description}
                     </Typography>
                   </Stack>
-                </ItemRow>
+                </TimelineRow>
               ))}
             </Stack>
           </SectionColumn>
+        </Container>
+      </Band>
 
-          {/* STEP별 도구 — 그룹 순서 = 작업 순서, 세로 리스트 */}
+      {/* STEP별 도구 (회색 밴드) */}
+      <Band $tone="default">
+        <Container maxWidth="md">
           <SectionColumn>
             <Stack spacing={1} sx={{ textAlign: 'center' }}>
               <Typography variant="h5">필요한 기능만 골라 쓸 수도 있습니다</Typography>
@@ -235,15 +212,19 @@ export default function MainView() {
               </UpcomingRow>
             </Stack>
           </SectionColumn>
+        </Container>
+      </Band>
 
-          {/* 약속 — 세로 스택 */}
+      {/* 약속 (흰 밴드) */}
+      <Band $tone="paper">
+        <Container maxWidth="md">
           <SectionColumn>
             <Typography variant="h5" sx={{ textAlign: 'center' }}>
-              오토셀러의 약속
+              {APP_NAME}의 약속
             </Typography>
             <Stack spacing={1.5}>
               {PROMISES.map((promise) => (
-                <ItemRow key={promise.title}>
+                <PromiseRow key={promise.title}>
                   <ToolIconBox>{promise.icon}</ToolIconBox>
                   <Stack spacing={0.25}>
                     <Typography variant="subtitle1">{promise.title}</Typography>
@@ -251,12 +232,16 @@ export default function MainView() {
                       {promise.description}
                     </Typography>
                   </Stack>
-                </ItemRow>
+                </PromiseRow>
               ))}
             </Stack>
           </SectionColumn>
+        </Container>
+      </Band>
 
-          {/* FAQ */}
+      {/* FAQ (회색 밴드) */}
+      <Band $tone="default">
+        <Container maxWidth="md">
           <SectionColumn>
             <Typography variant="h5" sx={{ textAlign: 'center' }}>
               자주 묻는 질문
@@ -276,25 +261,109 @@ export default function MainView() {
               ))}
             </Stack>
           </SectionColumn>
+        </Container>
+      </Band>
 
-          {/* 푸터 */}
+      {/* 하단 CTA (흰 밴드 + 체커보드) */}
+      <CtaBand>
+        <CheckerboardLayer aria-hidden />
+        <Container maxWidth="md">
+          <Stack spacing={3} sx={{ position: 'relative', alignItems: 'center', textAlign: 'center' }}>
+            <Typography variant="h5">지금 링크 하나면 시작됩니다</Typography>
+            <LinkForm />
+          </Stack>
+        </Container>
+      </CtaBand>
+
+      {/* 푸터 */}
+      <Band $tone="default">
+        <Container maxWidth="md">
           <Stack spacing={2}>
             <Divider />
-            <Typography variant="caption" color="text.secondary">
-              © 2026 {APP_NAME_EN}
-            </Typography>
+            <Stack
+              direction="row"
+              sx={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}
+              useFlexGap
+            >
+              <Stack spacing={0.25}>
+                <Typography variant="subtitle2">{APP_NAME_EN}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {APP_DESCRIPTION}
+                </Typography>
+              </Stack>
+              <Typography variant="caption" color="text.secondary">
+                © 2026 {APP_NAME_EN}
+              </Typography>
+            </Stack>
           </Stack>
-        </Stack>
-      </Container>
+        </Container>
+      </Band>
     </>
   );
 }
 
+//////////////////// 링크 입력 폼 (히어로·하단 CTA 공용) ////////////////////
+function LinkForm() {
+  const router = useRouter();
+  const [linkInput, setLinkInput] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // 버튼은 항상 활성 — 빈 입력이면 입력창으로 포커스 유도
+  const startWithLink = () => {
+    const trimmed = linkInput.trim();
+    if (trimmed.length === 0) {
+      inputRef.current?.focus();
+      return;
+    }
+    router.push(`/domeme-import?input=${encodeURIComponent(trimmed)}`);
+  };
+
+  return (
+    <ActionCard>
+      <TextField
+        fullWidth
+        size="medium"
+        placeholder="도매매 상품 링크를 붙여넣으세요"
+        value={linkInput}
+        inputRef={inputRef}
+        onChange={(event) => setLinkInput(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') startWithLink();
+        }}
+      />
+      <Button
+        variant="contained"
+        size="large"
+        endIcon={<ArrowForwardIcon />}
+        onClick={startWithLink}
+        sx={{ flexShrink: 0 }}
+      >
+        시작하기
+      </Button>
+    </ActionCard>
+  );
+}
+
 //////////////////////////////////////// 스타일 ////////////////////////////////////////
-const HeroSection = styled.section(({ theme }) => ({
+// 섹션 밴드: 흰/회색 교차로 호흡
+const Band = styled('section', transientOptions)<{ $tone: 'paper' | 'default' }>(({ theme, $tone }) => ({
+  backgroundColor: theme.palette.background[$tone],
+  padding: theme.spacing(9, 0),
+}));
+
+const HeroBand = styled.section(({ theme }) => ({
   position: 'relative',
   overflow: 'hidden',
   padding: theme.spacing(11, 0, 9),
+}));
+
+const CtaBand = styled.section(({ theme }) => ({
+  position: 'relative',
+  overflow: 'hidden',
+  padding: theme.spacing(9, 0),
+  backgroundColor: theme.palette.background.paper,
+  borderTop: `1px solid ${theme.palette.divider}`,
+  borderBottom: `1px solid ${theme.palette.divider}`,
 }));
 
 // 시그니처 모티프: 투명 체커보드 (누끼의 상징 — BRAND 7장 원칙 6)
@@ -315,7 +384,7 @@ const CheckerboardLayer = styled.div(({ theme }) => {
   };
 });
 
-const SloganLine = styled.span<{ $isAccent: boolean }>(({ theme, $isAccent }) => ({
+const SloganLine = styled('span', transientOptions)<{ $isAccent: boolean }>(({ theme, $isAccent }) => ({
   display: 'block',
   color: $isAccent ? theme.palette.primary.main : theme.palette.text.primary,
 }));
@@ -340,21 +409,30 @@ const ActionCard = styled.div(({ theme }) => ({
 const SectionColumn = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
-  gap: theme.spacing(3),
+  gap: theme.spacing(4),
   width: '100%',
   maxWidth: 720,
   margin: '0 auto',
 }));
 
-// 리스트 아이템 공통: 왼쪽 순번/아이콘 + 오른쪽 제목·설명
-const ItemRow = styled.div(({ theme }) => ({
+//////////////////// 진행 3단계 타임라인 ////////////////////
+const TimelineRow = styled.div(({ theme }) => ({
   display: 'flex',
-  alignItems: 'flex-start',
   gap: theme.spacing(2.5),
-  padding: theme.spacing(3),
-  borderRadius: theme.shape.borderRadius,
-  border: `1px solid ${theme.palette.divider}`,
-  backgroundColor: theme.palette.background.paper,
+}));
+
+const TimelineRail = styled.div(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: theme.spacing(1),
+}));
+
+const TimelineConnector = styled.div(({ theme }) => ({
+  width: 2,
+  flex: 1,
+  backgroundColor: theme.palette.divider,
+  borderRadius: 1,
 }));
 
 const StepNumber = styled.div(({ theme }) => ({
@@ -371,6 +449,7 @@ const StepNumber = styled.div(({ theme }) => ({
   fontWeight: 700,
 }));
 
+//////////////////// 도구·약속 리스트 ////////////////////
 const ToolIconBox = styled.div({
   flexShrink: 0,
   display: 'flex',
@@ -402,6 +481,16 @@ const UpcomingRow = styled.div(({ theme }) => ({
   borderRadius: theme.shape.borderRadius,
   border: `1px dashed ${theme.palette.divider}`,
   backgroundColor: theme.palette.background.paper,
+}));
+
+// 약속: 흰 밴드 위 회색 인셋 박스
+const PromiseRow = styled.div(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: theme.spacing(2.5),
+  padding: theme.spacing(2.5, 3),
+  borderRadius: theme.shape.borderRadius,
+  backgroundColor: theme.palette.background.default,
 }));
 
 const FaqAccordion = styled(Accordion)(({ theme }) => ({
