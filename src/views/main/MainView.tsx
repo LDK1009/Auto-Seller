@@ -1,8 +1,9 @@
 'use client';
 
 //////////////////////////////////////// 메인 화면 (랜딩) ////////////////////////////////////////
-// 구성: 히어로(슬로건 + 메인 액션 = 도매매 링크 입력) → 진행 3단계 → STEP별 도구 → 약속 3가지 → FAQ → 푸터.
-// 원칙: 메인 액션 1개 — 링크만 넣으면 여정이 시작된다. 문구는 docs/BRAND.md 준수 (검증 안 된 수치·과장 금지).
+// 구성: 히어로(슬로건 + 메인 액션 = 도매매 링크 입력) → 진행 3단계 → STEP별 도구 → 약속 → FAQ → 푸터.
+// 레이아웃 원칙: 가로 그리드 대신 세로 리스트 — 항목마다 [왼쪽 순번/아이콘 + 오른쪽 제목·설명] 한 덩어리로 강조.
+// 문구는 docs/BRAND.md 준수 (검증 안 된 수치·과장 금지).
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -20,6 +21,7 @@ import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import MoneyOffIcon from '@mui/icons-material/MoneyOff';
 import NoAccountsIcon from '@mui/icons-material/NoAccounts';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
@@ -48,12 +50,20 @@ const JOURNEY_STEPS = [
 
 //////////////////// 약속 3가지 (BRAND 6장 핵심 메시지 블록) ////////////////////
 const PROMISES = [
-  { icon: <MoneyOffIcon color="primary" />, title: '무료', description: '지금 제공하는 모든 도구는 장당 과금 없이 무제한' },
-  { icon: <NoAccountsIcon color="primary" />, title: '가입 없음', description: '열면 바로 사용 — 계정도 로그인도 없습니다' },
+  {
+    icon: <MoneyOffIcon color="primary" />,
+    title: '무료',
+    description: '지금 제공하는 모든 도구는 장당 과금 없이 무제한입니다.',
+  },
+  {
+    icon: <NoAccountsIcon color="primary" />,
+    title: '가입 없음',
+    description: '열면 바로 사용 — 계정도 로그인도 없습니다.',
+  },
   {
     icon: <LockOutlinedIcon color="primary" />,
     title: '내 이미지는 브라우저에서',
-    description: '내가 올린 이미지는 서버로 가지 않습니다',
+    description: '내가 올린 이미지는 서버로 가지 않습니다.',
   },
 ];
 
@@ -142,26 +152,28 @@ export default function MainView() {
 
       <Container maxWidth="md">
         <Stack spacing={9} sx={{ pb: 10 }}>
-          {/* 진행 3단계 */}
-          <Stack spacing={3}>
+          {/* 진행 3단계 — 세로 스택, 왼쪽 순번 + 오른쪽 설명 */}
+          <SectionColumn>
             <Typography variant="h5" sx={{ textAlign: 'center' }}>
               밤에 하던 노가다, 세 단계로 끝냅니다
             </Typography>
-            <StepGrid>
+            <Stack spacing={1.5}>
               {JOURNEY_STEPS.map((item) => (
-                <StepCard key={item.step}>
-                  <StepBadge>{item.step}</StepBadge>
-                  <Typography variant="subtitle1">{item.title}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {item.description}
-                  </Typography>
-                </StepCard>
+                <ItemRow key={item.step}>
+                  <StepNumber>{item.step}</StepNumber>
+                  <Stack spacing={0.5}>
+                    <Typography variant="h6">{item.title}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {item.description}
+                    </Typography>
+                  </Stack>
+                </ItemRow>
               ))}
-            </StepGrid>
-          </Stack>
+            </Stack>
+          </SectionColumn>
 
-          {/* STEP별 도구 (작업 플로우 순서) */}
-          <Stack spacing={5}>
+          {/* STEP별 도구 — 그룹 순서 = 작업 순서, 세로 리스트 */}
+          <SectionColumn>
             <Stack spacing={1} sx={{ textAlign: 'center' }}>
               <Typography variant="h5">필요한 기능만 골라 쓸 수도 있습니다</Typography>
               <Typography variant="body2" color="text.secondary">
@@ -170,9 +182,9 @@ export default function MainView() {
             </Stack>
 
             {TOOL_GROUPS.map((group) => (
-              <Stack key={group.key} spacing={2}>
+              <Stack key={group.key} spacing={1.5}>
                 <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-                  <StepBadge>{group.step}</StepBadge>
+                  <StepNumber>{group.step}</StepNumber>
                   <Stack>
                     <Typography variant="subtitle1">{group.label}</Typography>
                     <Typography variant="caption" color="text.secondary">
@@ -180,24 +192,27 @@ export default function MainView() {
                     </Typography>
                   </Stack>
                 </Stack>
-                <ToolGrid>
+                <Stack spacing={1.5}>
                   {TOOLS.filter((tool) => tool.group === group.key).map((tool) => (
-                    <ToolCard key={tool.href} href={tool.href}>
-                      {tool.icon}
-                      <Typography variant="subtitle1">{tool.title}</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {tool.description}
-                      </Typography>
-                    </ToolCard>
+                    <ToolRow key={tool.href} href={tool.href}>
+                      <ToolIconBox>{tool.icon}</ToolIconBox>
+                      <Stack spacing={0.25} sx={{ flex: 1 }}>
+                        <Typography variant="subtitle1">{tool.title}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {tool.description}
+                        </Typography>
+                      </Stack>
+                      <ChevronRightIcon color="disabled" />
+                    </ToolRow>
                   ))}
-                </ToolGrid>
+                </Stack>
               </Stack>
             ))}
 
             {/* STEP 3 — 등록 (준비 중 예고) */}
-            <Stack spacing={2}>
+            <Stack spacing={1.5}>
               <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-                <StepBadge>3</StepBadge>
+                <StepNumber>3</StepNumber>
                 <Stack>
                   <Typography variant="subtitle1">등록</Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -205,38 +220,47 @@ export default function MainView() {
                   </Typography>
                 </Stack>
               </Stack>
-              <UpcomingCard>
-                <StorefrontIcon color="disabled" fontSize="large" />
-                <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                  <Typography variant="subtitle1" color="text.secondary">
-                    스마트스토어 원클릭 등록
+              <UpcomingRow>
+                <ToolIconBox>
+                  <StorefrontIcon color="disabled" fontSize="large" />
+                </ToolIconBox>
+                <Stack spacing={0.25} sx={{ flex: 1 }}>
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                    <Typography variant="subtitle1" color="text.secondary">
+                      스마트스토어 원클릭 등록
+                    </Typography>
+                    <Chip size="small" label="준비 중" />
+                  </Stack>
+                  <Typography variant="body2" color="text.secondary">
+                    준비된 이미지 세트를 스마트스토어에 바로 등록하는 기능을 만들고 있습니다.
                   </Typography>
-                  <Chip size="small" label="준비 중" />
                 </Stack>
-                <Typography variant="body2" color="text.secondary">
-                  준비된 이미지 세트를 스마트스토어에 바로 등록하는 기능을 만들고 있습니다.
-                </Typography>
-              </UpcomingCard>
+              </UpcomingRow>
             </Stack>
-          </Stack>
+          </SectionColumn>
 
-          {/* 약속 3가지 */}
-          <PromiseRow>
-            {PROMISES.map((promise) => (
-              <PromiseItem key={promise.title}>
-                {promise.icon}
-                <Stack spacing={0.25}>
-                  <Typography variant="subtitle2">{promise.title}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {promise.description}
-                  </Typography>
-                </Stack>
-              </PromiseItem>
-            ))}
-          </PromiseRow>
+          {/* 약속 — 세로 스택 */}
+          <SectionColumn>
+            <Typography variant="h5" sx={{ textAlign: 'center' }}>
+              오토셀러의 약속
+            </Typography>
+            <Stack spacing={1.5}>
+              {PROMISES.map((promise) => (
+                <ItemRow key={promise.title}>
+                  <ToolIconBox>{promise.icon}</ToolIconBox>
+                  <Stack spacing={0.25}>
+                    <Typography variant="subtitle1">{promise.title}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {promise.description}
+                    </Typography>
+                  </Stack>
+                </ItemRow>
+              ))}
+            </Stack>
+          </SectionColumn>
 
           {/* FAQ */}
-          <Stack spacing={3}>
+          <SectionColumn>
             <Typography variant="h5" sx={{ textAlign: 'center' }}>
               자주 묻는 질문
             </Typography>
@@ -254,7 +278,7 @@ export default function MainView() {
                 </FaqAccordion>
               ))}
             </Stack>
-          </Stack>
+          </SectionColumn>
 
           {/* 푸터 */}
           <Stack spacing={2}>
@@ -320,28 +344,30 @@ const ActionCard = styled.div(({ theme }) => ({
   },
 }));
 
-const StepGrid = styled.div(({ theme }) => ({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
-  gap: theme.spacing(2),
-  [theme.breakpoints.down('md')]: {
-    gridTemplateColumns: '1fr',
-  },
-}));
-
-const StepCard = styled.div(({ theme }) => ({
+// 섹션 공통: 중앙 정렬 세로 컬럼 (읽기 폭 제한으로 시선 집중)
+const SectionColumn = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
-  gap: theme.spacing(1),
+  gap: theme.spacing(3),
+  width: '100%',
+  maxWidth: 720,
+  margin: '0 auto',
+}));
+
+// 리스트 아이템 공통: 왼쪽 순번/아이콘 + 오른쪽 제목·설명
+const ItemRow = styled.div(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: theme.spacing(2.5),
   padding: theme.spacing(3),
   borderRadius: theme.shape.borderRadius,
   border: `1px solid ${theme.palette.divider}`,
   backgroundColor: theme.palette.background.paper,
 }));
 
-const StepBadge = styled.div(({ theme }) => ({
-  width: 28,
-  height: 28,
+const StepNumber = styled.div(({ theme }) => ({
+  width: 36,
+  height: 36,
   flexShrink: 0,
   display: 'flex',
   alignItems: 'center',
@@ -349,58 +375,38 @@ const StepBadge = styled.div(({ theme }) => ({
   borderRadius: '50%',
   backgroundColor: theme.palette.primary.main,
   color: theme.palette.primary.contrastText,
-  fontSize: 14,
+  fontSize: 16,
   fontWeight: 700,
 }));
 
-const PromiseRow = styled.div(({ theme }) => ({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
-  gap: theme.spacing(2),
-  [theme.breakpoints.down('md')]: {
-    gridTemplateColumns: '1fr',
-  },
-}));
-
-const PromiseItem = styled.div(({ theme }) => ({
+const ToolIconBox = styled.div({
+  flexShrink: 0,
   display: 'flex',
-  alignItems: 'flex-start',
-  gap: theme.spacing(1.5),
-  padding: theme.spacing(2, 2.5),
-  borderRadius: theme.shape.borderRadius,
-  backgroundColor: theme.palette.background.paper,
-  border: `1px solid ${theme.palette.divider}`,
-}));
+  alignItems: 'center',
+});
 
-const ToolGrid = styled.div(({ theme }) => ({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-  gap: theme.spacing(2),
-}));
-
-const ToolCard = styled(Link)(({ theme }) => ({
+const ToolRow = styled(Link)(({ theme }) => ({
   display: 'flex',
-  flexDirection: 'column',
-  gap: theme.spacing(1),
-  padding: theme.spacing(3),
-  border: `1px solid ${theme.palette.divider}`,
+  alignItems: 'center',
+  gap: theme.spacing(2.5),
+  padding: theme.spacing(2.5, 3),
   borderRadius: theme.shape.borderRadius,
+  border: `1px solid ${theme.palette.divider}`,
   backgroundColor: theme.palette.background.paper,
   textDecoration: 'none',
   color: 'inherit',
-  transition: 'border-color 0.15s, transform 0.15s, box-shadow 0.15s',
+  transition: 'border-color 0.15s, box-shadow 0.15s',
   '&:hover': {
     borderColor: theme.palette.primary.main,
-    transform: 'translateY(-2px)',
     boxShadow: theme.shadows[3],
   },
 }));
 
-const UpcomingCard = styled.div(({ theme }) => ({
+const UpcomingRow = styled.div(({ theme }) => ({
   display: 'flex',
-  flexDirection: 'column',
-  gap: theme.spacing(1),
-  padding: theme.spacing(3),
+  alignItems: 'center',
+  gap: theme.spacing(2.5),
+  padding: theme.spacing(2.5, 3),
   borderRadius: theme.shape.borderRadius,
   border: `1px dashed ${theme.palette.divider}`,
   backgroundColor: theme.palette.background.paper,
