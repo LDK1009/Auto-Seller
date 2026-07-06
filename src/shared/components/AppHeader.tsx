@@ -16,13 +16,15 @@ import IconButton from '@mui/material/IconButton';
 import Drawer from '@mui/material/Drawer';
 import MenuIcon from '@mui/icons-material/Menu';
 import { APP_NAME_EN } from '@/shared/constants/app';
-import { TOOLS } from '@/shared/constants/tools';
+import { TOOLS, FLAGSHIP_TOOL } from '@/shared/constants/tools';
 import { HEADER_HEIGHT } from '@/shared/constants/layout';
 import { SidebarNav } from '@/shared/components/AppSidebar';
 
 export default function AppHeader() {
   const pathname = usePathname();
-  const isWorkspace = TOOLS.some((tool) => pathname.startsWith(tool.href));
+  const isWorkspace = [FLAGSHIP_TOOL.href, ...TOOLS.map((tool) => tool.href)].some((href) =>
+    pathname.startsWith(href),
+  );
 
   // 모바일 Drawer 열림 (순수 UI 상태)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -48,7 +50,7 @@ export default function AppHeader() {
 
           {/* 랜딩 전용: 작업 공간 진입 버튼 하나 */}
           {!isWorkspace && (
-            <Button component={Link} href="/domeme-import" variant="contained" size="small">
+            <Button component={Link} href={FLAGSHIP_TOOL.href} variant="contained" size="small">
               작업 공간
             </Button>
           )}
