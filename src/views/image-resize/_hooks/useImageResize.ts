@@ -7,6 +7,7 @@
 import { useCallback, useEffect } from 'react';
 import { enqueueSnackbar } from 'notistack';
 import { buildZip, downloadBlob } from '@/shared/utils/zip';
+import { trackEvent } from '@/shared/utils/analytics';
 import {
   filterAcceptedImageFiles,
   notifyRejectedImageFiles,
@@ -140,6 +141,7 @@ export function useImageResize() {
         { suffix: RESIZE_RESULT_SUFFIX, extension: EXTENSION_BY_FORMAT[store.settings.format] },
       );
       downloadBlob(zipBlob, '규격변환.zip');
+      trackEvent('zip_download', { tool: 'image-resize' });
     } catch (error) {
       console.error(error);
       enqueueSnackbar('ZIP 생성 중 오류가 발생했습니다.', { variant: 'error' });

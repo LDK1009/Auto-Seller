@@ -22,6 +22,7 @@ import { useSnackbar } from 'notistack';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
 import { useImageHandoffStore } from '@/shared/store/imageHandoffStore';
+import { trackEvent } from '@/shared/utils/analytics';
 import { downloadDomemeImages } from '@/shared/services/domemeItemService';
 import { useDomemeItem } from './_hooks/useDomemeItem';
 import LicenseGate from './_components/LicenseGate';
@@ -49,6 +50,7 @@ export default function DomemeImportView() {
     setLicenseConfirmed(false);
     setSelectedUrls(new Set());
     const fetched = await lookup(rawInput);
+    trackEvent('domeme_lookup', { result: fetched ? 'success' : 'fail' });
     if (fetched) {
       const thumbUrls = fetched.images.filter((image) => image.kind === 'thumb').map((image) => image.url);
       setSelectedUrls(new Set(thumbUrls));
@@ -76,6 +78,7 @@ export default function DomemeImportView() {
         setDownloadProgress(`이미지 내려받는 중… ${done}/${total}`),
       );
       useImageHandoffStore.getState().setImages(files);
+      trackEvent('handoff', { from: 'domeme-import', to: path.replace('/', '') });
       router.push(path);
     } catch (error) {
       console.error(error);

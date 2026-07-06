@@ -17,6 +17,7 @@ import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import PaletteIcon from '@mui/icons-material/Palette';
 import AspectRatioIcon from '@mui/icons-material/AspectRatio';
 import { useImageHandoffStore } from '@/shared/store/imageHandoffStore';
+import { trackEvent } from '@/shared/utils/analytics';
 import AnimatedProgressBar from '@/shared/components/AnimatedProgressBar';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
@@ -83,6 +84,7 @@ export default function BackgroundRemovalView() {
         blob: job.resultBlob as Blob,
       })),
     );
+    trackEvent('handoff', { from: 'background-removal', to: 'image-resize' });
     router.push('/image-resize');
   };
 

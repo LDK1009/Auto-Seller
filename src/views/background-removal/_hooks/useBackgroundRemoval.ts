@@ -13,6 +13,7 @@ import { removeImageBackground } from '../_utils/removeImageBackground';
 import { applyBackground } from '../_utils/applyBackground';
 import { fetchBackgroundImage } from '@/shared/services/backgroundImageSearch';
 import { buildZip, downloadBlob } from '@/shared/utils/zip';
+import { trackEvent } from '@/shared/utils/analytics';
 import {
   filterAcceptedImageFiles,
   notifyRejectedImageFiles,
@@ -227,6 +228,7 @@ export function useBackgroundRemoval() {
         { suffix: RESULT_SUFFIX, extension: OUTPUT_EXTENSION },
       );
       downloadBlob(zipBlob, '누끼결과.zip');
+      trackEvent('zip_download', { tool: 'background-removal' });
     } catch (error) {
       console.error(error);
       enqueueSnackbar('ZIP 생성 중 오류가 발생했습니다.', { variant: 'error' });

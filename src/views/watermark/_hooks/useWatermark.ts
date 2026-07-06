@@ -6,6 +6,7 @@
 import { useCallback, useEffect } from 'react';
 import { enqueueSnackbar } from 'notistack';
 import { buildZipWithNames, downloadBlob } from '@/shared/utils/zip';
+import { trackEvent } from '@/shared/utils/analytics';
 import {
   filterAcceptedImageFiles,
   notifyRejectedImageFiles,
@@ -138,6 +139,7 @@ export function useWatermark() {
 
       const zipBlob = await buildZipWithNames(entries);
       downloadBlob(zipBlob, '워터마크.zip');
+      trackEvent('zip_download', { tool: 'watermark' });
     } catch (error) {
       console.error(error);
       enqueueSnackbar('ZIP 생성 중 오류가 발생했습니다.', { variant: 'error' });

@@ -10,6 +10,7 @@ import {
   notifyRejectedImageFiles,
 } from '@/shared/utils/imageFileValidation';
 import { useImageHandoffStore } from '@/shared/store/imageHandoffStore';
+import { trackEvent } from '@/shared/utils/analytics';
 import { checkImage } from '../_utils/checkImage';
 import { useImageCheckStore, type CheckJob } from '../_store/imageCheckStore';
 
@@ -83,6 +84,7 @@ export function useImageCheck() {
     useImageHandoffStore.getState().setImages(
       currentJobs.map((job) => ({ name: job.file.name, blob: job.file })),
     );
+    trackEvent('handoff', { from: 'image-check', to: 'image-resize' });
     router.push('/image-resize');
   }, [router]);
 
