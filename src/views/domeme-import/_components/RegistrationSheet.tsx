@@ -76,6 +76,17 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
     .filter(Boolean)
     .join('\n');
 
+  ////////// 옵션 조합 (묶음 판매 시 가산가·재고도 묶음 단위로 환산)
+  const bundledOptions = item.options.map((option) => ({
+    name: option.name,
+    priceAdd: option.priceAdd * bundleUnits,
+    stock: Math.floor(option.stock / bundleUnits),
+  }));
+  // 스스 옵션 폼/엑셀에 붙일 TSV (옵션명 ⇥ 가산가 ⇥ 재고)
+  const optionsTsv = bundledOptions
+    .map((option) => `${option.name}\t${option.priceAdd}\t${option.stock}`)
+    .join('\n');
+
   ////////// 복사
   const copyText = async (label: string, value: string) => {
     if (!value) return;
@@ -97,6 +108,7 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
       item.model && `모델명: ${item.model}`,
       infoDutyText && `상품정보제공고시:\n${infoDutyText}`,
       item.categoryPath && `도매꾹 카테고리(참고): ${item.categoryPath}`,
+      optionsTsv && `옵션 (옵션명/가산가/재고${bundleUnits > 1 ? ' — 묶음 기준' : ''}):\n${optionsTsv}`,
       fixedInfo.afterServicePhone && `A/S 전화번호: ${fixedInfo.afterServicePhone}`,
       fixedInfo.afterServiceGuide && `A/S 안내: ${fixedInfo.afterServiceGuide}`,
     ]
@@ -238,6 +250,50 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
         />
       </Stack>
 
+      {/* 옵션 조합 — 스스 옵션 폼에 옮겨 치던 노가다 대체 */}
+      {bundledOptions.length > 0 && (
+        <>
+          <Divider />
+          <Stack spacing={1}>
+            <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography variant="subtitle2">
+                옵션 {bundledOptions.length}개{bundleUnits > 1 && ' (가산가·재고 = 묶음 기준)'}
+              </Typography>
+              <Button
+                size="small"
+                startIcon={<ContentCopyIcon />}
+                onClick={() => copyText('옵션 표', optionsTsv)}
+              >
+                옵션 표 복사
+              </Button>
+            </Stack>
+            <OptionHeader>
+              <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>옵션명</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ width: 90, textAlign: 'right' }}>가산가</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ width: 70, textAlign: 'right' }}>재고</Typography>
+            </OptionHeader>
+            <OptionList>
+              {bundledOptions.map((option) => (
+                <OptionRow key={option.name}>
+                  <Typography variant="body2" sx={{ flex: 1, minWidth: 0, wordBreak: 'break-all' }}>
+                    {option.name}
+                  </Typography>
+                  <Typography variant="body2" sx={{ width: 90, textAlign: 'right' }}>
+                    {option.priceAdd > 0 ? `+${option.priceAdd.toLocaleString()}` : option.priceAdd.toLocaleString()}
+                  </Typography>
+                  <Typography variant="body2" sx={{ width: 70, textAlign: 'right' }}>
+                    {option.stock.toLocaleString()}
+                  </Typography>
+                </OptionRow>
+              ))}
+            </OptionList>
+            <Typography variant="caption" color="text.secondary">
+              복사하면 탭 구분 텍스트로 들어가 엑셀·일괄등록 양식에 그대로 붙습니다.
+            </Typography>
+          </Stack>
+        </>
+      )}
+
       <Divider />
 
       {/* A/S 고정값 — 1회 입력 후 브라우저에 저장 */}
@@ -328,6 +384,28 @@ const PriceBox = styled.div(({ theme }) => ({
   borderRadius: theme.shape.borderRadius,
   border: `1px solid ${theme.palette.divider}`,
   backgroundColor: theme.palette.background.default,
+}));
+
+const OptionHeader = styled.div(({ theme }) => ({
+  display: 'flex',
+  gap: theme.spacing(1.5),
+  padding: theme.spacing(0, 1.5),
+}));
+
+const OptionList = styled.div(({ theme }) => ({
+  maxHeight: 280,
+  overflowY: 'auto',
+  borderRadius: theme.shape.borderRadius,
+  border: `1px solid ${theme.palette.divider}`,
+}));
+
+const OptionRow = styled.div(({ theme }) => ({
+  display: 'flex',
+  gap: theme.spacing(1.5),
+  padding: theme.spacing(1, 1.5),
+  '&:not(:last-of-type)': {
+    borderBottom: `1px solid ${theme.palette.divider}`,
+  },
 }));
 
 const RowBox = styled.div(({ theme }) => ({

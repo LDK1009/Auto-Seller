@@ -35,6 +35,13 @@ export type DomemeInfoDuty = {
   items: { name: string; desc: string }[]; // 항목별 고시 내용
 };
 
+////////// 옵션 조합 (selectOpt — 스스 옵션 폼 이식용)
+export type DomemeOption = {
+  name: string; // 조합 옵션명 (예: "블랙/L")
+  priceAdd: number; // 가산가 (도매꾹 단가 기준, 원)
+  stock: number; // 옵션별 재고 (낱개)
+};
+
 export type DomemeItem = {
   no: string; // 상품번호
   title: string;
@@ -56,4 +63,5 @@ export type DomemeItem = {
   returnInfo: DomemeReturnInfo;
   categoryPath: string | null; // 도매꾹 카테고리 경로 (참고용 — 스스 카테고리는 사용자 선택)
   supplierName: string | null; // 공급사 상호
+  options: DomemeOption[]; // 옵션 조합 (없거나 단일 기본옵션이면 빈 배열)
 };

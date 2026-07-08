@@ -147,6 +147,7 @@ export async function GET(request: Request) {
       },
       categoryPath: categoryNames.length > 0 ? categoryNames.join(' > ') : null,
       supplierName: toStringOrNull(root.seller?.company?.name) ?? toStringOrNull(root.seller?.nick),
+      options: parseOptions(root.selectOpt),
     };
 
     // 캐시 저장 (초과 시 가장 오래된 항목 제거)
@@ -183,6 +184,33 @@ function toStringOrNull(value: unknown): string | null {
   if (value === null || value === undefined) return null;
   const text = String(value).trim();
   return text.length > 0 ? text : null;
+}
+
+////////// 옵션 조합 파싱 — selectOpt는 이중 인코딩 JSON 문자열, data 맵에 조합별 옵션명·가산가·재고
+const MAX_OPTIONS = 200;
+
+function parseOptions(selectOpt: unknown): { name: string; priceAdd: number; stock: number }[] {
+  try {
+    const parsed = typeof selectOpt === 'string' ? JSON.parse(selectOpt) : selectOpt;
+    const data = parsed?.data;
+    if (!data || typeof data !== 'object') return [];
+
+    const options = Object.values(data as Record<string, any>)
+      .filter((entry) => entry && String(entry.hid ?? '0') !== '1') // 숨김 옵션 제외
+      .map((entry) => ({
+        name: String(entry.name ?? '').trim(),
+        priceAdd: toNumberOrNull(entry.domPrice) ?? 0,
+        stock: toNumberOrNull(entry.qty) ?? 0,
+      }))
+      .filter((option) => option.name.length > 0)
+      .slice(0, MAX_OPTIONS);
+
+    // 조합 1개 + 가산가 0 = 사실상 단일 상품 → 옵션 없음으로 취급
+    if (options.length === 1 && options[0].priceAdd === 0) return [];
+    return options;
+  } catch {
+    return []; // 파싱 실패 시 옵션 없음 (시트의 다른 항목은 정상 제공)
+  }
 }
 
 ////////// 배송비 테이블 파싱 — "80+3000|80+3000" 형식의 첫 구간 요금 추출 (불확실하면 null, 원문은 feeRaw로 보존)
