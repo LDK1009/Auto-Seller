@@ -19,6 +19,7 @@ import Link from '@mui/material/Link';
 import SearchIcon from '@mui/icons-material/Search';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import AspectRatioIcon from '@mui/icons-material/AspectRatio';
+import VerticalSplitIcon from '@mui/icons-material/VerticalSplit';
 import { useSnackbar } from 'notistack';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
@@ -26,6 +27,8 @@ import { useImageHandoffStore } from '@/shared/store/imageHandoffStore';
 import { trackEvent } from '@/shared/utils/analytics';
 import { downloadDomemeImages } from '@/shared/services/domemeItemService';
 import { useDomemeItem } from './_hooks/useDomemeItem';
+import { mergeImagesVertically } from './_utils/mergeImagesVertically';
+import { buildZipWithNames, downloadBlob } from '@/shared/utils/zip';
 import LicenseGate from './_components/LicenseGate';
 import ImageSelectGrid from './_components/ImageSelectGrid';
 import RegistrationSheet from './_components/RegistrationSheet';
@@ -115,6 +118,53 @@ export default function DomemeImportView() {
       setDownloadProgress(null);
     }
   };
+
+  ////////// 상세 통이미지 조립 — 선택한 상세 이미지를 세로 병합해 다운로드
+  const handleMergeDetail = async () => {
+    if (!item) return;
+    const detailImages = item.images.filter(
+      (image) => image.kind === 'detail' && selectedUrls.has(image.url),
+    );
+    if (detailImages.length === 0) return;
+
+    try {
+      const files = await downloadDomemeImages(detailImages, item.no, (done, total) =>
+        setDownloadProgress(`상세 이미지 내려받는 중… ${done}/${total}`),
+      );
+      setDownloadProgress('통이미지 조립 중…');
+      const parts = await mergeImagesVertically(files.map((file) => file.blob));
+
+      if (parts.length === 1) {
+        downloadBlob(parts[0], `상세통이미지_${item.no}.jpg`);
+      } else {
+        const zipBlob = await buildZipWithNames(
+          parts.map((blob, index) => ({
+            name: `상세통이미지_${item.no}_${String(index + 1).padStart(2, '0')}.jpg`,
+            blob,
+          })),
+        );
+        downloadBlob(zipBlob, `상세통이미지_${item.no}.zip`);
+        trackEvent('zip_download', { tool: 'detail-merge' });
+      }
+      enqueueSnackbar(
+        parts.length === 1
+          ? '상세 통이미지가 완성되었습니다. 에디터에 1장만 업로드하세요.'
+          : `높이 제한으로 ${parts.length}개 파트로 나눠 완성되었습니다.`,
+        { variant: 'success' },
+      );
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar(error instanceof Error ? error.message : '통이미지 조립에 실패했습니다.', {
+        variant: 'error',
+      });
+    } finally {
+      setDownloadProgress(null);
+    }
+  };
+
+  const selectedDetailCount = item
+    ? item.images.filter((image) => image.kind === 'detail' && selectedUrls.has(image.url)).length
+    : 0;
 
   const isBusy = status === 'loading' || downloadProgress !== null;
 
@@ -225,6 +275,14 @@ export default function DomemeImportView() {
                             {target.label}
                           </Button>
                         ))}
+                        <Button
+                          variant="outlined"
+                          startIcon={<VerticalSplitIcon />}
+                          disabled={selectedDetailCount === 0 || isBusy}
+                          onClick={handleMergeDetail}
+                        >
+                          상세 통이미지 받기{selectedDetailCount > 0 && ` (${selectedDetailCount}장)`}
+                        </Button>
                         {downloadProgress && (
                           <Typography variant="body2" color="text.secondary">
                             {downloadProgress}
