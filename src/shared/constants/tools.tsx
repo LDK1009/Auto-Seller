@@ -10,6 +10,7 @@ import FactCheckIcon from '@mui/icons-material/FactCheck';
 import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
 import VerticalSplitIcon from '@mui/icons-material/VerticalSplit';
 import CampaignIcon from '@mui/icons-material/Campaign';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 
 export type ToolGroupKey = 'sourcing' | 'image';
@@ -45,6 +46,13 @@ export const TOOLS: ToolInfo[] = [
     icon: <CalculateIcon color="primary" fontSize="large" />,
     title: '마진 계산기',
     description: '순이익 계산과 목표 마진 최소 판매가 역산',
+    group: 'sourcing',
+  },
+  {
+    href: '/excel-import',
+    icon: <UploadFileIcon color="primary" fontSize="large" />,
+    title: '엑셀 대량 가공',
+    description: '대량등록 엑셀의 상품 이미지를 모아 누끼 파이프라인에 일괄 투입',
     group: 'sourcing',
   },
   {

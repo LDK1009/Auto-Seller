@@ -20,6 +20,22 @@ const EXTENSION_CONTENT_TYPES: Record<string, string> = {
   bmp: 'image/bmp',
 };
 
+////////// 신뢰 호스트 (도매꾹 CDN·ESM 이미지호스팅 — 특정 서비스 CDN 한정이라 오픈 프록시 아님)
+// P-2 엑셀 이미지 URL용. views/excel-import/_utils/parseExcelImages.ts의 목록과 동기화할 것.
+const TRUSTED_HOST_SUFFIXES = ['domeggook.com', 'esmplus.com'];
+
+function isTrustedHost(url: string): boolean {
+  try {
+    const { hostname, protocol } = new URL(url);
+    return (
+      protocol === 'https:' &&
+      TRUSTED_HOST_SUFFIXES.some((suffix) => hostname === suffix || hostname.endsWith(`.${suffix}`))
+    );
+  } catch {
+    return false;
+  }
+}
+
 function resolveImageContentType(upstreamType: string | null, url: string): string {
   if (upstreamType?.startsWith('image/')) return upstreamType;
   const extension = url.split('?')[0].split('.').pop()?.toLowerCase() ?? '';
@@ -35,13 +51,15 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const url = searchParams.get('url');
   const signature = searchParams.get('sig');
-  if (!url || !signature) {
-    return NextResponse.json({ error: '이미지 URL(url)과 서명(sig)이 필요합니다.' }, { status: 400 });
+  if (!url) {
+    return NextResponse.json({ error: '이미지 URL(url)이 필요합니다.' }, { status: 400 });
   }
 
-  // 서명 검증 — domeme-item이 발급한 URL만 통과
-  if (signDomemeImageUrl(url, apiKey) !== signature) {
-    return NextResponse.json({ error: '허용되지 않은 이미지 요청입니다.' }, { status: 403 });
+  // 통과 조건: ① 도매꾹 CDN 호스트(P-2 엑셀 URL — 서명 불필요) 또는 ② domeme-item이 발급한 HMAC 서명
+  if (!isTrustedHost(url)) {
+    if (!signature || signDomemeImageUrl(url, apiKey) !== signature) {
+      return NextResponse.json({ error: '허용되지 않은 이미지 요청입니다.' }, { status: 403 });
+    }
   }
 
   try {
