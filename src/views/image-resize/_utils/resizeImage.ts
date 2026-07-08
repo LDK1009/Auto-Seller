@@ -24,19 +24,24 @@ export async function resizeImage(source: Blob, settings: ResizeSettings): Promi
     context.fillRect(0, 0, canvas.width, canvas.height);
   }
 
-  //////////////////// 스케일 계산 (비율 유지) ////////////////////
+  //////////////////// 상·하단 잘라내기 (P-4 — 변환 전 원본에서 제거) ////////////////////
+  const cropTop = Math.round((bitmap.height * (settings.cropTopPercent ?? 0)) / 100);
+  const cropBottom = Math.round((bitmap.height * (settings.cropBottomPercent ?? 0)) / 100);
+  const sourceHeight = Math.max(1, bitmap.height - cropTop - cropBottom);
+
+  //////////////////// 스케일 계산 (비율 유지 — 잘라낸 원본 기준) ////////////////////
   const scaleRatio =
     settings.fit === 'contain'
-      ? Math.min(canvas.width / bitmap.width, canvas.height / bitmap.height)
-      : Math.max(canvas.width / bitmap.width, canvas.height / bitmap.height);
+      ? Math.min(canvas.width / bitmap.width, canvas.height / sourceHeight)
+      : Math.max(canvas.width / bitmap.width, canvas.height / sourceHeight);
 
   const drawWidth = bitmap.width * scaleRatio;
-  const drawHeight = bitmap.height * scaleRatio;
+  const drawHeight = sourceHeight * scaleRatio;
   const offsetX = (canvas.width - drawWidth) / 2;
   const offsetY = (canvas.height - drawHeight) / 2;
 
   context.imageSmoothingQuality = 'high';
-  context.drawImage(bitmap, offsetX, offsetY, drawWidth, drawHeight);
+  context.drawImage(bitmap, 0, cropTop, bitmap.width, sourceHeight, offsetX, offsetY, drawWidth, drawHeight);
   bitmap.close();
 
   //////////////////// Blob 추출 ////////////////////

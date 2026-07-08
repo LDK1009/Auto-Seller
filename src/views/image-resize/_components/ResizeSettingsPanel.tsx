@@ -11,9 +11,12 @@ import TextField from '@mui/material/TextField';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Slider from '@mui/material/Slider';
+import InputAdornment from '@mui/material/InputAdornment';
 import {
   SIZE_PRESETS,
   FORMAT_OPTIONS,
+  CROP_PRESETS,
+  MAX_CROP_PERCENT,
   MIN_DIMENSION,
   MAX_DIMENSION,
   type ResizeSettings,
@@ -32,6 +35,13 @@ function clampDimension(raw: string): number {
   const value = Number(raw);
   if (!Number.isFinite(value)) return MIN_DIMENSION;
   return Math.min(MAX_DIMENSION, Math.max(MIN_DIMENSION, Math.round(value)));
+}
+
+// 잘라내기 % 보정 (0~MAX_CROP_PERCENT)
+function clampCropPercent(raw: string): number {
+  const value = Number(raw);
+  if (!Number.isFinite(value)) return 0;
+  return Math.min(MAX_CROP_PERCENT, Math.max(0, Math.round(value)));
 }
 
 export default function ResizeSettingsPanel({ settings, onChange, disabled = false }: ResizeSettingsPanelProps) {
@@ -115,6 +125,52 @@ export default function ResizeSettingsPanel({ settings, onChange, disabled = fal
             />
           </ColorLabel>
         </Stack>
+      </Stack>
+
+      {/* 상·하단 잘라내기 (P-4 — 공급사 문구 제거) */}
+      <Stack spacing={1}>
+        <Typography variant="subtitle2" color="text.secondary">
+          상·하단 잘라내기 (변환 전 적용)
+        </Typography>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+          {CROP_PRESETS.map((preset) => {
+            const isSelected =
+              settings.cropTopPercent === preset.top && settings.cropBottomPercent === preset.bottom;
+            return (
+              <Chip
+                key={preset.label}
+                label={preset.label}
+                color={isSelected ? 'primary' : 'default'}
+                variant={isSelected ? 'filled' : 'outlined'}
+                disabled={disabled}
+                onClick={() => onChange({ cropTopPercent: preset.top, cropBottomPercent: preset.bottom })}
+              />
+            );
+          })}
+          <TextField
+            size="small"
+            type="number"
+            label="상단"
+            value={settings.cropTopPercent}
+            disabled={disabled}
+            onChange={(event) => onChange({ cropTopPercent: clampCropPercent(event.target.value) })}
+            slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }}
+            sx={{ width: 100 }}
+          />
+          <TextField
+            size="small"
+            type="number"
+            label="하단"
+            value={settings.cropBottomPercent}
+            disabled={disabled}
+            onChange={(event) => onChange({ cropBottomPercent: clampCropPercent(event.target.value) })}
+            slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }}
+            sx={{ width: 100 }}
+          />
+        </Stack>
+        <Typography variant="caption" color="text.secondary">
+          공급사 대표이미지의 상·하단 홍보 문구를 잘라냅니다 — 미리보기에서 결과를 확인하세요
+        </Typography>
       </Stack>
 
       {/* 출력 포맷 + 품질 */}

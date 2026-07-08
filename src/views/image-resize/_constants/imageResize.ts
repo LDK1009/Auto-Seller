@@ -10,6 +10,8 @@ export type ResizeSettings = {
   backgroundColor: string; // contain 여백/JPG 배경 색
   format: OutputFormat;
   quality: number; // 0~1 (jpeg/webp)
+  cropTopPercent: number; // 변환 전 상단 잘라내기 % (P-4 — 공급사 문구 제거)
+  cropBottomPercent: number; // 변환 전 하단 잘라내기 %
 };
 
 //////////////////// 마켓 규격 프리셋 ////////////////////
@@ -26,7 +28,19 @@ export const DEFAULT_RESIZE_SETTINGS: ResizeSettings = {
   backgroundColor: '#FFFFFF',
   format: 'image/jpeg',
   quality: 0.9,
+  cropTopPercent: 0,
+  cropBottomPercent: 0,
 };
+
+//////////////////// 상·하단 잘라내기 (P-4) ////////////////////
+// 공급사 대표이미지의 상·하단 홍보 문구 제거용 프리셋
+export const CROP_PRESETS: { label: string; top: number; bottom: number }[] = [
+  { label: '없음', top: 0, bottom: 0 },
+  { label: '상단 10%', top: 10, bottom: 0 },
+  { label: '하단 10%', top: 0, bottom: 10 },
+  { label: '상·하단 10%', top: 10, bottom: 10 },
+];
+export const MAX_CROP_PERCENT = 40;
 
 //////////////////// 출력 포맷 ////////////////////
 export const FORMAT_OPTIONS: { value: OutputFormat; label: string }[] = [
