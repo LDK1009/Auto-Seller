@@ -1,9 +1,10 @@
 'use client';
 
 //////////////////////////////////////// 공급사 이미지 사용 조건 게이트 ////////////////////////////////////////
-// L-2 조사 결론 반영: 이미지사용권은 상품별이고 공급사 문구(license.msg)가 실질 기준.
-// 수집 전에 원문을 그대로 보여주고 사용자가 확인해야 다음 단계로 진행한다.
-// "금합니다" 류 문구가 감지되면 경고를 강화한다 (판단 책임은 사용자·공급사 간 — 우리는 도구).
+// 도매꾹 공식 회신(2026-07-07) 반영:
+// - 이미지 사용허용 공식 필드 = license.usable → false면 진행 차단
+// - usable=true여도 "임의 편집·가공은 msg 허용 범위 내, 명시 없으면 원본 사용 권장" → 고지 필수
+// - msg에 금지 뉘앙스가 있으면 경고 강화 (usable과 msg가 상충하는 상품 실재)
 
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
@@ -25,6 +26,23 @@ type LicenseGateProps = {
 };
 
 export default function LicenseGate({ license, itemUrl, confirmed, onConfirmedChange }: LicenseGateProps) {
+  ////////// usable=false: 공급사가 이미지 사용을 허용하지 않음 — 진행 차단 (공식 필드 기준)
+  if (!license.usable) {
+    return (
+      <Alert severity="error">
+        <AlertTitle>이미지 사용이 허용되지 않은 상품입니다</AlertTitle>
+        <Typography variant="body2">
+          공급사가 이 상품의 이미지 사용을 허용하지 않았습니다. 이미지를 가져올 수 없습니다. 다른 상품을
+          찾아보시거나,{' '}
+          <Link href={itemUrl} target="_blank" rel="noopener noreferrer">
+            상품 페이지
+          </Link>
+          에서 공급사에 직접 문의하세요.
+        </Typography>
+      </Alert>
+    );
+  }
+
   const looksForbidden =
     license.msg !== null && FORBIDDEN_PATTERNS.some((pattern) => license.msg?.includes(pattern));
 
@@ -54,6 +72,12 @@ export default function LicenseGate({ license, itemUrl, confirmed, onConfirmedCh
           </Typography>
         </Alert>
       )}
+
+      {/* 편집·가공 범위 고지 (도매꾹 공식 안내 기반) */}
+      <Typography variant="caption" color="text.secondary">
+        이미지 편집·가공(배경 제거 등)은 공급사가 허용한 범위에서만 가능합니다. 위 조건에 편집 허용 언급이
+        없다면 원본 그대로 사용하는 것이 안전합니다.
+      </Typography>
 
       <FormControlLabel
         control={

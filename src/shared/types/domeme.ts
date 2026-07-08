@@ -7,8 +7,8 @@ export type DomemeItemImage = {
 };
 
 export type DomemeLicense = {
-  usable: boolean; // API의 desc.license.usable — 단독 신뢰 불가 (L-2 조사)
-  msg: string | null; // 공급사가 직접 쓴 이미지 사용 조건 원문 — 실질 기준
+  usable: boolean; // 이미지 사용허용 공식 필드 (도매꾹 공식 회신 2026-07-07) — false면 사용 불가
+  msg: string | null; // 공급사가 쓴 사용 조건 원문 — 편집·가공 허용 범위는 이 문구가 기준
 };
 
 export type DomemeItem = {
