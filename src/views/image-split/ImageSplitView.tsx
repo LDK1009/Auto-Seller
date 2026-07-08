@@ -37,6 +37,8 @@ export default function ImageSplitView() {
   const {
     jobs,
     pieceHeight,
+    outputMode,
+    setOutputMode,
     isProcessing,
     isZipping,
     doneCount,
@@ -99,6 +101,30 @@ export default function ImageSplitView() {
                     }}
                     sx={{ width: 160 }}
                   />
+                </Stack>
+
+                {/* 출력 포맷 (P-5: JPG 압축 기본) */}
+                <Typography variant="subtitle2" color="text.secondary">
+                  출력 포맷
+                </Typography>
+                <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+                  <Chip
+                    label="JPG 압축 (권장)"
+                    color={outputMode === 'jpg' ? 'primary' : 'default'}
+                    variant={outputMode === 'jpg' ? 'filled' : 'outlined'}
+                    disabled={isProcessing}
+                    onClick={() => setOutputMode('jpg')}
+                  />
+                  <Chip
+                    label="원본 포맷 유지"
+                    color={outputMode === 'original' ? 'primary' : 'default'}
+                    variant={outputMode === 'original' ? 'filled' : 'outlined'}
+                    disabled={isProcessing}
+                    onClick={() => setOutputMode('original')}
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    JPG 압축은 업로드 용량 제한 걸림을 줄여줍니다 (상세 이미지는 투명도가 필요 없음)
+                  </Typography>
                 </Stack>
               </Stack>
             </Paper>

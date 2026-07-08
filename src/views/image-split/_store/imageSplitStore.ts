@@ -5,6 +5,7 @@
 
 import { create } from 'zustand';
 import { DEFAULT_PIECE_HEIGHT } from '../_constants/imageSplit';
+import type { SplitOutputMode } from '../_utils/splitImage';
 
 //////////////////// 타입 ////////////////////
 export type SplitStatus = 'pending' | 'done' | 'error';
@@ -24,6 +25,7 @@ export type SplitJob = {
 type ImageSplitState = {
   jobs: SplitJob[];
   pieceHeight: number; // 조각 높이(px)
+  outputMode: SplitOutputMode; // 출력 포맷 (기본 jpg 압축 — P-5)
   isProcessing: boolean;
   isZipping: boolean;
 
@@ -32,6 +34,7 @@ type ImageSplitState = {
   removeJob: (id: string) => void;
   clearJobs: () => void;
   setPieceHeight: (value: number) => void;
+  setOutputMode: (value: SplitOutputMode) => void;
   setIsProcessing: (value: boolean) => void;
   setIsZipping: (value: boolean) => void;
 };
@@ -39,6 +42,7 @@ type ImageSplitState = {
 export const useImageSplitStore = create<ImageSplitState>((set) => ({
   jobs: [],
   pieceHeight: DEFAULT_PIECE_HEIGHT,
+  outputMode: 'jpg',
   isProcessing: false,
   isZipping: false,
 
@@ -50,6 +54,7 @@ export const useImageSplitStore = create<ImageSplitState>((set) => ({
   removeJob: (id) => set((state) => ({ jobs: state.jobs.filter((job) => job.id !== id) })),
   clearJobs: () => set({ jobs: [] }),
   setPieceHeight: (value) => set({ pieceHeight: value }),
+  setOutputMode: (value) => set({ outputMode: value }),
   setIsProcessing: (value) => set({ isProcessing: value }),
   setIsZipping: (value) => set({ isZipping: value }),
 }));

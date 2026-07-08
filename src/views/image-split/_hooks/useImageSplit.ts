@@ -26,6 +26,8 @@ export function useImageSplit() {
   //////////////////// 스토어 구독 ////////////////////
   const jobs = useImageSplitStore((state) => state.jobs);
   const pieceHeight = useImageSplitStore((state) => state.pieceHeight);
+  const outputMode = useImageSplitStore((state) => state.outputMode);
+  const setOutputMode = useImageSplitStore((state) => state.setOutputMode);
   const isProcessing = useImageSplitStore((state) => state.isProcessing);
   const isZipping = useImageSplitStore((state) => state.isZipping);
   const setPieceHeight = useImageSplitStore((state) => state.setPieceHeight);
@@ -83,9 +85,9 @@ export function useImageSplit() {
 
     store.setIsProcessing(true);
     for (const job of store.jobs) {
-      const { patchJob, pieceHeight: currentHeight } = useImageSplitStore.getState();
+      const { patchJob, pieceHeight: currentHeight, outputMode } = useImageSplitStore.getState();
       try {
-        const pieceBlobs = await splitImage(job.file, currentHeight);
+        const pieceBlobs = await splitImage(job.file, currentHeight, outputMode);
         patchJob(job.id, { status: 'done', pieceBlobs, error: null });
       } catch (error) {
         console.error(error);
@@ -110,7 +112,7 @@ export function useImageSplit() {
     try {
       const entries = doneJobs.flatMap((job) => {
         const baseName = job.file.name.replace(/\.[^.]+$/, '');
-        const extension = getSplitExtension(job.file);
+        const extension = getSplitExtension(job.file, store.outputMode);
         return job.pieceBlobs.map((blob, index) => ({
           name: `${baseName}_${String(index + 1).padStart(2, '0')}.${extension}`,
           blob,
@@ -143,6 +145,8 @@ export function useImageSplit() {
   return {
     jobs,
     pieceHeight,
+    outputMode,
+    setOutputMode,
     isProcessing,
     isZipping,
     doneCount,
