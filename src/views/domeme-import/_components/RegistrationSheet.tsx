@@ -23,12 +23,18 @@ import { FEE_PRESETS, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from '@/shared/con
 import { calculateReversePrice, PRICE_ROUND_UNIT } from '@/shared/utils/marginCalculation';
 import type { DomemeItem } from '@/shared/types/domeme';
 import { useSellerFixedInfo } from '../_hooks/useSellerFixedInfo';
+import { validateProductName, type NameCheckLevel } from '../_utils/validateProductName';
 
-// 스마트스토어 상품명 권장 길이 (SEO 관행)
-const PRODUCT_NAME_RECOMMENDED_LENGTH = 50;
 const SMARTSTORE_FEE_RATE = FEE_PRESETS[0].rate; // 5.6% (스마트스토어)
 // 할인율 표시 프리셋 (%) — 최종 결제가는 유지하고 정가만 역산 (스스 관행: 정가+할인 표기)
 const DISCOUNT_DISPLAY_PRESETS = [0, 10, 20, 30];
+
+// 상품명 검사 결과 칩 색
+const CHECK_CHIP_COLORS: Record<NameCheckLevel, 'success' | 'warning' | 'error'> = {
+  pass: 'success',
+  warn: 'warning',
+  fail: 'error',
+};
 
 type RegistrationSheetProps = {
   item: DomemeItem;
@@ -44,6 +50,8 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
   const [productName, setProductName] = useState(item.title);
   const [targetMarginRate, setTargetMarginRate] = useState(TARGET_MARGIN_PRESETS[2]); // 기본 20%
   const [discountRate, setDiscountRate] = useState(0); // 할인율 표시 (0 = 표시 안 함)
+
+  const nameChecks = validateProductName(productName);
 
   ////////// 원가·판매가 계산 (MOQ 반영)
   const bundleUnits = Math.max(item.moq, 1); // 고객 1주문당 도매꾹에서 사야 하는 수량
@@ -149,22 +157,33 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
         </Alert>
       )}
 
-      {/* 상품명 */}
-      <FieldRow>
-        <TextField
-          fullWidth
-          size="small"
-          label="상품명 (도매꾹 원본 — 수정해서 쓰세요)"
-          value={productName}
-          onChange={(event) => setProductName(event.target.value)}
-          helperText={`${productName.length}자 / 권장 ${PRODUCT_NAME_RECOMMENDED_LENGTH}자 이내${
-            /[^\w\sㄱ-ㅎ가-힣a-zA-Z0-9()\-+~.,%]/.test(productName) ? ' · 특수문자 주의' : ''
-          }`}
-        />
-        <CopyButton aria-label="상품명 복사" onClick={() => copyText('상품명', productName)}>
-          <ContentCopyIcon fontSize="small" />
-        </CopyButton>
-      </FieldRow>
+      {/* 상품명 + 검사기 */}
+      <Stack spacing={1}>
+        <FieldRow>
+          <TextField
+            fullWidth
+            size="small"
+            label="상품명 (도매꾹 원본 — 수정해서 쓰세요)"
+            value={productName}
+            onChange={(event) => setProductName(event.target.value)}
+          />
+          <CopyButton aria-label="상품명 복사" onClick={() => copyText('상품명', productName)}>
+            <ContentCopyIcon fontSize="small" />
+          </CopyButton>
+        </FieldRow>
+        {/* 검사 결과 — 통과 항목은 칩으로 압축, 경고·실패만 줄로 노출 */}
+        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+          {nameChecks.map((check) => (
+            <Chip
+              key={check.label}
+              size="small"
+              variant={check.level === 'pass' ? 'outlined' : 'filled'}
+              color={CHECK_CHIP_COLORS[check.level]}
+              label={check.level === 'pass' ? check.label : `${check.label}: ${check.message}`}
+            />
+          ))}
+        </Stack>
+      </Stack>
 
       {/* 판매가 — 목표 마진 역산 */}
       <PriceBox>
