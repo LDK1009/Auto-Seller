@@ -15,7 +15,8 @@ export const NAME_MAX_LENGTH = 100;
 export const NAME_RECOMMENDED_LENGTH = 50;
 
 // 홍보성 문구 — 네이버 상품명 가이드가 명시적으로 배제하는 유형 (검색 노출 불이익)
-const PROMO_WORDS = [
+// (태그 후보 필터에서도 재사용하므로 export)
+export const PROMO_WORDS = [
   '무료배송', '무배', '최저가', '초특가', '특가', '할인', '세일', 'sale', '이벤트', '사은품',
   '증정', '당일발송', '당일배송', '빠른배송', '히트', '인기', '추천', '베스트', 'best', '1위',
   '최고', '최상', '명품급', '핫딜', '공식', '정품보장',

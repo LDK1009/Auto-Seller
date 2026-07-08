@@ -64,4 +64,5 @@ export type DomemeItem = {
   categoryPath: string | null; // 도매꾹 카테고리 경로 (참고용 — 스스 카테고리는 사용자 선택)
   supplierName: string | null; // 공급사 상호
   options: DomemeOption[]; // 옵션 조합 (없거나 단일 기본옵션이면 빈 배열)
+  keywords: string[]; // 공급사 등록 키워드 (basis.keywords.kw — 태그 후보 1차 재료)
 };

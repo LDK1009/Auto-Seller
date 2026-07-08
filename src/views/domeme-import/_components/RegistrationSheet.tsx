@@ -23,7 +23,8 @@ import { FEE_PRESETS, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from '@/shared/con
 import { calculateReversePrice, PRICE_ROUND_UNIT } from '@/shared/utils/marginCalculation';
 import type { DomemeItem } from '@/shared/types/domeme';
 import { useSellerFixedInfo } from '../_hooks/useSellerFixedInfo';
-import { validateProductName, type NameCheckLevel } from '../_utils/validateProductName';
+import { validateProductName, PROMO_WORDS, type NameCheckLevel } from '../_utils/validateProductName';
+import { detectComplianceRisk } from '../_utils/detectComplianceRisk';
 
 const SMARTSTORE_FEE_RATE = FEE_PRESETS[0].rate; // 5.6% (스마트스토어)
 // 할인율 표시 프리셋 (%) — 최종 결제가는 유지하고 정가만 역산 (스스 관행: 정가+할인 표기)
@@ -52,6 +53,16 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
   const [discountRate, setDiscountRate] = useState(0); // 할인율 표시 (0 = 표시 안 함)
 
   const nameChecks = validateProductName(productName);
+  const complianceRisks = detectComplianceRisk(item.title, item.categoryPath);
+
+  ////////// 태그 후보: 공급사 키워드(1순위) + 상품명 토큰 — 홍보어·비정상 토큰 제외, 10개
+  const nameTokens = productName
+    .split(/\s+/)
+    .map((token) => token.replace(/[^가-힣a-zA-Z0-9]/g, ''))
+    .filter((token) => token.length >= 2);
+  const tagCandidates = Array.from(new Set([...item.keywords, ...nameTokens]))
+    .filter((tag) => !PROMO_WORDS.some((word) => tag.toLowerCase().includes(word.toLowerCase())))
+    .slice(0, 10);
 
   ////////// 원가·판매가 계산 (MOQ 반영)
   const bundleUnits = Math.max(item.moq, 1); // 고객 1주문당 도매꾹에서 사야 하는 수량
@@ -118,6 +129,7 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
         `판매가: ${recommendedPrice}${bundleUnits > 1 ? ` (${bundleUnits}개 묶음 기준)` : ''}`,
       listPrice !== null && `정가(할인 표시용): ${listPrice} (−${discountRate}% → ${recommendedPrice})`,
       `판매자 상품코드: DG-${item.no}`,
+      tagCandidates.length > 0 && `태그 후보: ${tagCandidates.join(',')}`,
       `배송비: ${shippingFee}${item.delivery.feeType ? ` (${item.delivery.feeType})` : ''}`,
       item.returnInfo.fee !== null && `반품비: ${item.returnInfo.fee} / 교환비: ${exchangeFee}`,
       bundleStock !== null && `재고: ${bundleStock}${bundleUnits > 1 ? ` (묶음 기준, 낱개 ${item.inventory})` : ''}`,
@@ -147,6 +159,13 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
       <Typography variant="body2" color="text.secondary">
         스마트스토어 등록 화면에 항목별로 붙여넣으세요. 남은 건 카테고리 선택과 등록 버튼뿐입니다.
       </Typography>
+
+      {/* 인증·인허가 지뢰 경고 */}
+      {complianceRisks.map((risk) => (
+        <Alert key={risk.type} severity="warning">
+          <b>{risk.type} 대상일 수 있습니다</b> (감지: {risk.matched.join(', ')}) — {risk.guide}
+        </Alert>
+      ))}
 
       {/* MOQ 묶음 안내 */}
       {bundleUnits >= 2 && (
@@ -184,6 +203,30 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
           ))}
         </Stack>
       </Stack>
+
+      {/* 태그 후보 — 공급사 키워드 + 상품명 추출 */}
+      {tagCandidates.length > 0 && (
+        <Stack spacing={1}>
+          <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="subtitle2">태그 후보 {tagCandidates.length}개</Typography>
+            <Button
+              size="small"
+              startIcon={<ContentCopyIcon />}
+              onClick={() => copyText('태그', tagCandidates.join(','))}
+            >
+              태그 복사
+            </Button>
+          </Stack>
+          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+            {tagCandidates.map((tag) => (
+              <Chip key={tag} size="small" variant="outlined" label={`#${tag}`} />
+            ))}
+          </Stack>
+          <Typography variant="caption" color="text.secondary">
+            공급사 등록 키워드 + 상품명에서 추출했습니다. 제한 태그 여부는 등록 화면에서 최종 확인됩니다.
+          </Typography>
+        </Stack>
+      )}
 
       {/* 판매가 — 목표 마진 역산 */}
       <PriceBox>

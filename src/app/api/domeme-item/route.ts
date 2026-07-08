@@ -148,6 +148,7 @@ export async function GET(request: Request) {
       categoryPath: categoryNames.length > 0 ? categoryNames.join(' > ') : null,
       supplierName: toStringOrNull(root.seller?.company?.name) ?? toStringOrNull(root.seller?.nick),
       options: parseOptions(root.selectOpt),
+      keywords: parseKeywords(root.basis?.keywords?.kw),
     };
 
     // 캐시 저장 (초과 시 가장 오래된 항목 제거)
@@ -184,6 +185,15 @@ function toStringOrNull(value: unknown): string | null {
   if (value === null || value === undefined) return null;
   const text = String(value).trim();
   return text.length > 0 ? text : null;
+}
+
+////////// 공급사 키워드 파싱 (단일 문자열/배열 혼재 대응)
+function parseKeywords(kw: unknown): string[] {
+  const list = Array.isArray(kw) ? kw : kw ? [kw] : [];
+  return list
+    .map((entry) => String(entry).trim())
+    .filter((keyword) => keyword.length > 0)
+    .slice(0, 20);
 }
 
 ////////// 옵션 조합 파싱 — selectOpt는 이중 인코딩 JSON 문자열, data 맵에 조합별 옵션명·가산가·재고
