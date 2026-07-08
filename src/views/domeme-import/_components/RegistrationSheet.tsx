@@ -37,6 +37,15 @@ const CHECK_CHIP_COLORS: Record<NameCheckLevel, 'success' | 'warning' | 'error'>
   fail: 'error',
 };
 
+// 구매/리뷰 혜택 권장 프리셋 (초보 표준 세팅 — 등록 UI ⑧구간의 결정 부담 제거)
+const BENEFIT_PRESET_LINES = [
+  '텍스트 리뷰 적립: 50원',
+  '포토/동영상 리뷰 적립: 150원',
+  '한달사용 텍스트 리뷰: 50원 / 포토·동영상: 150원',
+  '복수구매할인·무이자할부·사은품: 설정 안 함 (마진 확보 우선)',
+  '최소·최대 구매수량: 제한 없음',
+];
+
 type RegistrationSheetProps = {
   item: DomemeItem;
 };
@@ -402,6 +411,31 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
         </>
       )}
 
+      {/* 구매/리뷰 혜택 권장 프리셋 */}
+      <Stack spacing={1}>
+        <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="subtitle2">구매/리뷰 혜택 — 초보 권장 세팅</Typography>
+          <Button
+            size="small"
+            startIcon={<ContentCopyIcon />}
+            onClick={() => copyText('혜택 세팅', BENEFIT_PRESET_LINES.join('\n'))}
+          >
+            복사
+          </Button>
+        </Stack>
+        <PresetBox>
+          {BENEFIT_PRESET_LINES.map((line) => (
+            <Typography key={line} variant="body2">
+              · {line}
+            </Typography>
+          ))}
+        </PresetBox>
+        <Typography variant="caption" color="text.secondary">
+          리뷰 적립은 초기 리뷰 확보 비용 중 가장 싼 투자입니다. 리뷰가 쌓이기 전까지는 다른 혜택은 켜지
+          않는 것을 권장합니다.
+        </Typography>
+      </Stack>
+
       <Divider />
 
       {/* A/S 고정값 — 1회 입력 후 브라우저에 저장 */}
@@ -491,6 +525,15 @@ const PriceBox = styled.div(({ theme }) => ({
   padding: theme.spacing(2),
   borderRadius: theme.shape.borderRadius,
   border: `1px solid ${theme.palette.divider}`,
+  backgroundColor: theme.palette.background.default,
+}));
+
+const PresetBox = styled.div(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: theme.spacing(0.5),
+  padding: theme.spacing(1.5),
+  borderRadius: theme.shape.borderRadius,
   backgroundColor: theme.palette.background.default,
 }));
 
