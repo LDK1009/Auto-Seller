@@ -5,7 +5,7 @@
 // 이벤트 사전 (임의 추가 금지 — 여기 정의된 것만 사용):
 // - zip_download { tool }      : ZIP 다운로드 완료 = NSM
 // - handoff { from, to }       : 도구 간 이미지 전달 (여정 연결 지표)
-// - domeme_lookup { result }   : 도매매 상품 조회 (성공/실패)
+// - domeme_lookup { result }   : 도매꾹 상품 조회 (성공/실패)
 
 type AnalyticsParams = Record<string, string | number | boolean>;
 

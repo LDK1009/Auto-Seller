@@ -1,7 +1,7 @@
 'use client';
 
 //////////////////////////////////////// 원링크 화면 (플래그십) ////////////////////////////////////////
-// 골: 도매매 URL 하나 → 네이버 상품등록까지. 현재 범위는 등록 "준비"(이미지 자동 가공)까지.
+// 골: 도매꾹 URL 하나 → 네이버 상품등록까지. 현재 범위는 등록 "준비"(이미지 자동 가공)까지.
 // 여정: 링크/상품번호 입력 → 상품 조회 → 공급사 사용 조건 확인 게이트 → 이미지 선택 → 누끼/규격 변환 투입.
 
 import { useEffect, useRef, useState } from 'react';
@@ -121,12 +121,12 @@ export default function DomemeImportView() {
   return (
     <PageLayout
       title="원링크"
-      description="도매매 링크 하나로 — 이미지 완성까지 자동으로 준비합니다."
+      description="도매꾹 링크 하나로 — 이미지 완성까지 자동으로 준비합니다."
       maxWidth="md"
       help={
         <HelpPanel storageKey="domeme-import">
           <Stack spacing={0.75}>
-            <Typography variant="body2">① 도매매 상품 링크(또는 상품번호)를 붙여넣고 조회하세요</Typography>
+            <Typography variant="body2">① 도매꾹 상품 링크(또는 상품번호)를 붙여넣고 조회하세요</Typography>
             <Typography variant="body2">② 공급사의 이미지 사용 조건을 확인하고 체크합니다</Typography>
             <Typography variant="body2">③ 필요한 이미지를 골라 누끼·규격 변환으로 보내세요</Typography>
             <Typography variant="caption" color="text.secondary">
@@ -144,7 +144,7 @@ export default function DomemeImportView() {
             <TextField
               fullWidth
               size="small"
-              label="도매매 상품 링크 또는 상품번호"
+              label="도매꾹 상품 링크 또는 상품번호"
               placeholder="https://domeme.domeggook.com/s/12345678"
               value={rawInput}
               onChange={(event) => setRawInput(event.target.value)}

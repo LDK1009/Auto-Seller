@@ -157,7 +157,7 @@ export function useBackgroundRemoval() {
     }
   }, []);
 
-  //////////////////// 도매매 가져오기 등 다른 도구에서 넘어온 이미지 수신 ////////////////////
+  //////////////////// 원링크 등 다른 도구에서 넘어온 이미지 수신 ////////////////////
   // autoStart 플래그가 켜져 있으면(원클릭 이어달리기) 도착 즉시 배경 제거를 시작한다.
   useEffect(() => {
     const { images, autoStart, clear } = useImageHandoffStore.getState();

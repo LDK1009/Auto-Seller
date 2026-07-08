@@ -1,4 +1,4 @@
-//////////////////////////////////////// 도매매 상품 서비스 ////////////////////////////////////////
+//////////////////////////////////////// 도매꾹 상품 서비스 ////////////////////////////////////////
 // 서버 프록시(/api/domeme-item, /api/domeme-image) 호출 전담.
 
 import type { DomemeItem, DomemeItemImage } from '@/shared/types/domeme';
@@ -8,7 +8,7 @@ export async function fetchDomemeItem(productNo: string): Promise<DomemeItem> {
   const response = await fetch(`/api/domeme-item?no=${productNo}`);
   const body = await response.json();
   if (!response.ok) {
-    throw new Error(body?.error ?? '도매매 상품 정보를 불러오지 못했습니다.');
+    throw new Error(body?.error ?? '도매꾹 상품 정보를 불러오지 못했습니다.');
   }
   return body as DomemeItem;
 }

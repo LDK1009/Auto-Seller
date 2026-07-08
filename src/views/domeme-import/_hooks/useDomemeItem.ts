@@ -1,6 +1,6 @@
 'use client';
 
-//////////////////////////////////////// 도매매 상품 조회 훅 ////////////////////////////////////////
+//////////////////////////////////////// 도매꾹 상품 조회 훅 ////////////////////////////////////////
 // 링크/상품번호 입력 → 파싱 → 서비스 호출 → 조회 상태 관리.
 
 import { useState } from 'react';
@@ -20,7 +20,7 @@ export function useDomemeItem() {
     const productNo = parseDomemeProductNo(rawInput);
     if (!productNo) {
       setStatus('error');
-      setErrorMessage('도매매 상품 링크 또는 상품번호를 확인해주세요. 예) https://domeme.domeggook.com/s/12345678');
+      setErrorMessage('도매꾹 상품 링크 또는 상품번호를 확인해주세요. 예) https://domeggook.com/12345678');
       return null;
     }
 

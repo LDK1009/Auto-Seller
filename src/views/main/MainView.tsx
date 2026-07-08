@@ -36,7 +36,7 @@ import { transientOptions } from '@/shared/utils/emotionTransientProps';
 const JOURNEY_STEPS = [
   {
     step: '1',
-    title: '도매매 링크 붙여넣기',
+    title: '도매꾹 링크 붙여넣기',
     description: '팔 상품의 링크 하나면 준비 끝. 대표·상세 이미지를 모아옵니다.',
   },
   {
@@ -84,10 +84,10 @@ const FAQS = [
   {
     question: '내 이미지는 어디로 가나요?',
     answer:
-      '내가 올린 이미지는 서버로 전송되지 않고 내 브라우저에서만 처리됩니다. 도매매 링크로 가져온 상품 이미지는 전달용으로만 서버를 거치며 저장하지 않습니다.',
+      '내가 올린 이미지는 서버로 전송되지 않고 내 브라우저에서만 처리됩니다. 도매꾹 링크로 가져온 상품 이미지는 전달용으로만 서버를 거치며 저장하지 않습니다.',
   },
   {
-    question: '도매매 상품 이미지는 마음대로 써도 되나요?',
+    question: '도매꾹 상품 이미지는 마음대로 써도 되나요?',
     answer:
       '공급사마다 이미지 사용 조건이 다릅니다. 원링크에서 공급사의 사용 조건 원문을 보여드리니, 확인 후 진행하세요.',
   },
@@ -110,7 +110,7 @@ export default function MainView() {
               ))}
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400, maxWidth: 560 }}>
-              도매매 링크 하나로 — 이미지 가공부터 다운로드까지.
+              도매꾹 링크 하나로 — 이미지 가공부터 다운로드까지.
             </Typography>
             <LinkForm />
           </Stack>
@@ -323,7 +323,7 @@ function LinkForm() {
       <TextField
         fullWidth
         size="medium"
-        placeholder="도매매 상품 링크를 붙여넣으세요"
+        placeholder="도매꾹 상품 링크를 붙여넣으세요"
         value={linkInput}
         inputRef={inputRef}
         onChange={(event) => setLinkInput(event.target.value)}

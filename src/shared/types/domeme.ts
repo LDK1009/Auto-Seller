@@ -44,7 +44,7 @@ export type DomemeItem = {
 
   //////////////////// 등록 준비 패키지 필드 ////////////////////
   domePrice: number | null; // 도매꾹가 (원가 계산 기준)
-  supplyPrice: number | null; // 도매매 공급가 (참고)
+  supplyPrice: number | null; // 도매매(전문셀러몰) 공급가 — 참고용, 원가 기준은 domePrice
   moq: number; // 도매꾹 최소 구매 수량 (qty.domeMoq — 1이면 낱개 가능)
   inventory: number | null; // 재고 수량
   taxType: string | null; // 과세 구분 원문 (과세상품/면세상품)
