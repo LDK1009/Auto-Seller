@@ -20,13 +20,15 @@ import Divider from '@mui/material/Divider';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useSnackbar } from 'notistack';
 import { FEE_PRESETS, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from '@/shared/constants/marketFees';
-import { calculateReversePrice } from '@/shared/utils/marginCalculation';
+import { calculateReversePrice, PRICE_ROUND_UNIT } from '@/shared/utils/marginCalculation';
 import type { DomemeItem } from '@/shared/types/domeme';
 import { useSellerFixedInfo } from '../_hooks/useSellerFixedInfo';
 
 // 스마트스토어 상품명 권장 길이 (SEO 관행)
 const PRODUCT_NAME_RECOMMENDED_LENGTH = 50;
 const SMARTSTORE_FEE_RATE = FEE_PRESETS[0].rate; // 5.6% (스마트스토어)
+// 할인율 표시 프리셋 (%) — 최종 결제가는 유지하고 정가만 역산 (스스 관행: 정가+할인 표기)
+const DISCOUNT_DISPLAY_PRESETS = [0, 10, 20, 30];
 
 type RegistrationSheetProps = {
   item: DomemeItem;
@@ -41,6 +43,7 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
   // 순수 UI 상태
   const [productName, setProductName] = useState(item.title);
   const [targetMarginRate, setTargetMarginRate] = useState(TARGET_MARGIN_PRESETS[2]); // 기본 20%
+  const [discountRate, setDiscountRate] = useState(0); // 할인율 표시 (0 = 표시 안 함)
 
   ////////// 원가·판매가 계산 (MOQ 반영)
   const bundleUnits = Math.max(item.moq, 1); // 고객 1주문당 도매꾹에서 사야 하는 수량
@@ -59,6 +62,12 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
 
   const recommendedPrice = reverseResult.achievable ? reverseResult.recommendedPrice : null;
   const profitAtPrice = reverseResult.achievable ? reverseResult.marginAtPrice.profit : null;
+
+  // 할인가 분해: 최종 결제가(추천가)는 그대로 두고, 표시용 정가를 역산 (정가 × (1−할인율) ≥ 최종가 보장)
+  const listPrice =
+    recommendedPrice !== null && discountRate > 0
+      ? Math.ceil(recommendedPrice / (1 - discountRate / 100) / PRICE_ROUND_UNIT) * PRICE_ROUND_UNIT
+      : null;
 
   ////////// 파생 값
   const bundleStock = item.inventory !== null ? Math.floor(item.inventory / bundleUnits) : null;
@@ -99,6 +108,8 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
       `상품명: ${productName}`,
       recommendedPrice !== null &&
         `판매가: ${recommendedPrice}${bundleUnits > 1 ? ` (${bundleUnits}개 묶음 기준)` : ''}`,
+      listPrice !== null && `정가(할인 표시용): ${listPrice} (−${discountRate}% → ${recommendedPrice})`,
+      `판매자 상품코드: DG-${item.no}`,
       `배송비: ${shippingFee}${item.delivery.feeType ? ` (${item.delivery.feeType})` : ''}`,
       item.returnInfo.fee !== null && `반품비: ${item.returnInfo.fee} / 교환비: ${exchangeFee}`,
       bundleStock !== null && `재고: ${bundleStock}${bundleUnits > 1 ? ` (묶음 기준, 낱개 ${item.inventory})` : ''}`,
@@ -173,21 +184,50 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
           </Stack>
 
           {recommendedPrice !== null ? (
-            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'baseline', flexWrap: 'wrap' }} useFlexGap>
-              <Typography variant="h5" sx={{ color: 'primary.main' }}>
-                {KRW(recommendedPrice)}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                원가 {KRW(costPrice)}
-                {bundleUnits > 1 && ` (${KRW(unitPrice)}×${bundleUnits})`} · 수수료 {SMARTSTORE_FEE_RATE}% ·
-                개당 순이익 {profitAtPrice !== null ? KRW(profitAtPrice) : '—'}
-              </Typography>
-              <CopyButton
-                aria-label="판매가 복사"
-                onClick={() => copyText('판매가', String(recommendedPrice))}
-              >
-                <ContentCopyIcon fontSize="small" />
-              </CopyButton>
+            <Stack spacing={1}>
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'baseline', flexWrap: 'wrap' }} useFlexGap>
+                <Typography variant="h5" sx={{ color: 'primary.main' }}>
+                  {KRW(recommendedPrice)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  원가 {KRW(costPrice)}
+                  {bundleUnits > 1 && ` (${KRW(unitPrice)}×${bundleUnits})`} · 수수료 {SMARTSTORE_FEE_RATE}% ·
+                  개당 순이익 {profitAtPrice !== null ? KRW(profitAtPrice) : '—'}
+                </Typography>
+                <CopyButton
+                  aria-label="판매가 복사"
+                  onClick={() => copyText('판매가', String(recommendedPrice))}
+                >
+                  <ContentCopyIcon fontSize="small" />
+                </CopyButton>
+              </Stack>
+
+              {/* 할인율 표시 분해 — 최종 결제가는 유지, 정가만 역산 */}
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'center' }} useFlexGap>
+                <Typography variant="caption" color="text.secondary">
+                  할인 표시
+                </Typography>
+                {DISCOUNT_DISPLAY_PRESETS.map((rate) => (
+                  <Chip
+                    key={rate}
+                    size="small"
+                    label={rate === 0 ? '없음' : `${rate}%`}
+                    color={discountRate === rate ? 'primary' : 'default'}
+                    variant={discountRate === rate ? 'filled' : 'outlined'}
+                    onClick={() => setDiscountRate(rate)}
+                  />
+                ))}
+                {listPrice !== null && (
+                  <>
+                    <Typography variant="body2">
+                      정가 <b>{KRW(listPrice)}</b> − {discountRate}% 할인 → 최종 {KRW(recommendedPrice)}
+                    </Typography>
+                    <CopyButton aria-label="정가 복사" onClick={() => copyText('정가', String(listPrice))}>
+                      <ContentCopyIcon fontSize="small" />
+                    </CopyButton>
+                  </>
+                )}
+              </Stack>
             </Stack>
           ) : (
             <Alert severity="warning">
@@ -247,6 +287,12 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
           value={item.categoryPath ?? '—'}
           caption="스마트스토어 카테고리는 등록 화면에서 가장 가까운 항목을 선택하세요"
           onCopy={item.categoryPath ? () => copyText('카테고리', item.categoryPath as string) : undefined}
+        />
+        <SheetRow
+          label="판매자 상품코드 (권장)"
+          value={`DG-${item.no}`}
+          caption="도매꾹 상품번호 — 주문이 들어오면 이 코드로 도매꾹에서 바로 찾아 발주할 수 있습니다"
+          onCopy={() => copyText('판매자 상품코드', `DG-${item.no}`)}
         />
       </Stack>
 
