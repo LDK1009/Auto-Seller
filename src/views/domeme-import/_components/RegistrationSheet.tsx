@@ -25,6 +25,8 @@ import type { DomemeItem } from '@/shared/types/domeme';
 import { useSellerFixedInfo } from '../_hooks/useSellerFixedInfo';
 import { validateProductName, PROMO_WORDS, type NameCheckLevel } from '../_utils/validateProductName';
 import { detectComplianceRisk } from '../_utils/detectComplianceRisk';
+import { fetchKeywordStats } from '@/shared/services/keywordStatsService';
+import type { KeywordStat } from '@/shared/types/keywordStats';
 
 const SMARTSTORE_FEE_RATE = FEE_PRESETS[0].rate; // 5.6% (스마트스토어)
 // 할인율 표시 프리셋 (%) — 최종 결제가는 유지하고 정가만 역산 (스스 관행: 정가+할인 표기)
@@ -60,6 +62,8 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
   const [productName, setProductName] = useState(item.title);
   const [targetMarginRate, setTargetMarginRate] = useState(TARGET_MARGIN_PRESETS[2]); // 기본 20%
   const [discountRate, setDiscountRate] = useState(0); // 할인율 표시 (0 = 표시 안 함)
+  const [tagStats, setTagStats] = useState<Map<string, KeywordStat> | null>(null); // null = 미조회
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
 
   const nameChecks = validateProductName(productName);
   const complianceRisks = detectComplianceRisk(item.title, item.categoryPath);
@@ -123,6 +127,27 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
   const optionsTsv = bundledOptions
     .map((option) => `${option.name}\t${option.priceAdd}\t${option.stock}`)
     .join('\n');
+
+  ////////// 태그 검색량 조회 (버튼 트리거 — 호출량 절약)
+  const handleLoadTagStats = async () => {
+    if (tagCandidates.length === 0) return;
+    setIsLoadingStats(true);
+    try {
+      const response = await fetchKeywordStats(tagCandidates);
+      if (!response.configured) {
+        enqueueSnackbar('검색량 기능이 아직 준비되지 않았습니다. (API 키 미설정)', { variant: 'info' });
+        return;
+      }
+      setTagStats(new Map(response.stats.map((stat) => [stat.keyword, stat])));
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar(error instanceof Error ? error.message : '검색량 조회에 실패했습니다.', {
+        variant: 'error',
+      });
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
 
   ////////// 복사
   const copyText = async (label: string, value: string) => {
@@ -216,23 +241,38 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
       {/* 태그 후보 — 공급사 키워드 + 상품명 추출 */}
       {tagCandidates.length > 0 && (
         <Stack spacing={1}>
-          <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography variant="subtitle2">태그 후보 {tagCandidates.length}개</Typography>
-            <Button
-              size="small"
-              startIcon={<ContentCopyIcon />}
-              onClick={() => copyText('태그', tagCandidates.join(','))}
-            >
-              태그 복사
-            </Button>
+            <Stack direction="row" spacing={1}>
+              <Button size="small" onClick={handleLoadTagStats} disabled={isLoadingStats}>
+                {isLoadingStats ? '조회 중…' : '검색량 확인'}
+              </Button>
+              <Button
+                size="small"
+                startIcon={<ContentCopyIcon />}
+                onClick={() => copyText('태그', tagCandidates.join(','))}
+              >
+                태그 복사
+              </Button>
+            </Stack>
           </Stack>
           <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
-            {tagCandidates.map((tag) => (
-              <Chip key={tag} size="small" variant="outlined" label={`#${tag}`} />
-            ))}
+            {tagCandidates.map((tag) => {
+              const stat = tagStats?.get(tag.replace(/\s+/g, ''));
+              const label = stat
+                ? `#${tag} · ${stat.isLowVolume ? '<10' : (stat.monthlySearches ?? '—').toLocaleString()}회${
+                    stat.ratio !== null ? ` · 경쟁 ${stat.ratio}` : ''
+                  }`
+                : `#${tag}`;
+              const color =
+                stat && stat.ratio !== null ? (stat.ratio < 1 ? 'success' : stat.ratio <= 5 ? 'warning' : 'error') : 'default';
+              return <Chip key={tag} size="small" variant="outlined" color={color} label={label} />;
+            })}
           </Stack>
           <Typography variant="caption" color="text.secondary">
-            공급사 등록 키워드 + 상품명에서 추출했습니다. 제한 태그 여부는 등록 화면에서 최종 확인됩니다.
+            공급사 등록 키워드 + 상품명에서 추출했습니다. [검색량 확인]을 누르면 월간 검색수와
+            경쟁강도(상품수÷검색수 — 낮을수록 틈새)가 붙습니다. 제한 태그 여부는 등록 화면에서 최종
+            확인됩니다.
           </Typography>
         </Stack>
       )}

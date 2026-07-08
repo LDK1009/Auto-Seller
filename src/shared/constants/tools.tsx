@@ -11,6 +11,7 @@ import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
 import VerticalSplitIcon from '@mui/icons-material/VerticalSplit';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 
 export type ToolGroupKey = 'sourcing' | 'image';
@@ -46,6 +47,13 @@ export const TOOLS: ToolInfo[] = [
     icon: <CalculateIcon color="primary" fontSize="large" />,
     title: '마진 계산기',
     description: '순이익 계산과 목표 마진 최소 판매가 역산',
+    group: 'sourcing',
+  },
+  {
+    href: '/keyword-stats',
+    icon: <QueryStatsIcon color="primary" fontSize="large" />,
+    title: '키워드 검색량 조회',
+    description: '월간 검색수 ÷ 등록 상품 수로 틈새 키워드 판정',
     group: 'sourcing',
   },
   {
