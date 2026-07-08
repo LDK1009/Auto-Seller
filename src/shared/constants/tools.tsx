@@ -9,6 +9,8 @@ import CalculateIcon from '@mui/icons-material/Calculate';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
 import VerticalSplitIcon from '@mui/icons-material/VerticalSplit';
+import CampaignIcon from '@mui/icons-material/Campaign';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 
 export type ToolGroupKey = 'sourcing' | 'image';
 
@@ -43,6 +45,20 @@ export const TOOLS: ToolInfo[] = [
     icon: <CalculateIcon color="primary" fontSize="large" />,
     title: '마진 계산기',
     description: '순이익 계산과 목표 마진 최소 판매가 역산',
+    group: 'sourcing',
+  },
+  {
+    href: '/roas-calculator',
+    icon: <CampaignIcon color="primary" fontSize="large" />,
+    title: '광고 ROAS 계산기',
+    description: '내 마진 기준 손익분기 ROAS와 광고 손익 시뮬레이션',
+    group: 'sourcing',
+  },
+  {
+    href: '/vat-calculator',
+    icon: <ReceiptLongIcon color="primary" fontSize="large" />,
+    title: '부가세 간이 계산기',
+    description: '간이/일반 과세 유형별 부가세 납부 예상액',
     group: 'sourcing',
   },
   //////////////////// ② 이미지 준비 (파이프라인 순) ////////////////////
