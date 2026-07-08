@@ -97,19 +97,56 @@ export async function GET(request: Request) {
       images.push({ url, proxyUrl: buildProxyUrl(url, apiKey), kind: 'detail' });
     }
 
-    const supplyPriceRaw = root.price?.supply ?? root.price?.dome ?? null;
-    const supplyPrice = supplyPriceRaw !== null ? Number(supplyPriceRaw) : null;
+    ////////// 등록 준비 패키지 필드 추출
+    const deli = root.deli ?? {};
+    const domeDeli = deli.dome ?? {};
+    const infoDutyItems = root.detail?.infoDuty?.item;
+    const categoryElems: { name?: string }[] = root.category?.parents?.elem ?? [];
+    const categoryNames = [
+      ...categoryElems.map((element) => element?.name).filter(Boolean),
+      root.category?.current?.name,
+    ].filter(Boolean);
 
     const data: DomemeItem = {
       no,
       title: String(root.basis.title ?? ''),
-      supplyPrice: Number.isFinite(supplyPrice) ? supplyPrice : null,
-      itemUrl: `https://domeme.domeggook.com/s/${no}`,
+      itemUrl: `https://domeggook.com/${no}`,
       license: {
         usable: String(root.desc?.license?.usable ?? '') === 'true',
         msg: root.desc?.license?.msg ? String(root.desc.license.msg) : null,
       },
       images,
+
+      domePrice: toNumberOrNull(root.price?.dome),
+      supplyPrice: toNumberOrNull(root.price?.supply),
+      moq: toNumberOrNull(root.qty?.domeMoq) ?? 1,
+      inventory: toNumberOrNull(root.qty?.inventory),
+      taxType: toStringOrNull(root.basis?.tax),
+      origin: toStringOrNull(root.detail?.country),
+      manufacturer: toStringOrNull(root.detail?.manufacturer),
+      model: toStringOrNull(root.detail?.model),
+      infoDuty: {
+        type: toStringOrNull(root.detail?.infoDuty?.type),
+        items: (Array.isArray(infoDutyItems) ? infoDutyItems : infoDutyItems ? [infoDutyItems] : [])
+          .map((entry: any) => ({ name: String(entry?.name ?? ''), desc: String(entry?.desc ?? '') }))
+          .filter((entry: { name: string }) => entry.name),
+      },
+      delivery: {
+        method: toStringOrNull(deli.method),
+        pay: toStringOrNull(deli.pay),
+        feeType: toStringOrNull(domeDeli.type),
+        baseFee: parseBaseFee(domeDeli.tbl),
+        feeRaw: toStringOrNull(domeDeli.tbl),
+        jejuExtra: toNumberOrNull(deli.feeExtra?.jeju),
+        islandsExtra: toNumberOrNull(deli.feeExtra?.islands),
+        sendAvgDays: toNumberOrNull(deli.sendAvg),
+      },
+      returnInfo: {
+        fee: toNumberOrNull(root.return?.deliAmt),
+        exchangeDouble: String(root.return?.deliAmtDouble ?? '') === 'true',
+      },
+      categoryPath: categoryNames.length > 0 ? categoryNames.join(' > ') : null,
+      supplierName: toStringOrNull(root.seller?.company?.name) ?? toStringOrNull(root.seller?.nick),
     };
 
     // 캐시 저장 (초과 시 가장 오래된 항목 제거)
@@ -133,4 +170,25 @@ export async function GET(request: Request) {
 function buildProxyUrl(url: string, secret: string): string {
   const signature = signDomemeImageUrl(url, secret);
   return `/api/domeme-image?url=${encodeURIComponent(url)}&sig=${signature}`;
+}
+
+////////// 값 정규화 (외부 API 응답 — 문자열/숫자 혼재)
+function toNumberOrNull(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function toStringOrNull(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
+  const text = String(value).trim();
+  return text.length > 0 ? text : null;
+}
+
+////////// 배송비 테이블 파싱 — "80+3000|80+3000" 형식의 첫 구간 요금 추출 (불확실하면 null, 원문은 feeRaw로 보존)
+function parseBaseFee(tbl: unknown): number | null {
+  if (typeof tbl !== 'string' || tbl.length === 0) return null;
+  const firstTier = tbl.split('|')[0];
+  const feePart = firstTier.includes('+') ? firstTier.split('+')[1] : firstTier;
+  return toNumberOrNull(feePart);
 }

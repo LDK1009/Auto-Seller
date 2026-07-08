@@ -1,0 +1,344 @@
+'use client';
+
+//////////////////////////////////////// 등록 정보 시트 (등록 준비 패키지) ////////////////////////////////////////
+// 스마트스토어 등록 폼에 그대로 붙여넣을 정보를 자동 조합한다 — API 없이 등록 노동의 마지막 구간을 복붙으로.
+// - 판매가: 도매꾹가 × 구매단위(MOQ) 원가로 역산 (shared/utils/marginCalculation 재사용)
+// - MOQ ≥ 2: 묶음(1+1 등) 구성 판매 안내 — 고객 1주문 = 도매꾹 MOQ 구매이므로 원가에 반영
+// - A/S 정보: 셀러 고정값 (localStorage — useSellerFixedInfo)
+
+import { useState } from 'react';
+import styled from '@emotion/styled';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
+import Chip from '@mui/material/Chip';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Alert from '@mui/material/Alert';
+import Divider from '@mui/material/Divider';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { useSnackbar } from 'notistack';
+import { FEE_PRESETS, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from '@/shared/constants/marketFees';
+import { calculateReversePrice } from '@/shared/utils/marginCalculation';
+import type { DomemeItem } from '@/shared/types/domeme';
+import { useSellerFixedInfo } from '../_hooks/useSellerFixedInfo';
+
+// 스마트스토어 상품명 권장 길이 (SEO 관행)
+const PRODUCT_NAME_RECOMMENDED_LENGTH = 50;
+const SMARTSTORE_FEE_RATE = FEE_PRESETS[0].rate; // 5.6% (스마트스토어)
+
+type RegistrationSheetProps = {
+  item: DomemeItem;
+};
+
+const KRW = (value: number) => `${Math.round(value).toLocaleString()}원`;
+
+export default function RegistrationSheet({ item }: RegistrationSheetProps) {
+  const { enqueueSnackbar } = useSnackbar();
+  const { fixedInfo, updateFixedInfo } = useSellerFixedInfo();
+
+  // 순수 UI 상태
+  const [productName, setProductName] = useState(item.title);
+  const [targetMarginRate, setTargetMarginRate] = useState(TARGET_MARGIN_PRESETS[2]); // 기본 20%
+
+  ////////// 원가·판매가 계산 (MOQ 반영)
+  const bundleUnits = Math.max(item.moq, 1); // 고객 1주문당 도매꾹에서 사야 하는 수량
+  const unitPrice = item.domePrice ?? 0;
+  const costPrice = unitPrice * bundleUnits;
+  const shippingFee = item.delivery.baseFee ?? 0;
+
+  const reverseResult = calculateReversePrice({
+    costPrice,
+    targetMarginRate,
+    feeRate: SMARTSTORE_FEE_RATE,
+    shippingCharge: shippingFee, // 고객에게 받는 배송비 = 도매꾹 배송비 그대로 (기본값)
+    shippingCost: shippingFee,
+    otherCost: 0,
+  });
+
+  const recommendedPrice = reverseResult.achievable ? reverseResult.recommendedPrice : null;
+  const profitAtPrice = reverseResult.achievable ? reverseResult.marginAtPrice.profit : null;
+
+  ////////// 파생 값
+  const bundleStock = item.inventory !== null ? Math.floor(item.inventory / bundleUnits) : null;
+  const exchangeFee =
+    item.returnInfo.fee !== null
+      ? item.returnInfo.exchangeDouble
+        ? item.returnInfo.fee * 2
+        : item.returnInfo.fee
+      : null;
+  const taxLabel = item.taxType?.includes('면세') ? '면세' : item.taxType?.includes('과세') ? '과세' : item.taxType;
+  const infoDutyText = [
+    item.infoDuty.type ? `유형: ${item.infoDuty.type}` : null,
+    ...item.infoDuty.items.map((entry) => `${entry.name}: ${entry.desc}`),
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  ////////// 복사
+  const copyText = async (label: string, value: string) => {
+    if (!value) return;
+    await navigator.clipboard.writeText(value);
+    enqueueSnackbar(`${label}을(를) 복사했습니다.`, { variant: 'success' });
+  };
+
+  const copyAll = async () => {
+    const lines = [
+      `상품명: ${productName}`,
+      recommendedPrice !== null &&
+        `판매가: ${recommendedPrice}${bundleUnits > 1 ? ` (${bundleUnits}개 묶음 기준)` : ''}`,
+      `배송비: ${shippingFee}${item.delivery.feeType ? ` (${item.delivery.feeType})` : ''}`,
+      item.returnInfo.fee !== null && `반품비: ${item.returnInfo.fee} / 교환비: ${exchangeFee}`,
+      bundleStock !== null && `재고: ${bundleStock}${bundleUnits > 1 ? ` (묶음 기준, 낱개 ${item.inventory})` : ''}`,
+      taxLabel && `과세 구분: ${taxLabel}`,
+      item.origin && `원산지: ${item.origin}`,
+      item.manufacturer && `제조사: ${item.manufacturer}`,
+      item.model && `모델명: ${item.model}`,
+      infoDutyText && `상품정보제공고시:\n${infoDutyText}`,
+      item.categoryPath && `도매꾹 카테고리(참고): ${item.categoryPath}`,
+      fixedInfo.afterServicePhone && `A/S 전화번호: ${fixedInfo.afterServicePhone}`,
+      fixedInfo.afterServiceGuide && `A/S 안내: ${fixedInfo.afterServiceGuide}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+    await copyText('등록 정보 시트 전체', lines);
+  };
+
+  return (
+    <Stack spacing={2.5}>
+      <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+        <Typography variant="h6">등록 정보 시트</Typography>
+        <Button variant="outlined" size="small" startIcon={<ContentCopyIcon />} onClick={copyAll}>
+          전체 복사
+        </Button>
+      </Stack>
+      <Typography variant="body2" color="text.secondary">
+        스마트스토어 등록 화면에 항목별로 붙여넣으세요. 남은 건 카테고리 선택과 등록 버튼뿐입니다.
+      </Typography>
+
+      {/* MOQ 묶음 안내 */}
+      {bundleUnits >= 2 && (
+        <Alert severity={bundleUnits > 2 ? 'warning' : 'info'}>
+          이 상품의 도매꾹 최소 구매수량은 <b>{bundleUnits}개</b>입니다. 고객 1주문마다 {bundleUnits}개를
+          구매해야 하므로 <b>{bundleUnits === 2 ? '1+1' : `${bundleUnits}개 묶음`} 구성 판매</b>를 권장합니다.
+          아래 판매가·재고는 묶음 기준으로 계산했습니다.
+        </Alert>
+      )}
+
+      {/* 상품명 */}
+      <FieldRow>
+        <TextField
+          fullWidth
+          size="small"
+          label="상품명 (도매꾹 원본 — 수정해서 쓰세요)"
+          value={productName}
+          onChange={(event) => setProductName(event.target.value)}
+          helperText={`${productName.length}자 / 권장 ${PRODUCT_NAME_RECOMMENDED_LENGTH}자 이내${
+            /[^\w\sㄱ-ㅎ가-힣a-zA-Z0-9()\-+~.,%]/.test(productName) ? ' · 특수문자 주의' : ''
+          }`}
+        />
+        <CopyButton aria-label="상품명 복사" onClick={() => copyText('상품명', productName)}>
+          <ContentCopyIcon fontSize="small" />
+        </CopyButton>
+      </FieldRow>
+
+      {/* 판매가 — 목표 마진 역산 */}
+      <PriceBox>
+        <Stack spacing={1.5}>
+          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'center' }} useFlexGap>
+            <Typography variant="subtitle2">추천 판매가</Typography>
+            {TARGET_MARGIN_PRESETS.map((rate) => (
+              <Chip
+                key={rate}
+                size="small"
+                label={`마진 ${rate}%`}
+                color={targetMarginRate === rate ? 'primary' : 'default'}
+                variant={targetMarginRate === rate ? 'filled' : 'outlined'}
+                onClick={() => setTargetMarginRate(rate)}
+              />
+            ))}
+          </Stack>
+
+          {recommendedPrice !== null ? (
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'baseline', flexWrap: 'wrap' }} useFlexGap>
+              <Typography variant="h5" sx={{ color: 'primary.main' }}>
+                {KRW(recommendedPrice)}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                원가 {KRW(costPrice)}
+                {bundleUnits > 1 && ` (${KRW(unitPrice)}×${bundleUnits})`} · 수수료 {SMARTSTORE_FEE_RATE}% ·
+                개당 순이익 {profitAtPrice !== null ? KRW(profitAtPrice) : '—'}
+              </Typography>
+              <CopyButton
+                aria-label="판매가 복사"
+                onClick={() => copyText('판매가', String(recommendedPrice))}
+              >
+                <ContentCopyIcon fontSize="small" />
+              </CopyButton>
+            </Stack>
+          ) : (
+            <Alert severity="warning">
+              {reverseResult.achievable === false ? reverseResult.reason : '가격 정보를 불러오지 못했습니다.'}
+            </Alert>
+          )}
+          <Typography variant="caption" color="text.secondary">
+            {FEE_DISCLAIMER}
+          </Typography>
+        </Stack>
+      </PriceBox>
+
+      <Divider />
+
+      {/* 자동 채움 필드들 */}
+      <Stack spacing={1}>
+        <SheetRow
+          label="배송비"
+          value={shippingFee > 0 ? KRW(shippingFee) : item.delivery.feeType ?? '—'}
+          caption={[item.delivery.feeType, item.delivery.pay, item.delivery.jejuExtra !== null && `제주 +${KRW(item.delivery.jejuExtra)}`]
+            .filter(Boolean)
+            .join(' · ')}
+          onCopy={() => copyText('배송비', String(shippingFee))}
+        />
+        <SheetRow
+          label="반품 / 교환비"
+          value={
+            item.returnInfo.fee !== null ? `${KRW(item.returnInfo.fee)} / ${exchangeFee !== null ? KRW(exchangeFee) : '—'}` : '—'
+          }
+          onCopy={item.returnInfo.fee !== null ? () => copyText('반품비', String(item.returnInfo.fee)) : undefined}
+        />
+        <SheetRow
+          label="재고 수량"
+          value={bundleStock !== null ? `${bundleStock.toLocaleString()}개` : '—'}
+          caption={bundleUnits > 1 && item.inventory !== null ? `묶음 기준 (낱개 ${item.inventory.toLocaleString()}개)` : undefined}
+          onCopy={bundleStock !== null ? () => copyText('재고 수량', String(bundleStock)) : undefined}
+        />
+        <SheetRow label="과세 구분" value={taxLabel ?? '—'} onCopy={taxLabel ? () => copyText('과세 구분', taxLabel) : undefined} />
+        <SheetRow label="원산지" value={item.origin ?? '—'} onCopy={item.origin ? () => copyText('원산지', item.origin as string) : undefined} />
+        <SheetRow
+          label="제조사 / 모델명"
+          value={[item.manufacturer, item.model].filter(Boolean).join(' / ') || '—'}
+          onCopy={
+            item.manufacturer || item.model
+              ? () => copyText('제조사/모델명', [item.manufacturer, item.model].filter(Boolean).join(' / '))
+              : undefined
+          }
+        />
+        <SheetRow
+          label="상품정보제공고시"
+          value={item.infoDuty.type ?? '—'}
+          caption={item.infoDuty.items.map((entry) => `${entry.name}: ${entry.desc}`).join(' · ') || undefined}
+          onCopy={infoDutyText ? () => copyText('상품정보제공고시', infoDutyText) : undefined}
+        />
+        <SheetRow
+          label="도매꾹 카테고리 (참고)"
+          value={item.categoryPath ?? '—'}
+          caption="스마트스토어 카테고리는 등록 화면에서 가장 가까운 항목을 선택하세요"
+          onCopy={item.categoryPath ? () => copyText('카테고리', item.categoryPath as string) : undefined}
+        />
+      </Stack>
+
+      <Divider />
+
+      {/* A/S 고정값 — 1회 입력 후 브라우저에 저장 */}
+      <Stack spacing={1.5}>
+        <Typography variant="subtitle2">A/S 정보 (한 번 입력하면 이 브라우저에 저장됩니다)</Typography>
+        <FieldRow>
+          <TextField
+            fullWidth
+            size="small"
+            label="A/S 전화번호"
+            value={fixedInfo.afterServicePhone}
+            onChange={(event) => updateFixedInfo({ afterServicePhone: event.target.value })}
+          />
+          <CopyButton
+            aria-label="A/S 전화번호 복사"
+            onClick={() => copyText('A/S 전화번호', fixedInfo.afterServicePhone)}
+          >
+            <ContentCopyIcon fontSize="small" />
+          </CopyButton>
+        </FieldRow>
+        <FieldRow>
+          <TextField
+            fullWidth
+            size="small"
+            label="A/S 안내 문구"
+            value={fixedInfo.afterServiceGuide}
+            onChange={(event) => updateFixedInfo({ afterServiceGuide: event.target.value })}
+            slotProps={{
+              input: {
+                endAdornment: <InputAdornment position="end">{fixedInfo.afterServiceGuide.length}자</InputAdornment>,
+              },
+            }}
+          />
+          <CopyButton
+            aria-label="A/S 안내 복사"
+            onClick={() => copyText('A/S 안내', fixedInfo.afterServiceGuide)}
+          >
+            <ContentCopyIcon fontSize="small" />
+          </CopyButton>
+        </FieldRow>
+      </Stack>
+    </Stack>
+  );
+}
+
+//////////////////// 시트 행 (라벨 + 값 + 복사) ////////////////////
+type SheetRowProps = {
+  label: string;
+  value: string;
+  caption?: string;
+  onCopy?: () => void;
+};
+
+function SheetRow({ label, value, caption, onCopy }: SheetRowProps) {
+  return (
+    <RowBox>
+      <Typography variant="body2" color="text.secondary" sx={{ width: 150, flexShrink: 0 }}>
+        {label}
+      </Typography>
+      <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, wordBreak: 'break-all' }}>
+          {value}
+        </Typography>
+        {caption && (
+          <Typography variant="caption" color="text.secondary">
+            {caption}
+          </Typography>
+        )}
+      </Stack>
+      {onCopy && (
+        <CopyButton aria-label={`${label} 복사`} onClick={onCopy}>
+          <ContentCopyIcon fontSize="small" />
+        </CopyButton>
+      )}
+    </RowBox>
+  );
+}
+
+//////////////////////////////////////// 스타일 ////////////////////////////////////////
+const FieldRow = styled.div(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: theme.spacing(1),
+}));
+
+const PriceBox = styled.div(({ theme }) => ({
+  padding: theme.spacing(2),
+  borderRadius: theme.shape.borderRadius,
+  border: `1px solid ${theme.palette.divider}`,
+  backgroundColor: theme.palette.background.default,
+}));
+
+const RowBox = styled.div(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: theme.spacing(1.5),
+  padding: theme.spacing(1.25, 1.5),
+  borderRadius: theme.shape.borderRadius,
+  backgroundColor: theme.palette.background.default,
+}));
+
+const CopyButton = styled(IconButton)({
+  flexShrink: 0,
+});

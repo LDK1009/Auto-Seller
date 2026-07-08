@@ -28,6 +28,7 @@ import { downloadDomemeImages } from '@/shared/services/domemeItemService';
 import { useDomemeItem } from './_hooks/useDomemeItem';
 import LicenseGate from './_components/LicenseGate';
 import ImageSelectGrid from './_components/ImageSelectGrid';
+import RegistrationSheet from './_components/RegistrationSheet';
 
 // 핸드오프 대상 도구 — autoStart: 도착 즉시 작업 자동 시작 (원클릭 이어달리기)
 const HANDOFF_TARGETS = [
@@ -176,7 +177,8 @@ export default function DomemeImportView() {
                   {item.title}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {item.supplyPrice !== null && `공급가 ${item.supplyPrice.toLocaleString()}원 · `}
+                  {item.domePrice !== null && `도매꾹가 ${item.domePrice.toLocaleString()}원 · `}
+                  {item.moq > 1 && `최소구매 ${item.moq}개 · `}
                   이미지 {item.images.length}장 ·{' '}
                   <Link href={item.itemUrl} target="_blank" rel="noopener noreferrer">
                     상품 페이지 열기
@@ -231,6 +233,10 @@ export default function DomemeImportView() {
                       </ActionRow>
                     </>
                   )}
+
+                  {/* 등록 정보 시트 (등록 준비 패키지) */}
+                  <Divider />
+                  <RegistrationSheet item={item} />
                 </>
               )}
             </Stack>

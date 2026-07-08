@@ -7,7 +7,7 @@ import styled from '@emotion/styled';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
-import type { MarginResult } from '../_utils/calculateMargin';
+import type { MarginResult } from '@/shared/utils/marginCalculation';
 import { MARGIN_RATE_GOOD, MARGIN_RATE_WARN } from '../_constants/marginCalculator';
 
 type MarginResultPanelProps = {

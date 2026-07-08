@@ -1,15 +1,54 @@
-//////////////////////////////////////// 역산 마진 계산 유틸 ////////////////////////////////////////
-// 목표: 원가·수수료·배송비·목표 마진율(판매가 기준)을 넣으면 "최소 판매가"를 역산한다.
+//////////////////////////////////////// 마진 계산 유틸 (전역 공유) ////////////////////////////////////////
+// 사용처: 마진 계산기(정방향·역산) + 원링크 등록 준비 패키지(추천 판매가) — 2개 라우트 공유로 shared 승격.
 //
-// 유도 (calculateMargin과 동일한 비용 모델):
+// 계산 기준:
+// - 매출 = 판매가 + 고객 부담 배송비 (마켓 수수료는 통상 배송비 포함 결제금액에 부과)
+// - 수수료 = 매출 × 수수료율
+// - 총비용 = 원가 + 실제 배송비 + 기타 비용 + 수수료
+// - 순이익 = 매출 − 총비용
+// - 마진율 = 순이익 ÷ 판매가 × 100 (셀러 관행상 판매가 기준)
+
+//////////////////// 정방향: 판매가 → 순이익 ////////////////////
+
+export type MarginInput = {
+  sellingPrice: number; // 판매가
+  costPrice: number; // 원가(매입가)
+  feeRate: number; // 수수료율 (%)
+  shippingCharge: number; // 고객에게 받는 배송비
+  shippingCost: number; // 실제 나가는 배송비
+  otherCost: number; // 기타 비용 (포장재·광고 등)
+};
+
+export type MarginResult = {
+  revenue: number; // 매출 (판매가+배송비 수입)
+  feeAmount: number; // 수수료액
+  totalCost: number; // 총비용
+  profit: number; // 순이익
+  marginRate: number; // 마진율 (판매가 기준 %)
+  costMarkup: number; // 원가 대비 수익률 (%)
+};
+
+export function calculateMargin(input: MarginInput): MarginResult {
+  const revenue = input.sellingPrice + input.shippingCharge;
+  const feeAmount = Math.round((revenue * input.feeRate) / 100);
+  const totalCost = input.costPrice + input.shippingCost + input.otherCost + feeAmount;
+  const profit = revenue - totalCost;
+
+  const marginRate = input.sellingPrice > 0 ? (profit / input.sellingPrice) * 100 : 0;
+  const costMarkup = input.costPrice > 0 ? (profit / input.costPrice) * 100 : 0;
+
+  return { revenue, feeAmount, totalCost, profit, marginRate, costMarkup };
+}
+
+//////////////////// 역산: 목표 마진율 → 최소 판매가 ////////////////////
+// 유도:
 // - 순이익 = (P + 받는배송비) − [원가 + 나가는배송비 + 기타 + (P + 받는배송비) × f]
 // - 목표: 순이익 = P × m  (f = 수수료율/100, m = 목표마진율/100)
-// - 정리: P × (1 − f − m) = 고정비 − 받는배송비 × (1 − f)
-//   → P = (고정비 − 받는배송비 × (1 − f)) / (1 − f − m)
+// - 정리: P = (고정비 − 받는배송비 × (1 − f)) / (1 − f − m)
 // - 손익분기 판매가는 m = 0 대입
 
-import { calculateMargin, type MarginResult } from './calculateMargin';
-import { PRICE_ROUND_UNIT } from '../_constants/marginCalculator';
+// 역산 판매가 올림 단위 (원) — 최소가 보장을 위해 항상 올림
+export const PRICE_ROUND_UNIT = 10;
 
 export type ReversePriceInput = {
   costPrice: number; // 원가(공급가)

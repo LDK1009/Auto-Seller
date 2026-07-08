@@ -17,9 +17,8 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
-import { FEE_PRESETS, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from './_constants/marginCalculator';
-import { calculateMargin, type MarginInput } from './_utils/calculateMargin';
-import { calculateReversePrice } from './_utils/calculateReversePrice';
+import { FEE_PRESETS, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from '@/shared/constants/marketFees';
+import { calculateMargin, calculateReversePrice, type MarginInput } from '@/shared/utils/marginCalculation';
 import MarginResultPanel from './_components/MarginResultPanel';
 import ReversePricePanel from './_components/ReversePricePanel';
 

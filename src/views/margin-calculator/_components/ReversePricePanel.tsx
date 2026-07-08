@@ -8,7 +8,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
-import type { ReversePriceResult } from '../_utils/calculateReversePrice';
+import type { ReversePriceResult } from '@/shared/utils/marginCalculation';
 
 type ReversePricePanelProps = {
   result: ReversePriceResult;
