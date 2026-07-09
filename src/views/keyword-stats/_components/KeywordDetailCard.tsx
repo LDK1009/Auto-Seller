@@ -5,7 +5,8 @@
 // 차트는 Recharts — 포인트 호버 툴팁 기본 제공 (판정 중심 — 3초 판단).
 
 import styled from '@emotion/styled';
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
+import MuiTooltip from '@mui/material/Tooltip';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
@@ -95,9 +96,21 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
         <BlockCard>
           <BlockLabel>검색 트렌드</BlockLabel>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-            {detail.trendDirection === 'up' && <Chip size="small" color="success" icon={<TrendingUpIcon />} label="상승 중" />}
-            {detail.trendDirection === 'flat' && <Chip size="small" icon={<TrendingFlatIcon />} label="유지" />}
-            {detail.trendDirection === 'down' && <Chip size="small" color="error" icon={<TrendingDownIcon />} label="하락 중" />}
+            {detail.trendDirection === 'up' && (
+              <MuiTooltip title="최근 3개월 평균 검색량이 직전 3개월보다 15% 이상 많아요">
+                <Chip size="small" color="success" icon={<TrendingUpIcon />} label="최근 3개월 상승" />
+              </MuiTooltip>
+            )}
+            {detail.trendDirection === 'flat' && (
+              <MuiTooltip title="최근 3개월 검색량이 직전 3개월과 비슷해요 (±15% 이내)">
+                <Chip size="small" icon={<TrendingFlatIcon />} label="검색량 유지" />
+              </MuiTooltip>
+            )}
+            {detail.trendDirection === 'down' && (
+              <MuiTooltip title="최근 3개월 평균 검색량이 직전 3개월보다 15% 이상 적어요">
+                <Chip size="small" color="error" icon={<TrendingDownIcon />} label="최근 3개월 하락" />
+              </MuiTooltip>
+            )}
             {detail.categorySeason && detail.categoryName && (
               <Chip size="small" variant="outlined" label={`${detail.categoryName} 카테고리 ${detail.categorySeason}`} />
             )}
@@ -138,7 +151,14 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
                     axisLine={false}
                     interval="preserveStartEnd"
                   />
-                  <YAxis hide domain={[0, 100]} />
+                  <YAxis
+                    domain={[0, 100]}
+                    ticks={[0, 50, 100]}
+                    width={30}
+                    tick={{ fontSize: 10, fill: theme.palette.text.secondary }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <Tooltip contentStyle={chartTooltipStyle} />
                   <Line
                     type="monotone"
@@ -161,6 +181,9 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
                   )}
                 </LineChart>
               </ResponsiveContainer>
+              <Typography variant="caption" color="text.secondary">
+                세로축은 검색량 지수 — 12개월 중 검색이 가장 많던 달을 100으로 본 상대값이에요
+              </Typography>
             </Stack>
           ) : (
             <Typography variant="caption" color="text.secondary">트렌드 데이터 없음</Typography>
@@ -207,11 +230,17 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
                   <YAxis hide />
                   <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => [`${value}%`, '비중']} cursor={{ fill: theme.palette.action.hover }} />
                   <Bar dataKey="percent" radius={[4, 4, 0, 0]} isAnimationActive={false}>
-                    <LabelList dataKey="percent" position="top" fontSize={10} formatter={(value) => `${value}%`} />
+                    <LabelList
+                      dataKey="percent"
+                      position="top"
+                      fontSize={10}
+                      fill={theme.palette.text.secondary}
+                      formatter={(value) => `${value}%`}
+                    />
                     {ageData.map((bucket) => (
                       <Cell
                         key={bucket.label}
-                        fill={bucket.label === topAgeLabel ? theme.palette.primary.main : theme.palette.action.selected}
+                        fill={bucket.label === topAgeLabel ? theme.palette.primary.main : alpha(theme.palette.primary.main, 0.25)}
                       />
                     ))}
                   </Bar>
@@ -234,11 +263,17 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
                   <YAxis hide />
                   <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => [`${value}%`, '비중']} cursor={{ fill: theme.palette.action.hover }} />
                   <Bar dataKey="percent" radius={[4, 4, 0, 0]} isAnimationActive={false}>
-                    <LabelList dataKey="percent" position="top" fontSize={10} formatter={(value) => `${value}%`} />
+                    <LabelList
+                      dataKey="percent"
+                      position="top"
+                      fontSize={10}
+                      fill={theme.palette.text.secondary}
+                      formatter={(value) => `${value}%`}
+                    />
                     {weekdayData.map((day, index) => (
                       <Cell
                         key={day.label}
-                        fill={index === topWeekdayIndex ? theme.palette.primary.main : theme.palette.action.selected}
+                        fill={index === topWeekdayIndex ? theme.palette.primary.main : alpha(theme.palette.primary.main, 0.25)}
                       />
                     ))}
                   </Bar>

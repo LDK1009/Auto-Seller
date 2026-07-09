@@ -95,7 +95,14 @@ export default function CompareSection({ entries }: PropsType) {
                 axisLine={false}
                 interval="preserveStartEnd"
               />
-              <YAxis hide domain={[0, 100]} />
+              <YAxis
+                domain={[0, 100]}
+                ticks={[0, 50, 100]}
+                width={30}
+                tick={{ fontSize: 10, fill: theme.palette.text.secondary }}
+                tickLine={false}
+                axisLine={false}
+              />
               <Tooltip contentStyle={chartTooltipStyle} />
               {entries.map((entry, index) => (
                 <Line
@@ -110,6 +117,9 @@ export default function CompareSection({ entries }: PropsType) {
               ))}
             </LineChart>
           </ResponsiveContainer>
+          <Typography variant="caption" color="text.secondary">
+            세로축은 검색량 지수 — 이 비교에서 검색이 가장 많던 지점을 100으로 본 상대값이에요
+          </Typography>
         </BlockCard>
       )}
 

@@ -28,7 +28,7 @@ import type { KeywordStat, RelatedKeyword } from '@/shared/types/keywordStats';
 import type { KeywordDetail } from '@/shared/types/keywordDetail';
 import type { KeywordCompareResponse } from '@/shared/types/keywordCompare';
 import KeywordDetailCard from './_components/KeywordDetailCard';
-import AiVerdictCard from './_components/AiVerdictCard';
+// import AiVerdictCard from './_components/AiVerdictCard'; // AI 판단 가동(카카오·키·테이블 셋업) 전까지 숨김 — 백로그 F-4
 import StatSummaryCards from './_components/StatSummaryCards';
 import RelatedKeywordTable from './_components/RelatedKeywordTable';
 import CompareSection from './_components/CompareSection';
@@ -211,8 +211,8 @@ export default function KeywordStatsView() {
           </Alert>
         )}
 
-        {/* ⓪ AI 판단 (로그인 게이트 — 분석 결과 최상단) */}
-        {hasResult && <AiVerdictCard keyword={currentKeyword} stat={stat} detail={detail} />}
+        {/* ⓪ AI 판단 — 가동 셋업 완료 후 노출 (백로그 F-4)
+        {hasResult && <AiVerdictCard keyword={currentKeyword} stat={stat} detail={detail} />} */}
 
         {/* ① 핵심 지표 카드 */}
         {hasResult && (

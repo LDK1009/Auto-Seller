@@ -43,10 +43,10 @@ export default function RelatedKeywordTable({
       <HeaderRow>
         <CheckCell />
         <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>키워드</Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ width: 90, textAlign: 'right' }}>월간 검색수</Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ width: 90, textAlign: 'right' }}>상품 수</Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ width: 70, textAlign: 'right' }}>경쟁강도</Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ width: 70, textAlign: 'center' }}>판정</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ width: 100, textAlign: 'right' }}>월간 검색수</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ width: 100, textAlign: 'right' }}>상품 수</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ width: 80, textAlign: 'right' }}>경쟁강도</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ width: 76, textAlign: 'center' }}>판정</Typography>
       </HeaderRow>
       <ListBox>
         {related.map((entry) => {
@@ -77,13 +77,13 @@ export default function RelatedKeywordTable({
                   {entry.keyword}
                 </Typography>
               </KeywordButton>
-              <Typography variant="body2" sx={{ width: 90, textAlign: 'right' }}>
+              <Typography variant="body2" sx={{ width: 100, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                 {entry.isLowVolume ? '10 미만' : entry.monthlySearches.toLocaleString()}
               </Typography>
-              <Typography variant="body2" sx={{ width: 90, textAlign: 'right' }}>
+              <Typography variant="body2" sx={{ width: 100, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                 {productCount !== null ? productCount.toLocaleString() : isCountsLoaded ? '—' : '…'}
               </Typography>
-              <Typography variant="body2" sx={{ width: 70, textAlign: 'right' }}>
+              <Typography variant="body2" sx={{ width: 80, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                 {ratio !== null ? ratio : isCountsLoaded ? '—' : '…'}
               </Typography>
               <ChipCell>
@@ -149,7 +149,7 @@ const KeywordButton = styled(ButtonBase)(({ theme }) => ({
 }));
 
 const ChipCell = styled.div({
-  width: 70,
+  width: 76,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
