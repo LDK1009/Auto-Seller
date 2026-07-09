@@ -45,29 +45,33 @@ export default function KeywordStatsView() {
   const [isConfigured, setIsConfigured] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 상세 분석 (행 확장 — 온디맨드 로드, 클라이언트 캐시)
-  const [expandedKeyword, setExpandedKeyword] = useState<string | null>(null);
+  // 상세 분석 (행 확장 — 온디맨드 로드, 클라이언트 캐시, 다중 펼침 허용)
+  const [expandedKeywords, setExpandedKeywords] = useState<Set<string>>(new Set());
   const [details, setDetails] = useState<Map<string, KeywordDetail>>(new Map());
-  const [loadingDetailFor, setLoadingDetailFor] = useState<string | null>(null);
 
   const handleToggleDetail = async (keyword: string) => {
-    if (expandedKeyword === keyword) {
-      setExpandedKeyword(null);
+    if (expandedKeywords.has(keyword)) {
+      setExpandedKeywords((prev) => {
+        const next = new Set(prev);
+        next.delete(keyword);
+        return next;
+      });
       return;
     }
-    setExpandedKeyword(keyword);
+    setExpandedKeywords((prev) => new Set(prev).add(keyword));
     if (details.has(keyword)) return;
 
-    setLoadingDetailFor(keyword);
     try {
       const detail = await fetchKeywordDetail(keyword);
       setDetails((prev) => new Map(prev).set(keyword, detail));
     } catch (error) {
       console.error(error);
       enqueueSnackbar(error instanceof Error ? error.message : '상세 분석에 실패했습니다.', { variant: 'error' });
-      setExpandedKeyword(null);
-    } finally {
-      setLoadingDetailFor(null);
+      setExpandedKeywords((prev) => {
+        const next = new Set(prev);
+        next.delete(keyword);
+        return next;
+      });
     }
   };
 
@@ -112,8 +116,8 @@ export default function KeywordStatsView() {
 
   return (
     <PageLayout
-      title="키워드 검색량 조회"
-      description="월간 검색수와 등록 상품 수로 키워드의 경쟁강도를 판정합니다."
+      title="키워드 분석"
+      description="검색수·경쟁강도부터 트렌드·시장 상황까지 — 팔릴 키워드를 판정합니다."
       maxWidth="md"
       help={
         <HelpPanel storageKey="keyword-stats">
@@ -173,12 +177,12 @@ export default function KeywordStatsView() {
               </HeaderRow>
               {stats.map((stat) => {
                 const verdict = judgeRatio(stat.ratio);
-                const isExpanded = expandedKeyword === stat.keyword;
+                const isExpanded = expandedKeywords.has(stat.keyword);
                 const detail = details.get(stat.keyword);
                 return (
                   <Stack key={stat.keyword} spacing={1}>
                   <StatRow onClick={() => handleToggleDetail(stat.keyword)} style={{ cursor: 'pointer' }}>
-                    {loadingDetailFor === stat.keyword ? (
+                    {isExpanded && !detail ? (
                       <CircularProgress size={14} sx={{ flexShrink: 0 }} />
                     ) : isExpanded ? (
                       <KeyboardArrowDownIcon fontSize="small" color="action" sx={{ flexShrink: 0 }} />
@@ -217,27 +221,35 @@ export default function KeywordStatsView() {
           </Paper>
         )}
 
-        {/* 연관 키워드 — keywordstool이 덤으로 주는 확장 후보 */}
+        {/* 연관 키워드 — keywordstool이 덤으로 주는 확장 후보 (세로 표) */}
         {related.length > 0 && (
           <Paper variant="outlined" sx={{ p: 3 }}>
             <Stack spacing={1.5}>
-              <Typography variant="subtitle2">
-                연관 키워드 {related.length}개 — 클릭하면 조회 목록에 추가됩니다
-              </Typography>
-              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+              <Typography variant="subtitle2">연관 키워드 {related.length}개</Typography>
+              <HeaderRow>
+                <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>키워드</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ width: 110, textAlign: 'right' }}>월간 검색수</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ width: 90, textAlign: 'center' }}>&nbsp;</Typography>
+              </HeaderRow>
+              <RelatedList>
                 {related.map((entry) => (
-                  <Chip
-                    key={entry.keyword}
-                    size="small"
-                    variant="outlined"
-                    disabled={isLoading}
-                    onClick={() => handleAddRelated(entry.keyword)}
-                    label={`${entry.keyword} · ${entry.isLowVolume ? '<10' : entry.monthlySearches.toLocaleString()}회`}
-                  />
+                  <RelatedRow key={entry.keyword}>
+                    <Typography variant="body2" sx={{ flex: 1, fontWeight: 600, minWidth: 0, wordBreak: 'break-all' }}>
+                      {entry.keyword}
+                    </Typography>
+                    <Typography variant="body2" sx={{ width: 110, textAlign: 'right' }}>
+                      {entry.isLowVolume ? '10 미만' : entry.monthlySearches.toLocaleString()}
+                    </Typography>
+                    <Stack sx={{ width: 90, alignItems: 'center' }}>
+                      <Button size="small" disabled={isLoading} onClick={() => handleAddRelated(entry.keyword)}>
+                        + 분석
+                      </Button>
+                    </Stack>
+                  </RelatedRow>
                 ))}
-              </Stack>
+              </RelatedList>
               <Typography variant="caption" color="text.secondary">
-                검색량 높은 순 상위 30개입니다. 추가하면 상품 수·경쟁강도까지 조회됩니다.
+                검색량 높은 순 상위 30개입니다. [+ 분석]하면 상품 수·경쟁강도까지 조회됩니다.
               </Typography>
             </Stack>
           </Paper>
@@ -261,6 +273,23 @@ const StatRow = styled.div(({ theme }) => ({
   padding: theme.spacing(1, 1.5),
   borderRadius: theme.shape.borderRadius,
   backgroundColor: theme.palette.background.default,
+}));
+
+const RelatedList = styled.div(({ theme }) => ({
+  maxHeight: 360,
+  overflowY: 'auto',
+  borderRadius: theme.shape.borderRadius,
+  border: `1px solid ${theme.palette.divider}`,
+}));
+
+const RelatedRow = styled.div(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1.5),
+  padding: theme.spacing(0.5, 1.5),
+  '&:not(:last-of-type)': {
+    borderBottom: `1px solid ${theme.palette.divider}`,
+  },
 }));
 
 const ChipCell = styled.div({

@@ -8,7 +8,6 @@ import styled from '@emotion/styled';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
-import Divider from '@mui/material/Divider';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
@@ -38,9 +37,9 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
   return (
     <CardBox>
       {/* ①② 트렌드 · 시즌성 */}
-      <Stack spacing={1}>
+      <BlockCard>
+        <BlockLabel>검색 트렌드 · 12개월</BlockLabel>
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-          <Typography variant="subtitle2">12개월 검색 트렌드</Typography>
           {detail.trendDirection === 'up' && <Chip size="small" color="success" icon={<TrendingUpIcon />} label="상승 중" />}
           {detail.trendDirection === 'flat' && <Chip size="small" icon={<TrendingFlatIcon />} label="유지" />}
           {detail.trendDirection === 'down' && <Chip size="small" color="error" icon={<TrendingDownIcon />} label="하락 중" />}
@@ -64,13 +63,11 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
         ) : (
           <Typography variant="caption" color="text.secondary">트렌드 데이터 없음</Typography>
         )}
-      </Stack>
+      </BlockCard>
 
-      <Divider />
-
-      {/* ③⑥ 누가 검색하나 */}
-      <Stack spacing={1}>
-        <Typography variant="subtitle2">누가 검색하나</Typography>
+      {/* ③④⑤⑥ 누가 검색하나 */}
+      <BlockCard>
+        <BlockLabel>누가 검색하나</BlockLabel>
         {detail.deviceRatio !== null && (
           <RatioLine
             label="기기"
@@ -124,18 +121,21 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
         {detail.deviceRatio === null && detail.weekdayRatio === null && (
           <Typography variant="caption" color="text.secondary">데이터 없음</Typography>
         )}
-      </Stack>
-
-      <Divider />
+      </BlockCard>
 
       {/* ⑦⑧⑨⑩ 시장 상황 */}
-      <Stack spacing={1}>
-        <Typography variant="subtitle2">시장 상황</Typography>
+      <BlockCard>
+        <BlockLabel>시장 상황</BlockLabel>
         {detail.priceBand !== null && (
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
             <Typography variant="body2" color="text.secondary" sx={{ width: 40, flexShrink: 0 }}>가격</Typography>
             <Typography variant="body2">
-              {KRW(detail.priceBand.min)} ~ {KRW(detail.priceBand.max)} · 중앙값 <b>{KRW(detail.priceBand.median)}</b>
+              <Typography component="span" variant="subtitle1" sx={{ fontWeight: 700 }}>
+                {KRW(detail.priceBand.median)}
+              </Typography>
+              <Typography component="span" variant="caption" color="text.secondary">
+                {' '}중앙값 · 범위 {KRW(detail.priceBand.min)}~{KRW(detail.priceBand.max)}
+              </Typography>
             </Typography>
           </Stack>
         )}
@@ -148,7 +148,7 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
             <Chip size="small" variant="outlined" label={`블로그 ${formatCompact(detail.blogCount)} · 카페 ${detail.cafeCount !== null ? formatCompact(detail.cafeCount) : '—'}`} />
           )}
         </Stack>
-      </Stack>
+      </BlockCard>
     </CardBox>
   );
 }
@@ -215,13 +215,28 @@ function formatCompact(value: number): string {
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
 
 const CardBox = styled.div(({ theme }) => ({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+  gap: theme.spacing(1.5),
+  padding: theme.spacing(1.5),
+  borderRadius: theme.shape.borderRadius,
+  backgroundColor: theme.palette.background.default, // 인셋 서피스 (보더 없이 톤으로 구분 — 토스 규칙)
+}));
+
+const BlockCard = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
-  gap: theme.spacing(1.5),
+  gap: theme.spacing(1.25),
   padding: theme.spacing(2),
   borderRadius: theme.shape.borderRadius,
-  border: `1px solid ${theme.palette.divider}`,
   backgroundColor: theme.palette.background.paper,
+  boxShadow: theme.shadows[1],
+}));
+
+const BlockLabel = styled(Typography)(({ theme }) => ({
+  color: theme.palette.text.secondary,
+  fontWeight: 600,
+  fontSize: '0.8125rem',
 }));
 
 const SparklineSvg = styled.svg(({ theme }) => ({
