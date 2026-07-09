@@ -250,27 +250,25 @@ export default function KeywordStatsView() {
           </Alert>
         )}
 
-        {/* 시작 키워드 (검색 전 빈 화면) — [이번 달 | 사계절] 실조회 랭킹 표 + 최근 검색. 도매꾹 인기검색어 승인 후 교체 예정 */}
+        {/* 시작 키워드 (검색 전 빈 화면) — 랭킹 표 상하 배치 + 최근 검색. 도매꾹 인기검색어 승인 후 교체 예정 */}
         {!hasResult && !isLoading && (
           <Stack spacing={3}>
-            <StarterGrid>
-              <Paper variant="outlined" sx={{ p: 3 }}>
-                <StarterKeywordTable
-                  title="이번 달 뜨는 키워드"
-                  stats={seasonalStats}
-                  isLoading={isStarterLoading}
-                  onSelectKeyword={runSearch}
-                />
-              </Paper>
-              <Paper variant="outlined" sx={{ p: 3 }}>
-                <StarterKeywordTable
-                  title="일 년 내내 꾸준한 키워드"
-                  stats={steadyStats}
-                  isLoading={isStarterLoading}
-                  onSelectKeyword={runSearch}
-                />
-              </Paper>
-            </StarterGrid>
+            <Paper variant="outlined" sx={{ p: 3 }}>
+              <StarterKeywordTable
+                title="이번 달 뜨는 키워드"
+                stats={seasonalStats}
+                isLoading={isStarterLoading}
+                onSelectKeyword={runSearch}
+              />
+            </Paper>
+            <Paper variant="outlined" sx={{ p: 3 }}>
+              <StarterKeywordTable
+                title="일 년 내내 꾸준한 키워드"
+                stats={steadyStats}
+                isLoading={isStarterLoading}
+                onSelectKeyword={runSearch}
+              />
+            </Paper>
             {recentKeywords.length > 0 && (
               <Paper variant="outlined" sx={{ p: 3 }}>
                 <Stack spacing={1}>
@@ -361,16 +359,6 @@ export default function KeywordStatsView() {
 }
 
 //////////////////////////////////////// 스타일 ////////////////////////////////////////
-const StarterGrid = styled.div(({ theme }) => ({
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: theme.spacing(3),
-  alignItems: 'start',
-  [theme.breakpoints.down('md')]: {
-    gridTemplateColumns: '1fr',
-  },
-}));
-
 const LoadingBox = styled.div(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',

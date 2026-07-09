@@ -32,9 +32,9 @@ export default function StarterKeywordTable({ title, stats, isLoading, onSelectK
         <>
           <HeaderRow>
             <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>키워드</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ width: 110 }}>카테고리</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ width: 80, textAlign: 'right' }}>월간 검색수</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ width: 76, textAlign: 'right' }}>상품 수</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ width: 200 }}>카테고리</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ width: 90, textAlign: 'right' }}>월간 검색수</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ width: 90, textAlign: 'right' }}>상품 수</Typography>
           </HeaderRow>
           <ListBox>
             {stats.map((stat, index) => (
@@ -46,10 +46,10 @@ export default function StarterKeywordTable({ title, stats, isLoading, onSelectK
                 <CategoryText variant="caption" color="text.secondary" title={stat.category ?? undefined}>
                   {stat.category ?? '—'}
                 </CategoryText>
-                <Typography variant="body2" sx={{ width: 80, textAlign: 'right', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                <Typography variant="body2" sx={{ width: 90, textAlign: 'right', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
                   {stat.monthlySearches === null ? '—' : stat.isLowVolume ? '10 미만' : stat.monthlySearches.toLocaleString()}
                 </Typography>
-                <Typography variant="body2" sx={{ width: 76, textAlign: 'right', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                <Typography variant="body2" sx={{ width: 90, textAlign: 'right', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
                   {stat.productCount !== null ? stat.productCount.toLocaleString() : '—'}
                 </Typography>
               </RowButton>
@@ -112,7 +112,7 @@ const RankNumber = styled('span', transientOptions)<{ $isTop: boolean }>(({ them
 }));
 
 const CategoryText = styled(Typography)({
-  width: 110,
+  width: 200,
   flexShrink: 0,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
