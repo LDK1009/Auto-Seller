@@ -97,11 +97,14 @@ export async function GET(request: Request) {
         console.error('검색광고 API 실패 — 상품 수만 반환:', error);
       }
 
-      ////////// 2) 쇼핑 상품 수 (키워드별 1회 — 오픈API 키 없으면 생략)
+      ////////// 2) 쇼핑 상품 수 + 최빈 카테고리 (키워드별 1회 — 오픈API 키 없으면 생략)
       for (const keyword of missing) {
         const volume = searchVolumes.get(keyword);
-        const productCount =
-          clientId && clientSecret ? await fetchShopTotal(keyword, clientId, clientSecret) : null;
+        const shopMeta =
+          clientId && clientSecret
+            ? await fetchShopMeta(keyword, clientId, clientSecret)
+            : { total: null, category: null };
+        const productCount = shopMeta.total;
 
         const monthly = volume?.monthly ?? null;
         const stat: KeywordStat = {
@@ -112,6 +115,7 @@ export async function GET(request: Request) {
           monthlyClicks: volume?.clicks ?? null,
           avgCtr: volume?.ctr ?? null,
           productCount,
+          category: shopMeta.category,
           ratio:
             monthly !== null && monthly > 0 && productCount !== null
               ? Math.round((productCount / monthly) * 100) / 100
@@ -183,20 +187,36 @@ async function fetchKeywordTool(
   return Array.isArray(body?.keywordList) ? body.keywordList : [];
 }
 
-////////// 쇼핑 검색 — 등록 상품 수 (total)
-async function fetchShopTotal(keyword: string, clientId: string, clientSecret: string): Promise<number | null> {
+////////// 쇼핑 검색 — 등록 상품 수(total) + 최빈 카테고리 (상위 10개 표본, 호출 수는 동일 1회)
+async function fetchShopMeta(
+  keyword: string,
+  clientId: string,
+  clientSecret: string,
+): Promise<{ total: number | null; category: string | null }> {
   try {
-    const response = await fetch(`${SHOP_API_URL}?query=${encodeURIComponent(keyword)}&display=1`, {
+    const response = await fetch(`${SHOP_API_URL}?query=${encodeURIComponent(keyword)}&display=10`, {
       headers: { 'X-Naver-Client-Id': clientId, 'X-Naver-Client-Secret': clientSecret },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       cache: 'no-store',
     });
-    if (!response.ok) return null;
+    if (!response.ok) return { total: null, category: null };
     const body = await response.json();
     const total = Number(body?.total);
-    return Number.isFinite(total) ? total : null;
+
+    // "대분류 > 중분류" 최빈값
+    const categoryCounts = new Map<string, number>();
+    for (const item of body?.items ?? []) {
+      const path = [item.category1, item.category2]
+        .map((part) => String(part ?? '').trim())
+        .filter((part) => part.length > 0)
+        .join(' > ');
+      if (path) categoryCounts.set(path, (categoryCounts.get(path) ?? 0) + 1);
+    }
+    const topCategory = Array.from(categoryCounts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+
+    return { total: Number.isFinite(total) ? total : null, category: topCategory };
   } catch {
-    return null; // 상품 수 실패는 검색량 표시를 막지 않음
+    return { total: null, category: null }; // 상품 수 실패는 검색량 표시를 막지 않음
   }
 }
 

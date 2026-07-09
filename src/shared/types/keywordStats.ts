@@ -9,6 +9,7 @@ export type KeywordStat = {
   ratio: number | null; // 경쟁강도 = 상품수 ÷ 월간 검색수 (낮을수록 틈새)
   monthlyClicks: number | null; // 월평균 클릭수 (PC+모바일 — 검색이 클릭으로 이어지는 양)
   avgCtr: number | null; // 월평균 클릭률 % (PC/모바일 평균)
+  category: string | null; // 최빈 카테고리 경로 (쇼핑 상위 10개 기준, "대분류 > 중분류")
 };
 
 // 연관 키워드 (keywordstool이 덤으로 주는 목록 — 검색량만 있고 상품수는 미조회)

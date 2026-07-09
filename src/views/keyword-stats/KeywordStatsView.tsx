@@ -36,6 +36,7 @@ import {
   loadRecentKeywords,
   saveRecentKeyword,
 } from './_constants/starterKeywords';
+import StarterKeywordTable from './_components/StarterKeywordTable';
 import StatSummaryCards from './_components/StatSummaryCards';
 import RelatedKeywordTable from './_components/RelatedKeywordTable';
 import CompareSection from './_components/CompareSection';
@@ -55,9 +56,11 @@ export default function KeywordStatsView() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
 
-  // 시작 키워드 (빈 화면용 — 시즌 큐레이션 + 최근 검색)
+  // 시작 키워드 (빈 화면용 — 큐레이션을 실조회 데이터로 랭킹 + 최근 검색)
   const [recentKeywords, setRecentKeywords] = useState<string[]>([]);
-  const seasonalKeywords = getSeasonalKeywords();
+  const [seasonalStats, setSeasonalStats] = useState<KeywordStat[]>([]);
+  const [steadyStats, setSteadyStats] = useState<KeywordStat[]>([]);
+  const [isStarterLoading, setIsStarterLoading] = useState(false);
 
   // 비교 상태
   const [checkedKeywords, setCheckedKeywords] = useState<Set<string>>(new Set());
@@ -133,12 +136,35 @@ export default function KeywordStatsView() {
     }
   };
 
-  ////////// 최초 진입: URL의 ?keyword= 자동 검색 + 최근 검색 복원
+  ////////// 시작 키워드 실조회 (검색수 내림차순 랭킹 — 요청당 10개 제한이라 스테디는 분할)
+  const loadStarterStats = async () => {
+    setIsStarterLoading(true);
+    try {
+      const rankBySearches = (stats: KeywordStat[]) =>
+        [...stats].sort((a, b) => (b.monthlySearches ?? -1) - (a.monthlySearches ?? -1));
+      const [seasonalResponse, steadyFirst, steadyRest] = await Promise.all([
+        fetchKeywordStats(getSeasonalKeywords()),
+        fetchKeywordStats(STEADY_KEYWORDS.slice(0, 10)),
+        STEADY_KEYWORDS.length > 10 ? fetchKeywordStats(STEADY_KEYWORDS.slice(10)) : Promise.resolve(null),
+      ]);
+      setIsConfigured(seasonalResponse.configured);
+      setSeasonalStats(rankBySearches(seasonalResponse.stats));
+      setSteadyStats(rankBySearches([...steadyFirst.stats, ...(steadyRest?.stats ?? [])]));
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsStarterLoading(false);
+    }
+  };
+
+  ////////// 최초 진입: URL의 ?keyword= 자동 검색, 없으면 시작 키워드 로드 + 최근 검색 복원
   useEffect(() => {
     setRecentKeywords(loadRecentKeywords());
     const initialKeyword = new URLSearchParams(window.location.search).get('keyword');
     if (initialKeyword && initialKeyword.trim().length > 0) {
       runSearch(initialKeyword);
+    } else {
+      loadStarterStats();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -224,29 +250,25 @@ export default function KeywordStatsView() {
           </Alert>
         )}
 
-        {/* 시작 키워드 (검색 전 빈 화면) — [이번 달 | 사계절] 2단 + 최근 검색. 도매꾹 인기검색어 승인 후 교체 예정 */}
+        {/* 시작 키워드 (검색 전 빈 화면) — [이번 달 | 사계절] 실조회 랭킹 표 + 최근 검색. 도매꾹 인기검색어 승인 후 교체 예정 */}
         {!hasResult && !isLoading && (
           <Stack spacing={3}>
             <StarterGrid>
               <Paper variant="outlined" sx={{ p: 3 }}>
-                <Stack spacing={1}>
-                  <Typography variant="subtitle2">이번 달 뜨는 키워드</Typography>
-                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
-                    {seasonalKeywords.map((keyword) => (
-                      <Chip key={keyword} label={keyword} color="primary" variant="outlined" onClick={() => runSearch(keyword)} />
-                    ))}
-                  </Stack>
-                </Stack>
+                <StarterKeywordTable
+                  title="이번 달 뜨는 키워드"
+                  stats={seasonalStats}
+                  isLoading={isStarterLoading}
+                  onSelectKeyword={runSearch}
+                />
               </Paper>
               <Paper variant="outlined" sx={{ p: 3 }}>
-                <Stack spacing={1}>
-                  <Typography variant="subtitle2">일 년 내내 꾸준한 키워드</Typography>
-                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
-                    {STEADY_KEYWORDS.map((keyword) => (
-                      <Chip key={keyword} label={keyword} variant="outlined" onClick={() => runSearch(keyword)} />
-                    ))}
-                  </Stack>
-                </Stack>
+                <StarterKeywordTable
+                  title="일 년 내내 꾸준한 키워드"
+                  stats={steadyStats}
+                  isLoading={isStarterLoading}
+                  onSelectKeyword={runSearch}
+                />
               </Paper>
             </StarterGrid>
             {recentKeywords.length > 0 && (
