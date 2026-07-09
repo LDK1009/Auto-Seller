@@ -14,7 +14,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useSnackbar } from 'notistack';
 import { useAuthSession } from '@/shared/hooks/useAuthSession';
-import { signInWithKakao } from '@/shared/services/authService';
+import { isAuthConfigured, signInWithKakao } from '@/shared/services/authService';
 import { fetchAiVerdict } from '@/shared/services/keywordStatsService';
 import type { KeywordStat } from '@/shared/types/keywordStats';
 import type { KeywordDetail } from '@/shared/types/keywordDetail';
@@ -83,8 +83,8 @@ export default function AiVerdictCard({ keyword, stat, detail }: PropsType) {
         )}
       </Stack>
 
-      {/* 키 미설정 (운영자 안내) */}
-      {!isConfigured && (
+      {/* 키·인증 인프라 미설정 (운영자 안내) */}
+      {(!isConfigured || !isAuthConfigured) && (
         <Typography variant="caption" color="text.secondary">
           AI 판단은 준비 중입니다. (운영자: docs/launch/ai-verdict-setup.md)
         </Typography>
@@ -110,7 +110,7 @@ export default function AiVerdictCard({ keyword, stat, detail }: PropsType) {
       )}
 
       {/* 액션 (결과 없을 때) */}
-      {isConfigured && !currentVerdict && !isSessionLoading && (
+      {isConfigured && isAuthConfigured && !currentVerdict && !isSessionLoading && (
         <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
           {session ? (
             <>
