@@ -13,17 +13,30 @@ export async function fetchKeywordStats(keywords: string[]): Promise<KeywordStat
   return body as KeywordStatsResponse;
 }
 
-////////// 시작 키워드 (빈 화면 랭킹 표 — 서버가 시드 풀→검색량 랭킹→시즌성 분리까지 완료)
+////////// 시작 키워드 (빈 화면 랭킹 표) — Supabase 직접 읽기
+// 계산·저장은 새벽 크론(/api/starter-keywords/warm)이 담당, 여기선 테이블 SELECT만 (읽기 공개 RLS).
 import type { StarterKeywordsResponse } from '@/shared/types/keywordStats';
+import { getSupabaseClient } from './supabase';
 
 export async function fetchStarterKeywords(category: string = 'all'): Promise<StarterKeywordsResponse> {
-  const query = category === 'all' ? '' : `?category=${encodeURIComponent(category)}`;
-  const response = await fetch(`/api/starter-keywords${query}`);
-  const body = await response.json();
-  if (!response.ok) {
-    throw new Error(body?.error ?? '시작 키워드 조회에 실패했습니다.');
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    return { configured: false, seasonal: [], steady: [] }; // Supabase 미설정 — 준비 중 강등
   }
-  return body as StarterKeywordsResponse;
+  const { data, error } = await supabase
+    .from('starter_keywords_cache')
+    .select('payload')
+    .eq('category', category)
+    .maybeSingle();
+  if (error) {
+    console.error(error);
+    throw new Error('시작 키워드 조회에 실패했습니다.');
+  }
+  const payload = (data?.payload ?? { seasonal: [], steady: [] }) as {
+    seasonal: KeywordStat[];
+    steady: KeywordStat[];
+  };
+  return { configured: true, seasonal: payload.seasonal ?? [], steady: payload.steady ?? [] };
 }
 
 ////////// 키워드 상세 분석 (종합차트 — 온디맨드)
