@@ -68,8 +68,9 @@ export default function KeywordStatsView() {
   const [isComparing, setIsComparing] = useState(false);
   const compareSectionRef = useRef<HTMLDivElement>(null);
 
-  ////////// 검색 실행 (연관 클릭 재검색 포함 단일 진입점)
-  const runSearch = async (rawKeyword: string) => {
+  ////////// 검색 실행 (연관·시작 키워드 클릭 포함 단일 진입점)
+  // updatesHistory=false: URL 직접 진입·뒤로가기 등 이미 URL이 맞는 경우 (중복 엔트리 방지)
+  const runSearch = async (rawKeyword: string, updatesHistory = true) => {
     const keyword = rawKeyword.trim();
     if (keyword.length === 0) return;
 
@@ -86,8 +87,13 @@ export default function KeywordStatsView() {
     setIsLoading(true);
     setIsDetailLoading(true);
 
-    // URL 동기화 (공유·새로고침 대응) + 최근 검색 기록
-    window.history.replaceState(null, '', `?keyword=${encodeURIComponent(keyword)}`);
+    // URL 동기화 — 검색 시 히스토리 엔트리 추가 (직접 URL 진입과 동일한 상태, 뒤로가기 지원)
+    if (updatesHistory) {
+      const currentParam = new URLSearchParams(window.location.search).get('keyword');
+      const nextUrl = `?keyword=${encodeURIComponent(keyword)}`;
+      if (currentParam === keyword) window.history.replaceState(null, '', nextUrl);
+      else window.history.pushState(null, '', nextUrl);
+    }
     setRecentKeywords(saveRecentKeyword(keyword));
 
     // 종합차트는 별도 트랙으로 병렬 로드 (기본 지표보다 느림)
@@ -158,15 +164,36 @@ export default function KeywordStatsView() {
     }
   };
 
-  ////////// 최초 진입: URL의 ?keyword= 자동 검색, 없으면 시작 키워드 로드 + 최근 검색 복원
+  ////////// 시작 화면으로 복귀 (뒤로가기로 ?keyword= 가 사라졌을 때)
+  const resetToStarter = () => {
+    setCurrentKeyword('');
+    setInputValue('');
+    setStat(null);
+    setDetail(null);
+    setRelated([]);
+    setCheckedKeywords(new Set());
+    setCompare(null);
+    if (seasonalStats.length === 0) loadStarterStats();
+  };
+
+  ////////// 최초 진입: URL의 ?keyword= 자동 검색, 없으면 시작 키워드 로드 + 뒤로/앞으로 대응
   useEffect(() => {
     setRecentKeywords(loadRecentKeywords());
     const initialKeyword = new URLSearchParams(window.location.search).get('keyword');
     if (initialKeyword && initialKeyword.trim().length > 0) {
-      runSearch(initialKeyword);
+      runSearch(initialKeyword, false);
     } else {
       loadStarterStats();
     }
+
+    // 뒤로/앞으로 가기 → URL 파라미터 기준으로 화면 복원
+    const handlePopState = () => {
+      const keyword = new URLSearchParams(window.location.search).get('keyword');
+      if (keyword && keyword.trim().length > 0) runSearch(keyword, false);
+      else resetToStarter();
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
