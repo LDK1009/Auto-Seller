@@ -123,12 +123,17 @@ export default function CompareSection({ entries }: PropsType) {
                 <th />
                 {entries.map((entry, index) => (
                   <th key={entry.keyword}>
-                    <Stack spacing={0.5} sx={{ alignItems: 'center' }}>
+                    {/* 뱃지 위·키워드 아래 고정 — 뱃지 유무와 무관하게 키워드 텍스트 높이 통일 (th는 bottom 정렬) */}
+                    <Stack spacing={0.5} sx={{ alignItems: 'center', justifyContent: 'flex-end' }}>
+                      {(index === 0 || entry.keyword === nicheKeyword) && (
+                        <Stack direction="row" spacing={0.5}>
+                          {index === 0 && <Chip size="small" variant="outlined" label="기준" />}
+                          {entry.keyword === nicheKeyword && <Chip size="small" color="success" label="틈새 추천" />}
+                        </Stack>
+                      )}
                       <Typography variant="body2" sx={{ fontWeight: 700, wordBreak: 'keep-all' }}>
                         {entry.keyword}
                       </Typography>
-                      {index === 0 && <Chip size="small" variant="outlined" label="기준" />}
-                      {entry.keyword === nicheKeyword && <Chip size="small" color="success" label="틈새 추천" />}
                     </Stack>
                   </th>
                 ))}
@@ -280,6 +285,9 @@ const CompareTable = styled.table(({ theme }) => ({
     textAlign: 'center',
     whiteSpace: 'nowrap',
     borderBottom: `1px solid ${theme.palette.divider}`,
+  },
+  '& th': {
+    verticalAlign: 'bottom', // 뱃지 유무와 무관하게 키워드 텍스트를 같은 높이(하단)에 정렬
   },
   '& td:first-of-type': {
     textAlign: 'left',
