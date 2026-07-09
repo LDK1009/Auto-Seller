@@ -42,15 +42,16 @@ export default function StatSummaryCards({ stat }: PropsType) {
       <StatCard>
         <Typography variant="caption" color="text.secondary">경쟁강도 (상품수÷검색수)</Typography>
         <ChipLine>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            {stat.ratio !== null ? stat.ratio : '—'}
+          </Typography>
           <Chip
+            size="small"
             label={verdict.label}
             color={verdict.color}
             variant={verdict.color === 'default' ? 'outlined' : 'filled'}
             sx={{ fontWeight: 700 }}
           />
-          {stat.ratio !== null && (
-            <Typography variant="caption" color="text.secondary">{stat.ratio}</Typography>
-          )}
         </ChipLine>
       </StatCard>
     </CardGrid>
