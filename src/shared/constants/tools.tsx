@@ -1,6 +1,6 @@
 //////////////////////////////////////// 도구 목록 (전역 공유) ////////////////////////////////////////
-// 랜딩 그리드·헤더 GNB가 함께 사용. 배치 원칙: 셀러 작업 플로우 순서 (SERVICE 6장)
-// ① 소싱 (뭘 팔지 정하고 마진 판단) → ② 이미지 준비 (가공 파이프라인 순) → ③ 등록 (준비 중)
+// 랜딩 그리드·사이드바가 함께 사용. 배치 원칙: 셀러 작업 플로우 순서 (SERVICE 6장)
+// ① 소싱 (뭘 팔지 정하기) → ② 등록 준비 (이미지 파이프라인 순) → ③ 운영·정산 (판매 후)
 
 import type { ReactNode } from 'react';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
@@ -14,7 +14,7 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 
-export type ToolGroupKey = 'sourcing' | 'image';
+export type ToolGroupKey = 'sourcing' | 'image' | 'ops';
 
 export type ToolInfo = {
   href: string;
@@ -36,19 +36,13 @@ export const FLAGSHIP_TOOL = {
 // 플로우 그룹 정의 (표시 순서 = 작업 순서)
 export const TOOL_GROUPS: { key: ToolGroupKey; step: string; label: string; description: string }[] = [
   { key: 'sourcing', step: '1', label: '소싱', description: '뭘 팔지 정하고, 남는 장사인지 확인합니다' },
-  { key: 'image', step: '2', label: '이미지 준비', description: '등록용 이미지를 가공 순서대로 완성합니다' },
+  { key: 'image', step: '2', label: '등록 준비', description: '등록용 이미지를 가공 순서대로 완성합니다' },
+  { key: 'ops', step: '3', label: '운영·정산', description: '판매 후 광고 손익과 세금을 챙깁니다' },
 ];
 
 // 개별 도구 목록 (원링크는 FLAGSHIP_TOOL로 별도 — 같은 페이지 중복 노출 방지 위해 여기선 제외)
 export const TOOLS: ToolInfo[] = [
   //////////////////// ① 소싱 ////////////////////
-  {
-    href: '/margin-calculator',
-    icon: <CalculateIcon color="primary" fontSize="large" />,
-    title: '마진 계산',
-    description: '순이익 계산과 목표 마진 최소 판매가 역산',
-    group: 'sourcing',
-  },
   {
     href: '/keyword-stats',
     icon: <QueryStatsIcon color="primary" fontSize="large" />,
@@ -57,27 +51,13 @@ export const TOOLS: ToolInfo[] = [
     group: 'sourcing',
   },
   {
-    href: '/excel-import',
-    icon: <UploadFileIcon color="primary" fontSize="large" />,
-    title: '엑셀 대량 가공',
-    description: '대량등록 엑셀의 상품 이미지를 모아 누끼 파이프라인에 일괄 투입',
+    href: '/margin-calculator',
+    icon: <CalculateIcon color="primary" fontSize="large" />,
+    title: '마진 계산',
+    description: '순이익 계산과 목표 마진 최소 판매가 역산',
     group: 'sourcing',
   },
-  {
-    href: '/roas-calculator',
-    icon: <CampaignIcon color="primary" fontSize="large" />,
-    title: '광고 손익',
-    description: '내 마진 기준 손익분기 ROAS와 광고 손익 시뮬레이션',
-    group: 'sourcing',
-  },
-  {
-    href: '/vat-calculator',
-    icon: <ReceiptLongIcon color="primary" fontSize="large" />,
-    title: '부가세 계산',
-    description: '간이/일반 과세 유형별 부가세 납부 예상액',
-    group: 'sourcing',
-  },
-  //////////////////// ② 이미지 준비 (파이프라인 순) ////////////////////
+  //////////////////// ② 등록 준비 (이미지 파이프라인 순) ////////////////////
   {
     href: '/background-removal',
     icon: <AutoFixHighIcon color="primary" fontSize="large" />,
@@ -112,5 +92,27 @@ export const TOOLS: ToolInfo[] = [
     title: '상세 분할',
     description: '긴 상세 이미지를 마켓 높이 제한에 맞춰 순서대로 자동 분할',
     group: 'image',
+  },
+  {
+    href: '/excel-import',
+    icon: <UploadFileIcon color="primary" fontSize="large" />,
+    title: '엑셀 대량 가공',
+    description: '대량등록 엑셀의 상품 이미지를 모아 누끼 파이프라인에 일괄 투입',
+    group: 'image',
+  },
+  //////////////////// ③ 운영·정산 (판매 후) ////////////////////
+  {
+    href: '/roas-calculator',
+    icon: <CampaignIcon color="primary" fontSize="large" />,
+    title: '광고 손익',
+    description: '내 마진 기준 손익분기 ROAS와 광고 손익 시뮬레이션',
+    group: 'ops',
+  },
+  {
+    href: '/vat-calculator',
+    icon: <ReceiptLongIcon color="primary" fontSize="large" />,
+    title: '부가세 계산',
+    description: '간이/일반 과세 유형별 부가세 납부 예상액',
+    group: 'ops',
   },
 ];
