@@ -224,11 +224,33 @@ export default function KeywordStatsView() {
           </Alert>
         )}
 
-        {/* 시작 키워드 (검색 전 빈 화면) — 시즌 큐레이션 + 최근 검색. 도매꾹 인기검색어 승인 후 교체 예정 */}
+        {/* 시작 키워드 (검색 전 빈 화면) — [이번 달 | 사계절] 2단 + 최근 검색. 도매꾹 인기검색어 승인 후 교체 예정 */}
         {!hasResult && !isLoading && (
-          <Paper variant="outlined" sx={{ p: 3 }}>
-            <Stack spacing={2.5}>
-              {recentKeywords.length > 0 && (
+          <Stack spacing={3}>
+            <StarterGrid>
+              <Paper variant="outlined" sx={{ p: 3 }}>
+                <Stack spacing={1}>
+                  <Typography variant="subtitle2">이번 달 뜨는 키워드</Typography>
+                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+                    {seasonalKeywords.map((keyword) => (
+                      <Chip key={keyword} label={keyword} color="primary" variant="outlined" onClick={() => runSearch(keyword)} />
+                    ))}
+                  </Stack>
+                </Stack>
+              </Paper>
+              <Paper variant="outlined" sx={{ p: 3 }}>
+                <Stack spacing={1}>
+                  <Typography variant="subtitle2">일 년 내내 꾸준한 키워드</Typography>
+                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+                    {STEADY_KEYWORDS.map((keyword) => (
+                      <Chip key={keyword} label={keyword} variant="outlined" onClick={() => runSearch(keyword)} />
+                    ))}
+                  </Stack>
+                </Stack>
+              </Paper>
+            </StarterGrid>
+            {recentKeywords.length > 0 && (
+              <Paper variant="outlined" sx={{ p: 3 }}>
                 <Stack spacing={1}>
                   <Typography variant="subtitle2">최근 분석한 키워드</Typography>
                   <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
@@ -237,25 +259,9 @@ export default function KeywordStatsView() {
                     ))}
                   </Stack>
                 </Stack>
-              )}
-              <Stack spacing={1}>
-                <Typography variant="subtitle2">이번 달 시즌 키워드로 시작해보세요</Typography>
-                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
-                  {seasonalKeywords.map((keyword) => (
-                    <Chip key={keyword} label={keyword} color="primary" variant="outlined" onClick={() => runSearch(keyword)} />
-                  ))}
-                </Stack>
-              </Stack>
-              <Stack spacing={1}>
-                <Typography variant="subtitle2">계절 안 타는 스테디 카테고리</Typography>
-                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
-                  {STEADY_KEYWORDS.map((keyword) => (
-                    <Chip key={keyword} label={keyword} variant="outlined" onClick={() => runSearch(keyword)} />
-                  ))}
-                </Stack>
-              </Stack>
-            </Stack>
-          </Paper>
+              </Paper>
+            )}
+          </Stack>
         )}
 
         {/* ⓪ AI 판단 — 가동 셋업 완료 후 노출 (백로그 F-4)
@@ -333,6 +339,16 @@ export default function KeywordStatsView() {
 }
 
 //////////////////////////////////////// 스타일 ////////////////////////////////////////
+const StarterGrid = styled.div(({ theme }) => ({
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: theme.spacing(3),
+  alignItems: 'start',
+  [theme.breakpoints.down('md')]: {
+    gridTemplateColumns: '1fr',
+  },
+}));
+
 const LoadingBox = styled.div(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
