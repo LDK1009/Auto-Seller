@@ -93,7 +93,7 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
       <TwoColumnRow>
         {/* ①② 검색 트렌드 · 시즌성 */}
         <BlockCard>
-          <BlockLabel>검색 트렌드 · 12개월</BlockLabel>
+          <BlockLabel>검색 트렌드</BlockLabel>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
             {detail.trendDirection === 'up' && <Chip size="small" color="success" icon={<TrendingUpIcon />} label="상승 중" />}
             {detail.trendDirection === 'flat' && <Chip size="small" icon={<TrendingFlatIcon />} label="유지" />}
@@ -112,6 +112,22 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
           </Stack>
           {trendData.length > 1 ? (
             <Stack spacing={0.25} sx={{ flex: 1, justifyContent: 'flex-end' }}>
+              <LegendRow>
+                <LegendItem>
+                  <svg width="26" height="8" aria-hidden>
+                    <line x1="1" y1="4" x2="25" y2="4" stroke={theme.palette.primary.main} strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                  <Typography variant="caption" color="text.secondary">검색량</Typography>
+                </LegendItem>
+                {detail.shoppingClickTrend.length > 1 && (
+                  <LegendItem>
+                    <svg width="26" height="8" aria-hidden>
+                      <line x1="1" y1="4" x2="25" y2="4" stroke={theme.palette.text.disabled} strokeWidth="2" strokeDasharray="5 4" strokeLinecap="round" />
+                    </svg>
+                    <Typography variant="caption" color="text.secondary">쇼핑 클릭</Typography>
+                  </LegendItem>
+                )}
+              </LegendRow>
               <ResponsiveContainer width="100%" height={170}>
                 <LineChart data={trendData} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.palette.divider} />
@@ -145,11 +161,6 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
                   )}
                 </LineChart>
               </ResponsiveContainer>
-              {detail.shoppingClickTrend.length > 1 && (
-                <Typography variant="caption" color="text.secondary">
-                  실선 검색량 · 점선 쇼핑 클릭 (각각 상대지수, 최대 100)
-                </Typography>
-              )}
             </Stack>
           ) : (
             <Typography variant="caption" color="text.secondary">트렌드 데이터 없음</Typography>
@@ -183,7 +194,7 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
           )}
           {ageData.length > 0 && (
             <Stack spacing={0.25}>
-              <Typography variant="caption" color="text.secondary">연령별 비중 (%)</Typography>
+              <Typography variant="caption" color="text.secondary">연령별 비중</Typography>
               <ResponsiveContainer width="100%" height={96}>
                 <BarChart data={ageData} margin={{ top: 16, right: 4, bottom: 0, left: 4 }}>
                   <XAxis
@@ -210,9 +221,7 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
           )}
           {weekdayData.length > 0 && topWeekdayIndex !== null && (
             <Stack spacing={0.25}>
-              <Typography variant="caption" color="text.secondary">
-                요일별 비중 (%) — {WEEKDAY_LABELS[topWeekdayIndex]}요일에 가장 많이 찾음
-              </Typography>
+              <Typography variant="caption" color="text.secondary">요일별 비중</Typography>
               <ResponsiveContainer width="100%" height={96}>
                 <BarChart data={weekdayData} margin={{ top: 16, right: 4, bottom: 0, left: 4 }}>
                   <XAxis
@@ -235,6 +244,9 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+              <Typography variant="caption" color="text.secondary">
+                {WEEKDAY_LABELS[topWeekdayIndex]}요일에 가장 많이 찾아요
+              </Typography>
             </Stack>
           )}
           {detail.deviceRatio === null && detail.genderRatio === null && ageData.length === 0 && weekdayData.length === 0 && (
@@ -482,7 +494,21 @@ const MarketBox = styled.div(({ theme }) => ({
   gap: theme.spacing(0.25),
   padding: theme.spacing(1.5),
   borderRadius: theme.shape.borderRadius,
-  backgroundColor: theme.palette.background.default,
+  backgroundColor: theme.palette.background.paper, // 핵심 정보 = 흰 배경 (대표 확정 원칙)
+  border: `1px solid ${theme.palette.divider}`,
+}));
+
+////////// 차트 범례 (실제 선 모양 표기)
+const LegendRow = styled.div(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1.5),
+}));
+
+const LegendItem = styled.div(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(0.5),
 }));
 
 ////////// 기기·성별 비율 스택 바 컨테이너

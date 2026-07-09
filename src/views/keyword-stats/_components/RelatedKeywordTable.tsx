@@ -37,7 +37,7 @@ export default function RelatedKeywordTable({
       <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
         <Typography variant="subtitle2">연관 키워드 {related.length}개</Typography>
         <Typography variant="caption" color="text.secondary">
-          체크 후 비교 (최대 {MAX_COMPARE_CHECKS}개) · 키워드 클릭 시 재검색
+          최대 {MAX_COMPARE_CHECKS}개 체크 후 비교 · 키워드 클릭 시 재검색
         </Typography>
       </Stack>
       <HeaderRow>
@@ -99,7 +99,7 @@ export default function RelatedKeywordTable({
         })}
       </ListBox>
       <Typography variant="caption" color="text.secondary">
-        검색량 높은 순 상위 {related.length}개입니다. 경쟁강도가 낮을수록(1 미만) 틈새 키워드예요.
+        검색량 높은 순이에요. 경쟁강도가 1 미만이면 틈새 키워드예요.
       </Typography>
     </Stack>
   );

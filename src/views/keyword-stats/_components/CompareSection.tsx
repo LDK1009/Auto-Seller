@@ -69,14 +69,14 @@ export default function CompareSection({ entries }: PropsType) {
       {/* 판정 한 줄 */}
       {nicheKeyword !== null && (
         <Alert severity="success">
-          이 중 틈새는 <b>{nicheKeyword}</b> — 경쟁강도 {nicheRatio} (상품수÷검색수가 가장 낮음)
+          이 중 틈새는 <b>{nicheKeyword}</b> — 경쟁강도 {nicheRatio}로 가장 낮아요
         </Alert>
       )}
 
       {/* ① 트렌드 겹침 차트 (12개월, 동일 스케일) */}
       {hasTrend && (
         <BlockCard>
-          <BlockLabel>검색 트렌드 · 12개월 (동일 스케일 비교)</BlockLabel>
+          <BlockLabel>검색 트렌드</BlockLabel>
           <Legend>
             {entries.map((entry, index) => (
               <LegendItem key={entry.keyword}>
@@ -147,7 +147,7 @@ export default function CompareSection({ entries }: PropsType) {
                 }
               />
               <MetricRow
-                label="월 클릭 (클릭률)"
+                label="월간 클릭수"
                 entries={entries}
                 render={(entry) =>
                   entry.monthlyClicks !== null
@@ -156,7 +156,7 @@ export default function CompareSection({ entries }: PropsType) {
                 }
               />
               <MetricRow
-                label="등록 상품 수"
+                label="상품 수"
                 entries={entries}
                 render={(entry) => (entry.productCount !== null ? entry.productCount.toLocaleString() : '—')}
               />
@@ -184,26 +184,25 @@ export default function CompareSection({ entries }: PropsType) {
                 })}
               </tr>
               <MetricRow
-                label="기기 (PC/모바일)"
+                label="기기"
                 entries={entries}
                 render={(entry) =>
-                  entry.deviceRatio ? `${entry.deviceRatio.pc}% / ${entry.deviceRatio.mobile}%` : '—'
+                  entry.deviceRatio ? `PC ${entry.deviceRatio.pc}% · 모바일 ${entry.deviceRatio.mobile}%` : '—'
                 }
               />
               <MetricRow
-                label="성별 (남/여)"
+                label="성별"
                 entries={entries}
                 render={(entry) =>
-                  entry.genderRatio ? `${entry.genderRatio.male}% / ${entry.genderRatio.female}%` : '—'
+                  entry.genderRatio ? `남 ${entry.genderRatio.male}% · 여 ${entry.genderRatio.female}%` : '—'
                 }
               />
-              <MetricRow label="연령 TOP" entries={entries} render={(entry) => entry.ageTop ?? '—'} />
+              <MetricRow label="연령 1위" entries={entries} render={(entry) => entry.ageTop ?? '—'} />
             </tbody>
           </CompareTable>
         </TableScroll>
         <Typography variant="caption" color="text.secondary">
-          트렌드는 이 비교 안에서만 상대 비교가 유효합니다 (네이버 데이터랩 상대지수 특성). 성별·연령은 쇼핑
-          카테고리 클릭 기준입니다.
+          트렌드 지수는 이 비교 안에서만 서로 비교할 수 있어요.
         </Typography>
       </BlockCard>
     </Stack>

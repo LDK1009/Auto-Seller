@@ -23,7 +23,7 @@ export default function StatSummaryCards({ stat }: PropsType) {
         </Typography>
       </StatCard>
       <StatCard>
-        <Typography variant="caption" color="text.secondary">월 클릭 (클릭률)</Typography>
+        <Typography variant="caption" color="text.secondary">월간 클릭수</Typography>
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
           {stat.monthlyClicks !== null ? stat.monthlyClicks.toLocaleString() : '—'}
           {stat.avgCtr !== null && (
@@ -34,13 +34,13 @@ export default function StatSummaryCards({ stat }: PropsType) {
         </Typography>
       </StatCard>
       <StatCard>
-        <Typography variant="caption" color="text.secondary">등록 상품 수</Typography>
+        <Typography variant="caption" color="text.secondary">상품 수</Typography>
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
           {stat.productCount !== null ? stat.productCount.toLocaleString() : '—'}
         </Typography>
       </StatCard>
       <StatCard>
-        <Typography variant="caption" color="text.secondary">경쟁강도 (상품수÷검색수)</Typography>
+        <Typography variant="caption" color="text.secondary">경쟁강도</Typography>
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
           {stat.ratio !== null ? stat.ratio : '—'}
         </Typography>
@@ -76,7 +76,8 @@ const StatCard = styled.div(({ theme }) => ({
   gap: theme.spacing(0.75),
   padding: theme.spacing(2),
   borderRadius: theme.shape.borderRadius,
-  backgroundColor: theme.palette.background.default, // 인셋 서피스 (보더 없이 톤으로 구분 — 토스 규칙)
+  backgroundColor: theme.palette.background.paper, // 핵심 정보 = 흰 배경 (대표 확정 원칙)
+  boxShadow: theme.shadows[1],
 }));
 
 const ChipLine = styled.div(({ theme }) => ({

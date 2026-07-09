@@ -158,13 +158,9 @@ export default function KeywordStatsView() {
       help={
         <HelpPanel storageKey="keyword-stats">
           <Stack spacing={0.75}>
-            <Typography variant="body2">① 키워드 1개를 검색하면 핵심 지표와 종합 분석이 바로 나옵니다</Typography>
-            <Typography variant="body2">② 경쟁강도 = 등록 상품 수 ÷ 월간 검색수 — 1 미만이면 틈새, 5 초과면 치열</Typography>
-            <Typography variant="body2">③ 연관 키워드를 클릭하면 재검색, 체크(최대 4개) 후 [키워드 비교]하면 같은 눈금으로 비교됩니다</Typography>
-            <Typography variant="body2">④ 틈새 키워드를 도매꾹에서 역검색하면 소싱 후보가 나옵니다 (원링크로 투입)</Typography>
-            <Typography variant="caption" color="text.secondary">
-              네이버 검색광고·쇼핑·데이터랩 기준이며 24시간 캐시로 갱신됩니다.
-            </Typography>
+            <Typography variant="body2">① 키워드를 입력하고 [분석]을 누르세요</Typography>
+            <Typography variant="body2">② 연관 키워드를 클릭하면 그 키워드로 다시 분석됩니다</Typography>
+            <Typography variant="body2">③ 비교할 키워드를 체크하고 [키워드 비교]를 누르세요</Typography>
           </Stack>
         </HelpPanel>
       }
