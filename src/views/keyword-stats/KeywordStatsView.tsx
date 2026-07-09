@@ -25,18 +25,14 @@ import {
   fetchKeywordDetail,
   fetchRelatedCompetition,
   fetchKeywordCompare,
+  fetchStarterKeywords,
 } from '@/shared/services/keywordStatsService';
 import type { KeywordStat, RelatedKeyword } from '@/shared/types/keywordStats';
 import type { KeywordDetail } from '@/shared/types/keywordDetail';
 import type { KeywordCompareResponse } from '@/shared/types/keywordCompare';
 import KeywordDetailCard from './_components/KeywordDetailCard';
 // import AiVerdictCard from './_components/AiVerdictCard'; // AI 판단 가동(카카오·키·테이블 셋업) 전까지 숨김 — 백로그 F-4
-import {
-  getSeasonalKeywords,
-  STEADY_KEYWORDS,
-  loadRecentKeywords,
-  saveRecentKeyword,
-} from './_constants/starterKeywords';
+import { loadRecentKeywords, saveRecentKeyword } from './_constants/starterKeywords';
 import StarterKeywordTable from './_components/StarterKeywordTable';
 import StatSummaryCards from './_components/StatSummaryCards';
 import RelatedKeywordTable from './_components/RelatedKeywordTable';
@@ -150,21 +146,14 @@ export default function KeywordStatsView() {
     }
   };
 
-  ////////// 시작 키워드 실조회 (검색수 내림차순 랭킹 — 요청당 10개 제한이라 스테디는 분할)
+  ////////// 시작 키워드 실조회 (서버가 시드 풀→검색량 랭킹→시즌성 분리까지 완료 — 단일 호출)
   const loadStarterStats = async () => {
     setIsStarterLoading(true);
     try {
-      // 랭킹 후 상위 10개만 노출
-      const rankBySearches = (stats: KeywordStat[]) =>
-        [...stats].sort((a, b) => (b.monthlySearches ?? -1) - (a.monthlySearches ?? -1)).slice(0, 10);
-      // 순차 요청 — 병렬로 쏘면 내부 shop 콜이 합쳐져 오픈API 초당 제한(429)을 넘음 (실측)
-      const seasonalResponse = await fetchKeywordStats(getSeasonalKeywords());
-      setIsConfigured(seasonalResponse.configured);
-      setSeasonalStats(rankBySearches(seasonalResponse.stats));
-
-      const steadyFirst = await fetchKeywordStats(STEADY_KEYWORDS.slice(0, 10));
-      const steadyRest = STEADY_KEYWORDS.length > 10 ? await fetchKeywordStats(STEADY_KEYWORDS.slice(10)) : null;
-      setSteadyStats(rankBySearches([...steadyFirst.stats, ...(steadyRest?.stats ?? [])]));
+      const response = await fetchStarterKeywords();
+      setIsConfigured(response.configured);
+      setSeasonalStats(response.seasonal);
+      setSteadyStats(response.steady);
     } catch (error) {
       console.error(error);
     } finally {

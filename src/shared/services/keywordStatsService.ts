@@ -13,6 +13,18 @@ export async function fetchKeywordStats(keywords: string[]): Promise<KeywordStat
   return body as KeywordStatsResponse;
 }
 
+////////// 시작 키워드 (빈 화면 랭킹 표 — 서버가 시드 풀→검색량 랭킹→시즌성 분리까지 완료)
+import type { StarterKeywordsResponse } from '@/shared/types/keywordStats';
+
+export async function fetchStarterKeywords(): Promise<StarterKeywordsResponse> {
+  const response = await fetch('/api/starter-keywords');
+  const body = await response.json();
+  if (!response.ok) {
+    throw new Error(body?.error ?? '시작 키워드 조회에 실패했습니다.');
+  }
+  return body as StarterKeywordsResponse;
+}
+
 ////////// 키워드 상세 분석 (종합차트 — 온디맨드)
 import type { KeywordDetail } from '@/shared/types/keywordDetail';
 

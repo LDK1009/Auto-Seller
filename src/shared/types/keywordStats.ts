@@ -25,3 +25,10 @@ export type KeywordStatsResponse = {
   stats: KeywordStat[];
   related: RelatedKeyword[]; // 연관 키워드 (검색량 내림차순, 최대 30개)
 };
+
+// 시작 키워드 (빈 화면 랭킹 표 — 시드 풀을 시즌성으로 분리)
+export type StarterKeywordsResponse = {
+  configured: boolean;
+  seasonal: KeywordStat[]; // 이번 달 뜨는 (시즌성 + 제철, 검색량 내림차순)
+  steady: KeywordStat[]; // 일 년 내내 꾸준한 (비시즌성, 검색량 내림차순)
+};
