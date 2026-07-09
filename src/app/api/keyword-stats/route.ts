@@ -126,8 +126,8 @@ export async function GET(request: Request) {
           const oldestKey = cache.keys().next().value;
           if (oldestKey) cache.delete(oldestKey);
         }
-        // 검색수 미확보(검색광고 장애) 항목은 짧게 캐시 — 복구 즉시 재조회되도록
-        const ttl = stat.monthlySearches === null ? 1000 * 60 * 10 : CACHE_TTL_MS;
+        // 검색수·상품 수 미확보(장애·429) 항목은 짧게 캐시 — 복구 즉시 재조회되도록
+        const ttl = stat.monthlySearches === null || stat.productCount === null ? 1000 * 60 * 10 : CACHE_TTL_MS;
         cache.set(keyword, { stat, expiresAt: now + ttl });
       }
     }
@@ -188,10 +188,12 @@ async function fetchKeywordTool(
 }
 
 ////////// 쇼핑 검색 — 등록 상품 수(total) + 최빈 카테고리 (상위 10개 표본, 호출 수는 동일 1회)
+// 오픈API 속도 제한(약 10콜/초, 실측) — 429면 잠깐 쉬고 1회 재시도
 async function fetchShopMeta(
   keyword: string,
   clientId: string,
   clientSecret: string,
+  isRetry = false,
 ): Promise<{ total: number | null; category: string | null }> {
   try {
     const response = await fetch(`${SHOP_API_URL}?query=${encodeURIComponent(keyword)}&display=10`, {
@@ -199,6 +201,10 @@ async function fetchShopMeta(
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       cache: 'no-store',
     });
+    if (response.status === 429 && !isRetry) {
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      return fetchShopMeta(keyword, clientId, clientSecret, true);
+    }
     if (!response.ok) return { total: null, category: null };
     const body = await response.json();
     const total = Number(body?.total);

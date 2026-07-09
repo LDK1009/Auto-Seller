@@ -142,13 +142,13 @@ export default function KeywordStatsView() {
     try {
       const rankBySearches = (stats: KeywordStat[]) =>
         [...stats].sort((a, b) => (b.monthlySearches ?? -1) - (a.monthlySearches ?? -1));
-      const [seasonalResponse, steadyFirst, steadyRest] = await Promise.all([
-        fetchKeywordStats(getSeasonalKeywords()),
-        fetchKeywordStats(STEADY_KEYWORDS.slice(0, 10)),
-        STEADY_KEYWORDS.length > 10 ? fetchKeywordStats(STEADY_KEYWORDS.slice(10)) : Promise.resolve(null),
-      ]);
+      // 순차 요청 — 병렬로 쏘면 내부 shop 콜이 합쳐져 오픈API 초당 제한(429)을 넘음 (실측)
+      const seasonalResponse = await fetchKeywordStats(getSeasonalKeywords());
       setIsConfigured(seasonalResponse.configured);
       setSeasonalStats(rankBySearches(seasonalResponse.stats));
+
+      const steadyFirst = await fetchKeywordStats(STEADY_KEYWORDS.slice(0, 10));
+      const steadyRest = STEADY_KEYWORDS.length > 10 ? await fetchKeywordStats(STEADY_KEYWORDS.slice(10)) : null;
       setSteadyStats(rankBySearches([...steadyFirst.stats, ...(steadyRest?.stats ?? [])]));
     } catch (error) {
       console.error(error);
