@@ -40,15 +40,16 @@ export default function RelatedKeywordTable({
           최대 {MAX_COMPARE_CHECKS}개 체크 후 비교 · 키워드 클릭 시 재검색
         </Typography>
       </Stack>
-      <HeaderRow>
-        <CheckCell />
-        <Typography variant="caption" color="text.secondary" sx={{ flex: 1, textAlign: 'center' }}>키워드</Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ width: 100, textAlign: 'center' }}>월간 검색수</Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ width: 100, textAlign: 'center' }}>상품 수</Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ width: 80, textAlign: 'center' }}>경쟁강도</Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ width: 76, textAlign: 'center' }}>판정</Typography>
-      </HeaderRow>
       <ListBox>
+        {/* 헤더를 스크롤 박스 안(sticky)에 둬야 스크롤바 폭만큼 행과 어긋나지 않음 */}
+        <HeaderRow>
+          <CheckCell />
+          <Typography variant="caption" color="text.secondary" sx={{ flex: 1, textAlign: 'center' }}>키워드</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ width: 100, textAlign: 'center' }}>월간 검색수</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ width: 100, textAlign: 'center' }}>상품 수</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ width: 80, textAlign: 'center' }}>경쟁강도</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ width: 76, textAlign: 'center' }}>판정</Typography>
+        </HeaderRow>
         {related.map((entry) => {
           const isChecked = checkedKeywords.has(entry.keyword);
           const productCount = productCounts.get(entry.keyword) ?? null;
@@ -107,10 +108,15 @@ export default function RelatedKeywordTable({
 
 //////////////////////////////////////// 스타일 ////////////////////////////////////////
 const HeaderRow = styled.div(({ theme }) => ({
+  position: 'sticky',
+  top: 0,
+  zIndex: 1,
   display: 'flex',
   alignItems: 'center',
   gap: theme.spacing(1.5),
-  padding: theme.spacing(0, 1.5),
+  padding: theme.spacing(0.75, 1.5),
+  backgroundColor: theme.palette.background.paper,
+  borderBottom: `1px solid ${theme.palette.divider}`,
 }));
 
 const ListBox = styled.div(({ theme }) => ({
