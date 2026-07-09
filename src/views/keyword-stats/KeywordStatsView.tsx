@@ -5,6 +5,7 @@
 // 연관 키워드 클릭 = 재검색, 체크(≤4) 후 [키워드 비교] = 현재 키워드와 동일 스케일 비교.
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import styled from '@emotion/styled';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -43,6 +44,8 @@ import CompareSection from './_components/CompareSection';
 
 export default function KeywordStatsView() {
   const { enqueueSnackbar } = useSnackbar();
+  const router = useRouter();
+  const searchParams = useSearchParams(); // URL이 단일 소스 — 사이드바 재클릭·뒤로가기 모두 여기로 감지
 
   // 현재 리포트 상태
   const [inputValue, setInputValue] = useState('');
@@ -68,11 +71,23 @@ export default function KeywordStatsView() {
   const [isComparing, setIsComparing] = useState(false);
   const compareSectionRef = useRef<HTMLDivElement>(null);
 
-  ////////// 검색 실행 (연관·시작 키워드 클릭 포함 단일 진입점)
-  // updatesHistory=false: URL 직접 진입·뒤로가기 등 이미 URL이 맞는 경우 (중복 엔트리 방지)
-  const runSearch = async (rawKeyword: string, updatesHistory = true) => {
+  ////////// 검색 트리거 — URL만 바꾼다 (실행은 searchParams 이펙트가 담당)
+  const currentKeywordRef = useRef('');
+  const navigateToKeyword = (rawKeyword: string) => {
     const keyword = rawKeyword.trim();
     if (keyword.length === 0) return;
+    if ((searchParams.get('keyword') ?? '') === keyword) {
+      executeSearch(keyword); // 같은 키워드 재검색 — URL 변화가 없으니 직접 실행
+    } else {
+      router.push(`?keyword=${encodeURIComponent(keyword)}`);
+    }
+  };
+
+  ////////// 검색 실행 (URL 반영 후 실제 조회)
+  const executeSearch = async (rawKeyword: string) => {
+    const keyword = rawKeyword.trim();
+    if (keyword.length === 0) return;
+    currentKeywordRef.current = keyword;
 
     // 리포트 초기화
     setCurrentKeyword(keyword);
@@ -87,13 +102,6 @@ export default function KeywordStatsView() {
     setIsLoading(true);
     setIsDetailLoading(true);
 
-    // URL 동기화 — 검색 시 히스토리 엔트리 추가 (직접 URL 진입과 동일한 상태, 뒤로가기 지원)
-    if (updatesHistory) {
-      const currentParam = new URLSearchParams(window.location.search).get('keyword');
-      const nextUrl = `?keyword=${encodeURIComponent(keyword)}`;
-      if (currentParam === keyword) window.history.replaceState(null, '', nextUrl);
-      else window.history.pushState(null, '', nextUrl);
-    }
     setRecentKeywords(saveRecentKeyword(keyword));
 
     // 종합차트는 별도 트랙으로 병렬 로드 (기본 지표보다 느림)
@@ -164,8 +172,16 @@ export default function KeywordStatsView() {
     }
   };
 
-  ////////// 시작 화면으로 복귀 (뒤로가기로 ?keyword= 가 사라졌을 때)
+  ////////// 시작 화면으로 복귀 (?keyword= 가 사라졌을 때 — 사이드바 재클릭·뒤로가기)
+  const hasLoadedStarterRef = useRef(false);
+  const loadStarterOnce = () => {
+    if (hasLoadedStarterRef.current) return;
+    hasLoadedStarterRef.current = true;
+    loadStarterStats();
+  };
+
   const resetToStarter = () => {
+    currentKeywordRef.current = '';
     setCurrentKeyword('');
     setInputValue('');
     setStat(null);
@@ -173,29 +189,26 @@ export default function KeywordStatsView() {
     setRelated([]);
     setCheckedKeywords(new Set());
     setCompare(null);
-    if (seasonalStats.length === 0) loadStarterStats();
+    loadStarterOnce();
   };
 
-  ////////// 최초 진입: URL의 ?keyword= 자동 검색, 없으면 시작 키워드 로드 + 뒤로/앞으로 대응
+  ////////// 최근 검색 복원 (최초 1회)
   useEffect(() => {
     setRecentKeywords(loadRecentKeywords());
-    const initialKeyword = new URLSearchParams(window.location.search).get('keyword');
-    if (initialKeyword && initialKeyword.trim().length > 0) {
-      runSearch(initialKeyword, false);
-    } else {
-      loadStarterStats();
-    }
-
-    // 뒤로/앞으로 가기 → URL 파라미터 기준으로 화면 복원
-    const handlePopState = () => {
-      const keyword = new URLSearchParams(window.location.search).get('keyword');
-      if (keyword && keyword.trim().length > 0) runSearch(keyword, false);
-      else resetToStarter();
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  ////////// URL → 화면 동기화 (최초 진입·검색·사이드바 재클릭·뒤로/앞으로 전부 이 이펙트 하나로)
+  useEffect(() => {
+    const keyword = (searchParams.get('keyword') ?? '').trim();
+    if (keyword.length > 0) {
+      if (keyword !== currentKeywordRef.current) executeSearch(keyword);
+    } else if (currentKeywordRef.current.length > 0) {
+      resetToStarter();
+    } else {
+      loadStarterOnce();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   ////////// 비교 체크 토글
   const handleToggleCheck = (keyword: string) => {
@@ -255,12 +268,12 @@ export default function KeywordStatsView() {
               value={inputValue}
               onChange={(event) => setInputValue(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === 'Enter') runSearch(inputValue);
+                if (event.key === 'Enter') navigateToKeyword(inputValue);
               }}
             />
             <Button
               variant="contained"
-              onClick={() => runSearch(inputValue)}
+              onClick={() => navigateToKeyword(inputValue)}
               disabled={isLoading || inputValue.trim().length === 0}
               startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : <SearchIcon />}
               sx={{ flexShrink: 0, px: 3 }}
@@ -286,7 +299,7 @@ export default function KeywordStatsView() {
                 title="이번 달 뜨는 키워드"
                 stats={seasonalStats}
                 isLoading={isStarterLoading}
-                onSelectKeyword={runSearch}
+                onSelectKeyword={navigateToKeyword}
               />
             </Paper>
             <Paper variant="outlined" sx={{ p: 3 }}>
@@ -294,7 +307,7 @@ export default function KeywordStatsView() {
                 title="일 년 내내 꾸준한 키워드"
                 stats={steadyStats}
                 isLoading={isStarterLoading}
-                onSelectKeyword={runSearch}
+                onSelectKeyword={navigateToKeyword}
               />
             </Paper>
             {recentKeywords.length > 0 && (
@@ -303,7 +316,7 @@ export default function KeywordStatsView() {
                   <Typography variant="subtitle2">최근 분석한 키워드</Typography>
                   <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
                     {recentKeywords.map((keyword) => (
-                      <Chip key={keyword} label={keyword} variant="outlined" onClick={() => runSearch(keyword)} />
+                      <Chip key={keyword} label={keyword} variant="outlined" onClick={() => navigateToKeyword(keyword)} />
                     ))}
                   </Stack>
                 </Stack>
@@ -344,7 +357,7 @@ export default function KeywordStatsView() {
               checkedKeywords={checkedKeywords}
               onToggleCheck={handleToggleCheck}
               onSelectKeyword={(keyword) => {
-                runSearch(keyword);
+                navigateToKeyword(keyword);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             />
