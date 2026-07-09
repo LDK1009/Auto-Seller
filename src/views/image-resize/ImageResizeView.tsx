@@ -76,7 +76,7 @@ export default function ImageResizeView() {
 
   return (
     <PageLayout
-      title="이미지 규격 변환"
+      title="규격 맞추기"
       description="마켓별 대표이미지 규격에 맞춰 여러 이미지를 한 번에 변환합니다. 처리는 브라우저에서 진행되어 이미지가 서버로 전송되지 않습니다."
       help={
         <HelpPanel storageKey="image-resize">

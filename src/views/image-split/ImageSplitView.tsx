@@ -55,7 +55,7 @@ export default function ImageSplitView() {
 
   return (
     <PageLayout
-      title="상세페이지 이미지 분할"
+      title="상세 분할"
       description="세로로 긴 상세페이지 이미지를 지정 높이로 잘라 순서대로 저장합니다. 처리는 브라우저에서 진행됩니다."
       help={
         <HelpPanel storageKey="image-split">

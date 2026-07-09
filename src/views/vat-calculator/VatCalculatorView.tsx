@@ -38,7 +38,7 @@ export default function VatCalculatorView() {
 
   return (
     <PageLayout
-      title="부가세 간이 계산기"
+      title="부가세 계산"
       description="매출·매입으로 부가세 납부 예상액을 대략 계산합니다 (신고 기준은 홈택스가 우선)."
       maxWidth="md"
       help={

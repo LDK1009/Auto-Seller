@@ -79,7 +79,7 @@ export default function WatermarkView() {
 
   return (
     <PageLayout
-      title="워터마크 일괄 삽입"
+      title="워터마크"
       description="여러 상품 이미지에 텍스트/로고 워터마크를 한 번에 넣습니다. 처리는 브라우저에서 진행됩니다."
       help={
         <HelpPanel storageKey="watermark">

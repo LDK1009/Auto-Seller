@@ -27,7 +27,7 @@ export default function ImageCheckView() {
 
   return (
     <PageLayout
-      title="이미지 규정 검사"
+      title="규정 검사"
       description="상품 대표이미지가 마켓 규정에 맞는지 업로드 즉시 검사합니다. 처리는 브라우저에서 진행됩니다."
       help={
         <HelpPanel storageKey="image-check">

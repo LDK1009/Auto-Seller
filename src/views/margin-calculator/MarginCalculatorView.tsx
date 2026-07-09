@@ -59,7 +59,7 @@ export default function MarginCalculatorView() {
 
   return (
     <PageLayout
-      title="마진 계산기"
+      title="마진 계산"
       description="판매가로 순이익을 확인하거나, 목표 마진율로 최소 판매가를 역산합니다."
       maxWidth="md"
       help={

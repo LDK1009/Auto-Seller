@@ -90,7 +90,7 @@ export default function BackgroundRemovalView() {
 
   return (
     <PageLayout
-      title="대량 이미지 누끼"
+      title="누끼"
       description="여러 상품 이미지의 배경을 한 번에 제거합니다. 처리는 브라우저에서 진행되어 이미지가 서버로 전송되지 않습니다."
       help={
         <HelpPanel storageKey="background-removal">
