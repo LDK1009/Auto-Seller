@@ -98,7 +98,13 @@ export async function GET(request: Request) {
       }
 
       ////////// 2) 쇼핑 상품 수 + 최빈 카테고리 (키워드별 1회 — 오픈API 키 없으면 생략)
+      let shopCallIndex = 0;
       for (const keyword of missing) {
+        // 연속 호출 간 간격 — 초당 제한(429, 실측 약 10콜/초) 안전 마진
+        if (clientId && clientSecret && shopCallIndex > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 150));
+        }
+        shopCallIndex += 1;
         const volume = searchVolumes.get(keyword);
         const shopMeta =
           clientId && clientSecret

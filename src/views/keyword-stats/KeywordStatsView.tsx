@@ -140,8 +140,9 @@ export default function KeywordStatsView() {
   const loadStarterStats = async () => {
     setIsStarterLoading(true);
     try {
+      // 랭킹 후 상위 10개만 노출
       const rankBySearches = (stats: KeywordStat[]) =>
-        [...stats].sort((a, b) => (b.monthlySearches ?? -1) - (a.monthlySearches ?? -1));
+        [...stats].sort((a, b) => (b.monthlySearches ?? -1) - (a.monthlySearches ?? -1)).slice(0, 10);
       // 순차 요청 — 병렬로 쏘면 내부 shop 콜이 합쳐져 오픈API 초당 제한(429)을 넘음 (실측)
       const seasonalResponse = await fetchKeywordStats(getSeasonalKeywords());
       setIsConfigured(seasonalResponse.configured);
