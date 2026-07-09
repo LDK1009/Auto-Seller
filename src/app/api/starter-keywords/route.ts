@@ -6,6 +6,7 @@
 import { createHmac } from 'crypto';
 import { NextResponse } from 'next/server';
 import type { KeywordStat, StarterKeywordsResponse } from '@/shared/types/keywordStats';
+import { NAVER_TOP_CATEGORIES, type NaverTopCategory } from '@/shared/constants/naverCategories';
 
 export const maxDuration = 60; // 시즌 표 채우기 위한 심화 탐색 최악 케이스(후보 120개) 대비
 
@@ -20,25 +21,26 @@ const MIN_PRODUCT_COUNT = 1000; // 상품 키워드 판별 하한 (정보성 키
 const NON_PRODUCT_PATTERN =
   /근처|피부과|병원|의원|클리닉|한의원|약국|학원|시세|환율|날씨|계산기|사주|운세|로또|번역|주가|증권|채용|알바|시간표|고객센터|전화번호|홈페이지|사이트|다운로드|페어|박람회|전시회|맛집|호텔|펜션|리조트|영화|드라마|웹툰|게임/;
 
-// 네이버쇼핑 공식 대분류 10개 → 대표 상품군 시드 (시드는 안정적 — 결과 키워드는 API가 매일 갱신)
-const SEED_KEYWORDS = [
-  '여성 원피스', // 패션의류
-  '가방', '양말', // 패션잡화
-  '스킨케어', // 화장품/미용
-  '휴대폰 액세서리', // 디지털/가전
-  '인테리어 소품', '수납장', // 가구/인테리어
-  '유아용품', // 출산/육아
-  '간편식', // 식품
-  '캠핑용품', '홈트레이닝', // 스포츠/레저
-  '주방용품', '반려동물용품', '욕실용품', // 생활/건강
-  '차량용품', '문구', // 여가/생활편의
-];
+// 네이버쇼핑 공식 대분류 → 대표 상품군 시드 (시드는 안정적 — 결과 키워드는 API가 매일 갱신)
+const SEED_GROUPS: Record<NaverTopCategory, string[]> = {
+  '패션의류': ['여성 원피스'],
+  '패션잡화': ['가방', '양말'],
+  '화장품/미용': ['스킨케어'],
+  '디지털/가전': ['휴대폰 액세서리'],
+  '가구/인테리어': ['인테리어 소품', '수납장'],
+  '출산/육아': ['유아용품'],
+  '식품': ['간편식'],
+  '스포츠/레저': ['캠핑용품', '홈트레이닝'],
+  '생활/건강': ['주방용품', '반려동물용품', '욕실용품'],
+  '여가/생활편의': ['차량용품', '문구'],
+};
 
-let cache: { response: StarterKeywordsResponse; expiresAt: number } | null = null;
+// 카테고리별 캐시 ('all' 포함)
+const cacheByCategory = new Map<string, { response: StarterKeywordsResponse; expiresAt: number }>();
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export async function GET() {
+export async function GET(request: Request) {
   const adApiKey = process.env.NAVER_SEARCHAD_API_KEY;
   const adSecret = process.env.NAVER_SEARCHAD_SECRET_KEY;
   const adCustomer = process.env.NAVER_SEARCHAD_CUSTOMER_ID;
@@ -49,8 +51,16 @@ export async function GET() {
     return NextResponse.json({ configured: false, seasonal: [], steady: [] } satisfies StarterKeywordsResponse);
   }
 
-  if (cache && cache.expiresAt > Date.now()) {
-    return NextResponse.json(cache.response, { headers: cdnCacheHeaders() });
+  // 카테고리 필터 (미지정·비유효 = 전체)
+  const rawCategory = new URL(request.url).searchParams.get('category') ?? 'all';
+  const category: NaverTopCategory | 'all' = (NAVER_TOP_CATEGORIES as readonly string[]).includes(rawCategory)
+    ? (rawCategory as NaverTopCategory)
+    : 'all';
+  const seedKeywords = category === 'all' ? Object.values(SEED_GROUPS).flat() : SEED_GROUPS[category];
+
+  const cached = cacheByCategory.get(category);
+  if (cached && cached.expiresAt > Date.now()) {
+    return NextResponse.json(cached.response, { headers: cdnCacheHeaders() });
   }
 
   try {
@@ -63,9 +73,9 @@ export async function GET() {
 
     ////////// 1) 시드 → 연관 키워드 풀 (검색량 절대치)
     const pool = new Map<string, number>(); // keyword → monthly
-    const seedSet = new Set(SEED_KEYWORDS.map((seed) => seed.replace(/\s+/g, '')));
-    for (let index = 0; index < SEED_KEYWORDS.length; index += 5) {
-      const batch = SEED_KEYWORDS.slice(index, index + 5);
+    const seedSet = new Set(seedKeywords.map((seed) => seed.replace(/\s+/g, '')));
+    for (let index = 0; index < seedKeywords.length; index += 5) {
+      const batch = seedKeywords.slice(index, index + 5);
       const rows = await fetchKeywordTool(batch, adAuth).catch(() => []);
       for (const row of rows) {
         const keyword = String(row.relKeyword ?? '').replace(/\s+/g, '');
@@ -103,10 +113,12 @@ export async function GET() {
         chunk.forEach((keyword, chunkIndex) => shopMetaByKeyword.set(keyword, results[chunkIndex]));
         if (index + 3 < batch.length) await sleep(320);
       }
-      // 등록 상품이 거의 없는 키워드 = 상품 검색어가 아님 → 배제
+      // 등록 상품이 거의 없는 키워드 = 상품 검색어가 아님 → 배제 + 카테고리 필터 시 대분류 일치 검증
       const validBatch = batch.filter((entry) => {
-        const total = shopMetaByKeyword.get(entry.keyword)?.total;
-        return total !== null && total !== undefined && total >= MIN_PRODUCT_COUNT;
+        const meta = shopMetaByKeyword.get(entry.keyword);
+        if (meta?.total === null || meta?.total === undefined || meta.total < MIN_PRODUCT_COUNT) return false;
+        if (category !== 'all' && meta.category?.split(' > ')[0] !== category) return false;
+        return true;
       });
 
       // (b) 시즌성 판정 (데이터랩 5그룹 배치 — 그룹 간 스케일 공유라 자기 최대값으로 재정규화 후 판정)
@@ -153,7 +165,7 @@ export async function GET() {
       seasonal: seasonal.map(toStat),
       steady: steady.map(toStat),
     };
-    cache = { response, expiresAt: Date.now() + CACHE_TTL_MS };
+    cacheByCategory.set(category, { response, expiresAt: Date.now() + CACHE_TTL_MS });
     return NextResponse.json(response, { headers: cdnCacheHeaders() });
   } catch (error) {
     console.error(error);

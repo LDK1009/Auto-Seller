@@ -33,6 +33,8 @@ import type { KeywordCompareResponse } from '@/shared/types/keywordCompare';
 import KeywordDetailCard from './_components/KeywordDetailCard';
 // import AiVerdictCard from './_components/AiVerdictCard'; // AI 판단 가동(카카오·키·테이블 셋업) 전까지 숨김 — 백로그 F-4
 import { loadRecentKeywords, saveRecentKeyword } from './_constants/starterKeywords';
+import { NAVER_TOP_CATEGORIES } from '@/shared/constants/naverCategories';
+import type { StarterKeywordsResponse } from '@/shared/types/keywordStats';
 import StarterKeywordTable from './_components/StarterKeywordTable';
 import StatSummaryCards from './_components/StatSummaryCards';
 import RelatedKeywordTable from './_components/RelatedKeywordTable';
@@ -55,11 +57,13 @@ export default function KeywordStatsView() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
 
-  // 시작 키워드 (빈 화면용 — 큐레이션을 실조회 데이터로 랭킹 + 최근 검색)
+  // 시작 키워드 (빈 화면용 — 실데이터 랭킹 + 카테고리 필터 + 최근 검색)
   const [recentKeywords, setRecentKeywords] = useState<string[]>([]);
   const [seasonalStats, setSeasonalStats] = useState<KeywordStat[]>([]);
   const [steadyStats, setSteadyStats] = useState<KeywordStat[]>([]);
   const [isStarterLoading, setIsStarterLoading] = useState(false);
+  const [starterCategory, setStarterCategory] = useState<string>('all');
+  const starterCacheRef = useRef<Map<string, StarterKeywordsResponse>>(new Map()); // 카테고리별 클라 캐시
 
   // 비교 상태
   const [checkedKeywords, setCheckedKeywords] = useState<Set<string>>(new Set());
@@ -146,12 +150,21 @@ export default function KeywordStatsView() {
     }
   };
 
-  ////////// 시작 키워드 실조회 (서버가 시드 풀→검색량 랭킹→시즌성 분리까지 완료 — 단일 호출)
-  const loadStarterStats = async () => {
+  ////////// 시작 키워드 실조회 (서버가 시드 풀→검색량 랭킹→시즌성 분리까지 완료 — 카테고리별 캐시)
+  const loadStarterStats = async (category: string) => {
+    const cached = starterCacheRef.current.get(category);
+    if (cached) {
+      setSeasonalStats(cached.seasonal);
+      setSteadyStats(cached.steady);
+      return;
+    }
     setIsStarterLoading(true);
+    setSeasonalStats([]);
+    setSteadyStats([]);
     try {
-      const response = await fetchStarterKeywords();
+      const response = await fetchStarterKeywords(category);
       setIsConfigured(response.configured);
+      starterCacheRef.current.set(category, response);
       setSeasonalStats(response.seasonal);
       setSteadyStats(response.steady);
     } catch (error) {
@@ -161,12 +174,18 @@ export default function KeywordStatsView() {
     }
   };
 
+  ////////// 카테고리 칩 선택
+  const handleStarterCategory = (category: string) => {
+    setStarterCategory(category);
+    loadStarterStats(category);
+  };
+
   ////////// 시작 화면으로 복귀 (?keyword= 가 사라졌을 때 — 사이드바 재클릭·뒤로가기)
   const hasLoadedStarterRef = useRef(false);
   const loadStarterOnce = () => {
     if (hasLoadedStarterRef.current) return;
     hasLoadedStarterRef.current = true;
-    loadStarterStats();
+    loadStarterStats(starterCategory);
   };
 
   const resetToStarter = () => {
@@ -283,6 +302,24 @@ export default function KeywordStatsView() {
         {/* 시작 키워드 (검색 전 빈 화면) — 랭킹 표 상하 배치 + 최근 검색. 도매꾹 인기검색어 승인 후 교체 예정 */}
         {!hasResult && !isLoading && (
           <Stack spacing={3}>
+            {/* 카테고리 필터 (네이버쇼핑 공식 대분류 10개) */}
+            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+              <Chip
+                label="전체"
+                color={starterCategory === 'all' ? 'primary' : 'default'}
+                variant={starterCategory === 'all' ? 'filled' : 'outlined'}
+                onClick={() => handleStarterCategory('all')}
+              />
+              {NAVER_TOP_CATEGORIES.map((category) => (
+                <Chip
+                  key={category}
+                  label={category}
+                  color={starterCategory === category ? 'primary' : 'default'}
+                  variant={starterCategory === category ? 'filled' : 'outlined'}
+                  onClick={() => handleStarterCategory(category)}
+                />
+              ))}
+            </Stack>
             <Paper variant="outlined" sx={{ p: 3 }}>
               <StarterKeywordTable
                 title="이번 달 뜨는 키워드"

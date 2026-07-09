@@ -101,7 +101,7 @@ export default function StarterKeywordTable({ title, stats, isLoading, onSelectK
       )}
 
       {!isLoading && stats.length === 0 && (
-        <Typography variant="caption" color="text.secondary">데이터를 불러오지 못했어요</Typography>
+        <Typography variant="caption" color="text.secondary">표시할 키워드가 없어요</Typography>
       )}
     </Stack>
   );

@@ -16,8 +16,9 @@ export async function fetchKeywordStats(keywords: string[]): Promise<KeywordStat
 ////////// 시작 키워드 (빈 화면 랭킹 표 — 서버가 시드 풀→검색량 랭킹→시즌성 분리까지 완료)
 import type { StarterKeywordsResponse } from '@/shared/types/keywordStats';
 
-export async function fetchStarterKeywords(): Promise<StarterKeywordsResponse> {
-  const response = await fetch('/api/starter-keywords');
+export async function fetchStarterKeywords(category: string = 'all'): Promise<StarterKeywordsResponse> {
+  const query = category === 'all' ? '' : `?category=${encodeURIComponent(category)}`;
+  const response = await fetch(`/api/starter-keywords${query}`);
   const body = await response.json();
   if (!response.ok) {
     throw new Error(body?.error ?? '시작 키워드 조회에 실패했습니다.');
