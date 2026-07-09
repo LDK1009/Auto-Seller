@@ -56,6 +56,40 @@ export async function GET(request: Request) {
         fetchSearchTotal(`https://openapi.naver.com/v1/search/cafearticle.json?query=${encodeURIComponent(keyword)}&display=1`, clientId, clientSecret).catch(() => null),
       ]);
 
+    ////////// 2차: 쇼핑인사이트 (카테고리 cid 확보 후 — ④⑤⑪⑫)
+    const categoryName = shopSample?.topCategory ?? null;
+    const cid = categoryName ? (TOP_CATEGORY_CIDS[categoryName] ?? null) : null;
+    let genderRatio: KeywordDetail['genderRatio'] = null;
+    let ageRatio: KeywordDetail['ageRatio'] = null;
+    let categorySeason: string | null = null;
+    let shoppingClickTrend: TrendPoint[] = [];
+    if (cid) {
+      const [genderGroups, ageGroups, seasonLabel, clickTrend] = await Promise.all([
+        fetchInsightGroups('gender', cid, keyword, openApiHeaders).catch(() => null),
+        fetchInsightGroups('age', cid, keyword, openApiHeaders).catch(() => null),
+        fetchCategorySeason(cid, openApiHeaders).catch(() => null),
+        fetchShoppingClickTrend(cid, keyword, openApiHeaders).catch(() => [] as TrendPoint[]),
+      ]);
+      if (genderGroups && genderGroups.size > 0) {
+        const male = genderGroups.get('m') ?? 0;
+        const female = genderGroups.get('f') ?? 0;
+        const total = male + female;
+        if (total > 0) {
+          genderRatio = { male: Math.round((male / total) * 100), female: Math.round((female / total) * 100) };
+        }
+      }
+      if (ageGroups && ageGroups.size > 0) {
+        const totalAge = Array.from(ageGroups.values()).reduce((sum, value) => sum + value, 0);
+        if (totalAge > 0) {
+          ageRatio = Array.from(ageGroups.entries())
+            .map(([group, value]) => ({ label: group + '대', percent: Math.round((value / totalAge) * 100) }))
+            .sort((a, b) => b.percent - a.percent);
+        }
+      }
+      categorySeason = seasonLabel;
+      shoppingClickTrend = clickTrend ?? [];
+    }
+
     const detail: KeywordDetail = {
       configured: true,
       keyword,
@@ -63,12 +97,17 @@ export async function GET(request: Request) {
       trendDirection: trendSeries ? judgeTrendDirection(trendSeries) : null,
       seasonality: trendSeries ? judgeSeasonality(trendSeries) : { isSeasonal: false, peakMonths: [], label: null, isInSeason: false },
       deviceRatio,
+      genderRatio,
+      ageRatio,
       weekdayRatio: dailySeries ? aggregateWeekday(dailySeries) : null,
       priceBand: shopSample?.priceBand ?? null,
       brandShare: shopSample?.brandShare ?? null,
       strictProductCount: strictCount,
       blogCount,
       cafeCount,
+      categoryName,
+      categorySeason,
+      shoppingClickTrend,
     };
 
     if (cache.size >= CACHE_MAX_ENTRIES) {
@@ -182,7 +221,7 @@ async function fetchShopSample(
   keyword: string,
   clientId: string,
   clientSecret: string,
-): Promise<{ priceBand: KeywordDetail['priceBand']; brandShare: number | null }> {
+): Promise<{ priceBand: KeywordDetail['priceBand']; brandShare: number | null; topCategory: string | null }> {
   const response = await fetch(
     `https://openapi.naver.com/v1/search/shop.json?query=${encodeURIComponent(keyword)}&display=${PRICE_SAMPLE}`,
     {
@@ -194,7 +233,7 @@ async function fetchShopSample(
   if (!response.ok) throw new Error(`쇼핑 API 오류 (HTTP ${response.status})`);
   const data = await response.json();
   const items: any[] = Array.isArray(data?.items) ? data.items : [];
-  if (items.length === 0) return { priceBand: null, brandShare: null };
+  if (items.length === 0) return { priceBand: null, brandShare: null, topCategory: null };
 
   const prices = items
     .map((item) => Number(item.lprice))
@@ -208,7 +247,16 @@ async function fetchShopSample(
   const brandCount = items.filter((item) => String(item.brand ?? '').trim().length > 0).length;
   const brandShare = Math.round((brandCount / items.length) * 100);
 
-  return { priceBand, brandShare };
+  // 대분류 최빈값 (쇼핑인사이트 cid 매핑용)
+  const categoryCounts = new Map<string, number>();
+  for (const item of items) {
+    const name = String(item.category1 ?? '').trim();
+    if (name) categoryCounts.set(name, (categoryCounts.get(name) ?? 0) + 1);
+  }
+  const sorted = Array.from(categoryCounts.entries()).sort((a, b) => b[1] - a[1]);
+  const topCategory = sorted.length > 0 ? sorted[0][0] : null;
+
+  return { priceBand, brandShare, topCategory };
 }
 
 //////////////////// 검색 계열 total 공용 (실경쟁·블로그·카페) ////////////////////
@@ -222,6 +270,111 @@ async function fetchSearchTotal(url: string, clientId: string, clientSecret: str
   const data = await response.json();
   const total = Number(data?.total);
   return Number.isFinite(total) ? total : null;
+}
+
+//////////////////// 쇼핑인사이트 (④⑤⑪⑫) ////////////////////
+// 네이버쇼핑 대분류 cid 정적 매핑 (쇼핑인사이트 category 파라미터용)
+const TOP_CATEGORY_CIDS: Record<string, string> = {
+  '패션의류': '50000000',
+  '패션잡화': '50000001',
+  '화장품/미용': '50000002',
+  '디지털/가전': '50000003',
+  '가구/인테리어': '50000004',
+  '출산/육아': '50000005',
+  '식품': '50000006',
+  '스포츠/레저': '50000007',
+  '생활/건강': '50000008',
+  '여가/생활편의': '50000009',
+};
+
+// 인사이트 공용 기간 (최근 N개월, 지난달 말 기준)
+function insightRange(months: number): { start: string; end: string } {
+  const end = new Date();
+  end.setDate(1);
+  end.setDate(end.getDate() - 1);
+  const start = new Date(end);
+  start.setMonth(start.getMonth() - (months - 1));
+  start.setDate(1);
+  return { start: formatDate(start), end: formatDate(end) };
+}
+
+// 그룹 반환형 인사이트 호출 (성별/연령 — 단일 요청 내 동일 스케일이라 비교 유효)
+async function fetchInsightGroups(
+  endpoint: 'gender' | 'age',
+  cid: string,
+  keyword: string,
+  headers: Record<string, string>,
+): Promise<Map<string, number>> {
+  const range = insightRange(3);
+  const response = await fetch(`https://openapi.naver.com/v1/datalab/shopping/category/keyword/${endpoint}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ startDate: range.start, endDate: range.end, timeUnit: 'month', category: cid, keyword }),
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error(`쇼핑인사이트 오류 (HTTP ${response.status})`);
+  const data = await response.json();
+  const sums = new Map<string, number>();
+  for (const point of data?.results?.[0]?.data ?? []) {
+    const group = String(point.group ?? '');
+    sums.set(group, (sums.get(group) ?? 0) + (Number(point.ratio) || 0));
+  }
+  return sums;
+}
+
+// 카테고리 12개월 수요 추이 → 성수기 라벨 (⑪)
+async function fetchCategorySeason(cid: string, headers: Record<string, string>): Promise<string | null> {
+  const range = insightRange(12);
+  const response = await fetch('https://openapi.naver.com/v1/datalab/shopping/categories', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      startDate: range.start,
+      endDate: range.end,
+      timeUnit: 'month',
+      category: [{ name: 'cat', param: [cid] }],
+    }),
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    cache: 'no-store',
+  });
+  if (!response.ok) return null;
+  const data = await response.json();
+  const series: TrendPoint[] = (data?.results?.[0]?.data ?? []).map((point: any) => ({
+    period: String(point.period),
+    ratio: Number(point.ratio) || 0,
+  }));
+  const season = judgeSeasonality(series);
+  if (!season.isSeasonal || !season.label) return null;
+  return season.label.replace('집중', '성수기');
+}
+
+// 카테고리 내 키워드 쇼핑 클릭 추이 (⑫ — 검색 트렌드 보조선)
+async function fetchShoppingClickTrend(
+  cid: string,
+  keyword: string,
+  headers: Record<string, string>,
+): Promise<TrendPoint[]> {
+  const range = insightRange(12);
+  const response = await fetch('https://openapi.naver.com/v1/datalab/shopping/category/keywords', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      startDate: range.start,
+      endDate: range.end,
+      timeUnit: 'month',
+      category: cid,
+      keyword: [{ name: keyword, param: [keyword] }],
+    }),
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    cache: 'no-store',
+  });
+  if (!response.ok) return [];
+  const data = await response.json();
+  return (data?.results?.[0]?.data ?? []).map((point: any) => ({
+    period: String(point.period),
+    ratio: Number(point.ratio) || 0,
+  }));
 }
 
 //////////////////// 판정 로직 ////////////////////

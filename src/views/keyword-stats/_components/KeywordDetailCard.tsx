@@ -44,6 +44,9 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
           {detail.trendDirection === 'up' && <Chip size="small" color="success" icon={<TrendingUpIcon />} label="상승 중" />}
           {detail.trendDirection === 'flat' && <Chip size="small" icon={<TrendingFlatIcon />} label="유지" />}
           {detail.trendDirection === 'down' && <Chip size="small" color="error" icon={<TrendingDownIcon />} label="하락 중" />}
+          {detail.categorySeason && detail.categoryName && (
+            <Chip size="small" variant="outlined" label={`${detail.categoryName} 카테고리 ${detail.categorySeason}`} />
+          )}
           {detail.seasonality.label && (
             <Chip
               size="small"
@@ -53,7 +56,12 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
             />
           )}
         </Stack>
-        {detail.trend.length > 0 ? <TrendSparkline points={detail.trend.map((point) => point.ratio)} /> : (
+        {detail.trend.length > 0 ? (
+          <TrendSparkline
+            points={detail.trend.map((point) => point.ratio)}
+            overlayPoints={detail.shoppingClickTrend.length > 0 ? detail.shoppingClickTrend.map((point) => point.ratio) : undefined}
+          />
+        ) : (
           <Typography variant="caption" color="text.secondary">트렌드 데이터 없음</Typography>
         )}
       </Stack>
@@ -71,6 +79,29 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
             minorLabel={detail.deviceRatio.mobile >= detail.deviceRatio.pc ? 'PC' : '모바일'}
             minorPercent={Math.min(detail.deviceRatio.mobile, detail.deviceRatio.pc)}
           />
+        )}
+        {detail.genderRatio !== null && (
+          <RatioLine
+            label="성별"
+            majorLabel={detail.genderRatio.male >= detail.genderRatio.female ? '남성' : '여성'}
+            majorPercent={Math.max(detail.genderRatio.male, detail.genderRatio.female)}
+            minorLabel={detail.genderRatio.male >= detail.genderRatio.female ? '여성' : '남성'}
+            minorPercent={Math.min(detail.genderRatio.male, detail.genderRatio.female)}
+          />
+        )}
+        {detail.ageRatio !== null && detail.ageRatio.length > 0 && (
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+            <Typography variant="body2" color="text.secondary" sx={{ width: 40, flexShrink: 0 }}>연령</Typography>
+            {detail.ageRatio.slice(0, 3).map((bucket, index) => (
+              <Chip
+                key={bucket.label}
+                size="small"
+                color={index === 0 ? 'primary' : 'default'}
+                variant={index === 0 ? 'filled' : 'outlined'}
+                label={`${bucket.label} ${bucket.percent}%`}
+              />
+            ))}
+          </Stack>
         )}
         {detail.weekdayRatio !== null && topWeekdayIndex !== null && (
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
@@ -123,20 +154,35 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
 }
 
 //////////////////// 트렌드 스파크라인 (경량 SVG) ////////////////////
-function TrendSparkline({ points }: { points: number[] }) {
+function TrendSparkline({ points, overlayPoints }: { points: number[]; overlayPoints?: number[] }) {
   const width = 280;
   const height = 56;
+  const toCoords = (series: number[]) => {
+    const max = Math.max(...series, 1);
+    const step = width / Math.max(series.length - 1, 1);
+    return series.map((value, index) => `${index * step},${height - (value / max) * (height - 6) - 3}`);
+  };
+  const coords = toCoords(points);
   const max = Math.max(...points, 1);
   const step = width / Math.max(points.length - 1, 1);
-  const coords = points.map((value, index) => `${index * step},${height - (value / max) * (height - 6) - 3}`);
 
   return (
-    <SparklineSvg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
-      <polyline points={coords.join(' ')} fill="none" strokeWidth="2" />
-      {points.map((value, index) => (
-        <circle key={index} cx={index * step} cy={height - (value / max) * (height - 6) - 3} r="2" />
-      ))}
-    </SparklineSvg>
+    <Stack spacing={0.25}>
+      <SparklineSvg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+        {overlayPoints && overlayPoints.length > 1 && (
+          <polyline className="overlay" points={toCoords(overlayPoints).join(' ')} fill="none" strokeWidth="1.5" strokeDasharray="4 3" />
+        )}
+        <polyline points={coords.join(' ')} fill="none" strokeWidth="2" />
+        {points.map((value, index) => (
+          <circle key={index} cx={index * step} cy={height - (value / max) * (height - 6) - 3} r="2" />
+        ))}
+      </SparklineSvg>
+      {overlayPoints && overlayPoints.length > 1 && (
+        <Typography variant="caption" color="text.secondary">
+          실선 검색량 · 점선 쇼핑 클릭 (각각 상대지수)
+        </Typography>
+      )}
+    </Stack>
   );
 }
 
@@ -183,6 +229,7 @@ const SparklineSvg = styled.svg(({ theme }) => ({
   maxWidth: 320,
   height: 56,
   '& polyline': { stroke: theme.palette.primary.main },
+  '& polyline.overlay': { stroke: theme.palette.text.disabled },
   '& circle': { fill: theme.palette.primary.main },
 }));
 
