@@ -13,7 +13,9 @@ import ButtonBase from '@mui/material/ButtonBase';
 import CircularProgress from '@mui/material/CircularProgress';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import Chip from '@mui/material/Chip';
 import type { KeywordStat } from '@/shared/types/keywordStats';
+import { judgeCompetition } from '../_utils/judgeCompetition';
 
 const COLLAPSED_COUNT = 5;
 
@@ -45,12 +47,16 @@ export default function StarterKeywordTable({ title, stats, isLoading, onSelectK
         <>
           <HeaderRow>
             <Typography variant="caption" color="text.secondary" sx={{ flex: 1, textAlign: 'center' }}>키워드</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ width: 200, textAlign: 'center' }}>카테고리</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ width: 160, textAlign: 'center' }}>카테고리</Typography>
             <Typography variant="caption" color="text.secondary" sx={{ width: 90, textAlign: 'center' }}>월간 검색수</Typography>
             <Typography variant="caption" color="text.secondary" sx={{ width: 90, textAlign: 'center' }}>상품 수</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ width: 80, textAlign: 'center' }}>경쟁강도</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ width: 76, textAlign: 'center' }}>판정</Typography>
           </HeaderRow>
           <ListBox>
-            {visibleStats.map((stat, index) => (
+            {visibleStats.map((stat, index) => {
+              const verdict = judgeCompetition(stat.ratio);
+              return (
               <RowButton key={stat.keyword} onClick={() => onSelectKeyword(stat.keyword)}>
                 <RankNumber $isTop={index < 3}>{index + 1}</RankNumber>
                 <Typography variant="body2" sx={{ flex: 1, fontWeight: 600, minWidth: 0, wordBreak: 'break-all', textAlign: 'left' }}>
@@ -65,8 +71,20 @@ export default function StarterKeywordTable({ title, stats, isLoading, onSelectK
                 <Typography variant="body2" sx={{ width: 90, textAlign: 'center', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
                   {stat.productCount !== null ? stat.productCount.toLocaleString() : '—'}
                 </Typography>
+                <Typography variant="body2" sx={{ width: 80, textAlign: 'center', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
+                  {stat.ratio !== null ? stat.ratio : '—'}
+                </Typography>
+                <ChipCell>
+                  <Chip
+                    size="small"
+                    label={verdict.label}
+                    color={verdict.color}
+                    variant={verdict.color === 'default' ? 'outlined' : 'filled'}
+                  />
+                </ChipCell>
               </RowButton>
-            ))}
+              );
+            })}
           </ListBox>
           {hiddenCount > 0 && (
             <Button
@@ -135,8 +153,16 @@ const RankNumber = styled('span', transientOptions)<{ $isTop: boolean }>(({ them
   color: $isTop ? theme.palette.primary.main : theme.palette.text.disabled,
 }));
 
+const ChipCell = styled.div({
+  width: 76,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+});
+
 const CategoryText = styled(Typography)({
-  width: 200,
+  width: 160,
   flexShrink: 0,
   overflow: 'hidden',
   textOverflow: 'ellipsis',
