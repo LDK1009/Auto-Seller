@@ -56,19 +56,24 @@ export async function GET(request: Request) {
 
     if (missing.length > 0) {
       ////////// 1) 검색광고 keywordstool (5개씩 배치)
+      // 검색광고 인증·장애 시에도 전체를 죽이지 않는다 — 상품 수(쇼핑API)만이라도 반환 (부분 가동)
       const searchVolumes = new Map<string, { monthly: number; isLow: boolean; comp: string | null }>();
-      for (let index = 0; index < missing.length; index += 5) {
-        const batch = missing.slice(index, index + 5);
-        const list = await fetchKeywordTool(batch, { apiKey, secretKey, customerId });
-        for (const entry of list) {
-          const pc = parseCount(entry.monthlyPcQcCnt);
-          const mobile = parseCount(entry.monthlyMobileQcCnt);
-          searchVolumes.set(String(entry.relKeyword), {
-            monthly: pc.value + mobile.value,
-            isLow: pc.isLow && mobile.isLow,
-            comp: entry.compIdx ? String(entry.compIdx) : null,
-          });
+      try {
+        for (let index = 0; index < missing.length; index += 5) {
+          const batch = missing.slice(index, index + 5);
+          const list = await fetchKeywordTool(batch, { apiKey, secretKey, customerId });
+          for (const entry of list) {
+            const pc = parseCount(entry.monthlyPcQcCnt);
+            const mobile = parseCount(entry.monthlyMobileQcCnt);
+            searchVolumes.set(String(entry.relKeyword), {
+              monthly: pc.value + mobile.value,
+              isLow: pc.isLow && mobile.isLow,
+              comp: entry.compIdx ? String(entry.compIdx) : null,
+            });
+          }
         }
+      } catch (error) {
+        console.error('검색광고 API 실패 — 상품 수만 반환:', error);
       }
 
       ////////// 2) 쇼핑 상품 수 (키워드별 1회 — 오픈API 키 없으면 생략)
@@ -94,7 +99,9 @@ export async function GET(request: Request) {
           const oldestKey = cache.keys().next().value;
           if (oldestKey) cache.delete(oldestKey);
         }
-        cache.set(keyword, { stat, expiresAt: now + CACHE_TTL_MS });
+        // 검색수 미확보(검색광고 장애) 항목은 짧게 캐시 — 복구 즉시 재조회되도록
+        const ttl = stat.monthlySearches === null ? 1000 * 60 * 10 : CACHE_TTL_MS;
+        cache.set(keyword, { stat, expiresAt: now + ttl });
       }
     }
 
