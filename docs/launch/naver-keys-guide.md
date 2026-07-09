@@ -12,7 +12,7 @@
 3. **네이버 검색광고 API 서비스 신청** → 약관 동의 → 즉시 발급:
    - **액세스라이선스** → `NAVER_SEARCHAD_API_KEY`
    - **비밀키** → `NAVER_SEARCHAD_SECRET_KEY`
-4. `CUSTOMER_ID`: 광고시스템 우상단 계정명 옆 숫자 (예: `1234567`) → `NAVER_SEARCHAD_CUSTOMER_ID`
+4. `CUSTOMER_ID`: ⚠️ **우상단 계정/회원 ID가 아니다!** API 사용 관리 화면에서 **라이선스와 한 세트로 표기된 CUSTOMER_ID**를 쓸 것 (2026-07-09 실제로 이 함정에 걸려 403 auth-failed 4회 — 라이선스 화면의 숫자가 정답) → `NAVER_SEARCHAD_CUSTOMER_ID`
 
 ## 2) 네이버 오픈API — 쇼핑 검색 (키워드별 등록 상품 수)
 
