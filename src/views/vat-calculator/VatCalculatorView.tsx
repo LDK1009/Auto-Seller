@@ -46,7 +46,7 @@ export default function VatCalculatorView() {
           <Stack spacing={0.75}>
             <Typography variant="body2">① 과세 유형을 고르세요 — 초보 위탁 셀러는 대부분 간이과세로 시작합니다</Typography>
             <Typography variant="body2">② 기간 매출(공급대가)과 매입(증빙 수취분)을 입력하세요</Typography>
-            <Typography variant="body2">③ 납부 예상액이 계산됩니다 — 간이과세는 연 매출 4,800만 원 미만이면 납부 면제</Typography>
+            <Typography variant="body2">③ 납부 예상액을 확인하세요</Typography>
             <Typography variant="caption" color="text.secondary">
               소매(통신판매) 부가가치율 기준의 대략 계산입니다. 실제 신고액은 홈택스·세무사 기준을 따르세요.
             </Typography>

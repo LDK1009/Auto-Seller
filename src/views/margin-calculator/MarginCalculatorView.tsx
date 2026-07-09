@@ -67,10 +67,10 @@ export default function MarginCalculatorView() {
           <Stack spacing={0.75}>
             <Typography variant="body2">① 모드를 고릅니다 — 순이익 계산 또는 판매가 역산</Typography>
             <Typography variant="body2">
-              ② 순이익 계산: 판매가·원가를 넣으면 순이익·마진율이 실시간 계산됩니다
+              ② 순이익 계산: 판매가와 원가를 입력하세요
             </Typography>
             <Typography variant="body2">
-              ③ 판매가 역산: 원가(공급가)와 목표 마진율을 넣으면 그 마진을 지키는 최소 판매가를 알려줍니다
+              ③ 판매가 역산: 원가와 목표 마진율을 입력하세요
             </Typography>
             <Typography variant="caption" color="text.secondary">
               {FEE_DISCLAIMER}

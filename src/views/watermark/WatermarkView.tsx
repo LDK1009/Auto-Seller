@@ -87,7 +87,7 @@ export default function WatermarkView() {
             <Typography variant="body2">① 이미지를 업로드하고 워터마크 종류(텍스트/로고)를 정합니다</Typography>
             <Typography variant="body2">② 위치(3×3)·투명도·크기를 조절합니다 — 로고는 투명 배경 PNG 권장</Typography>
             <Typography variant="body2">③ [워터마크 적용]으로 일괄 합성하고, 설정을 바꿔 다시 적용할 수도 있습니다</Typography>
-            <Typography variant="body2">④ [다운로드]로 전체 결과를 ZIP으로 저장합니다 (원본 포맷 유지)</Typography>
+            <Typography variant="body2">④ [다운로드]로 전체 결과를 ZIP으로 저장합니다</Typography>
           </Stack>
         </HelpPanel>
       }

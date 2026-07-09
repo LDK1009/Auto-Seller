@@ -116,7 +116,7 @@ export default function ExcelImportView() {
             <Typography variant="body2">② 상품별로 발견된 이미지 URL을 확인하고 필요한 행만 선택하세요</Typography>
             <Typography variant="body2">③ [누끼 일괄 시작]을 누르면 이미지를 모아 배경 제거가 자동 시작됩니다</Typography>
             <Typography variant="caption" color="text.secondary">
-              한 번에 최대 {MAX_HANDOFF_IMAGES}장. 도매꾹·ESM 호스팅 이미지가 대상입니다.
+              한 번에 최대 {MAX_HANDOFF_IMAGES}장까지 보낼 수 있어요.
             </Typography>
           </Stack>
         </HelpPanel>

@@ -42,9 +42,9 @@ export default function RoasCalculatorView() {
       help={
         <HelpPanel storageKey="roas-calculator">
           <Stack spacing={0.75}>
-            <Typography variant="body2">① 판매가와 개당 순이익을 입력하세요 (마진 계산기 결과 그대로)</Typography>
-            <Typography variant="body2">② 손익분기 ROAS가 나옵니다 — 광고 ROAS가 이보다 낮으면 팔수록 적자입니다</Typography>
-            <Typography variant="body2">③ 광고비·광고 매출을 넣으면 실제 광고 손익을 시뮬레이션합니다</Typography>
+            <Typography variant="body2">① 판매가와 개당 순이익을 입력하세요</Typography>
+            <Typography variant="body2">② 손익분기 ROAS를 확인하세요</Typography>
+            <Typography variant="body2">③ 광고비와 광고 매출을 넣으면 광고 손익이 계산됩니다</Typography>
           </Stack>
         </HelpPanel>
       }

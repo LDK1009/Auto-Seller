@@ -180,8 +180,7 @@ export default function DomemeImportView() {
             <Typography variant="body2">② 공급사의 이미지 사용 조건을 확인하고 체크합니다</Typography>
             <Typography variant="body2">③ 필요한 이미지를 골라 누끼·규격 변환으로 보내세요</Typography>
             <Typography variant="caption" color="text.secondary">
-              상품 이미지는 공급사 소유입니다. 사용 조건은 상품마다 다르니 반드시 확인하세요. 가져온 이미지는
-              전달용으로만 서버를 거치며 저장되지 않습니다.
+              상품 이미지는 공급사 소유입니다. 사용 조건은 상품마다 다르니 반드시 확인하세요.
             </Typography>
           </Stack>
         </HelpPanel>
