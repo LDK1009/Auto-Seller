@@ -10,10 +10,7 @@ import Chip from '@mui/material/Chip';
 import Alert from '@mui/material/Alert';
 import type { CompareEntry } from '@/shared/types/keywordCompare';
 import { judgeCompetition } from '../_utils/judgeCompetition';
-
-const CHART_WIDTH = 640;
-const CHART_HEIGHT = 180;
-const CHART_PADDING = 8;
+import TrendLineChart from './TrendLineChart';
 
 type PropsType = {
   entries: CompareEntry[]; // 첫 번째 = 기준 키워드
@@ -62,49 +59,16 @@ export default function CompareSection({ entries }: PropsType) {
               </LegendItem>
             ))}
           </Legend>
-          <ChartScroll>
-            <svg
-              viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-              width="100%"
-              height={CHART_HEIGHT}
-              preserveAspectRatio="none"
-              role="img"
-              aria-label="키워드별 12개월 검색 트렌드 비교"
-            >
-              {entries.map((entry, index) => {
-                if (entry.trend.length < 2) return null;
-                const points = entry.trend
-                  .map((point, pointIndex) => {
-                    const x =
-                      CHART_PADDING +
-                      (pointIndex / (entry.trend.length - 1)) * (CHART_WIDTH - CHART_PADDING * 2);
-                    const y =
-                      CHART_HEIGHT - CHART_PADDING - (point.ratio / 100) * (CHART_HEIGHT - CHART_PADDING * 2);
-                    return `${x},${y}`;
-                  })
-                  .join(' ');
-                return (
-                  <polyline
-                    key={entry.keyword}
-                    points={points}
-                    fill="none"
-                    stroke={lineColors[index % lineColors.length]}
-                    strokeWidth={index === 0 ? 2.5 : 1.75}
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                  />
-                );
-              })}
-            </svg>
-          </ChartScroll>
-          <MonthAxis>
-            <Typography variant="caption" color="text.secondary">
-              {entries[0]?.trend[0]?.period.slice(0, 7) ?? ''}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {entries[0]?.trend[entries[0].trend.length - 1]?.period.slice(0, 7) ?? ''}
-            </Typography>
-          </MonthAxis>
+          <TrendLineChart
+            height={180}
+            ariaLabel="키워드별 12개월 검색 트렌드 비교"
+            series={entries.map((entry, index) => ({
+              name: entry.keyword,
+              color: lineColors[index % lineColors.length],
+              points: entry.trend,
+              strokeWidth: index === 0 ? 2.5 : 1.75,
+            }))}
+          />
         </BlockCard>
       )}
 
@@ -155,25 +119,25 @@ export default function CompareSection({ entries }: PropsType) {
                 entries={entries}
                 render={(entry) => (entry.productCount !== null ? entry.productCount.toLocaleString() : '—')}
               />
+              <MetricRow
+                label="경쟁강도"
+                entries={entries}
+                render={(entry) => (entry.ratio !== null ? String(entry.ratio) : '—')}
+              />
               <tr>
                 <td>
-                  <Typography variant="caption" color="text.secondary">경쟁강도</Typography>
+                  <Typography variant="caption" color="text.secondary">판정</Typography>
                 </td>
                 {entries.map((entry) => {
                   const verdict = judgeCompetition(entry.ratio);
                   return (
                     <td key={entry.keyword}>
-                      <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', justifyContent: 'center' }}>
-                        <Chip
-                          size="small"
-                          label={verdict.label}
-                          color={verdict.color}
-                          variant={verdict.color === 'default' ? 'outlined' : 'filled'}
-                        />
-                        {entry.ratio !== null && (
-                          <Typography variant="caption" color="text.secondary">{entry.ratio}</Typography>
-                        )}
-                      </Stack>
+                      <Chip
+                        size="small"
+                        label={verdict.label}
+                        color={verdict.color}
+                        variant={verdict.color === 'default' ? 'outlined' : 'filled'}
+                      />
                     </td>
                   );
                 })}
@@ -261,16 +225,6 @@ const LegendSwatch = styled.span({
   height: 4,
   borderRadius: 2,
   display: 'inline-block',
-});
-
-const ChartScroll = styled.div({
-  width: '100%',
-  overflowX: 'auto',
-});
-
-const MonthAxis = styled.div({
-  display: 'flex',
-  justifyContent: 'space-between',
 });
 
 const TableScroll = styled.div({
