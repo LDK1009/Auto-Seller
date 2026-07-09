@@ -18,8 +18,12 @@ import SearchIcon from '@mui/icons-material/Search';
 import { useSnackbar } from 'notistack';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
-import { fetchKeywordStats } from '@/shared/services/keywordStatsService';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
+import { fetchKeywordStats, fetchKeywordDetail } from '@/shared/services/keywordStatsService';
 import type { KeywordStat, RelatedKeyword } from '@/shared/types/keywordStats';
+import type { KeywordDetail } from '@/shared/types/keywordDetail';
+import KeywordDetailCard from './_components/KeywordDetailCard';
 
 const MAX_KEYWORDS = 10;
 
@@ -40,6 +44,32 @@ export default function KeywordStatsView() {
   const [related, setRelated] = useState<RelatedKeyword[]>([]);
   const [isConfigured, setIsConfigured] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+
+  // 상세 분석 (행 확장 — 온디맨드 로드, 클라이언트 캐시)
+  const [expandedKeyword, setExpandedKeyword] = useState<string | null>(null);
+  const [details, setDetails] = useState<Map<string, KeywordDetail>>(new Map());
+  const [loadingDetailFor, setLoadingDetailFor] = useState<string | null>(null);
+
+  const handleToggleDetail = async (keyword: string) => {
+    if (expandedKeyword === keyword) {
+      setExpandedKeyword(null);
+      return;
+    }
+    setExpandedKeyword(keyword);
+    if (details.has(keyword)) return;
+
+    setLoadingDetailFor(keyword);
+    try {
+      const detail = await fetchKeywordDetail(keyword);
+      setDetails((prev) => new Map(prev).set(keyword, detail));
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar(error instanceof Error ? error.message : '상세 분석에 실패했습니다.', { variant: 'error' });
+      setExpandedKeyword(null);
+    } finally {
+      setLoadingDetailFor(null);
+    }
+  };
 
   const runLookup = async (keywords: string[]) => {
     if (keywords.length === 0) return;
@@ -143,8 +173,18 @@ export default function KeywordStatsView() {
               </HeaderRow>
               {stats.map((stat) => {
                 const verdict = judgeRatio(stat.ratio);
+                const isExpanded = expandedKeyword === stat.keyword;
+                const detail = details.get(stat.keyword);
                 return (
-                  <StatRow key={stat.keyword}>
+                  <Stack key={stat.keyword} spacing={1}>
+                  <StatRow onClick={() => handleToggleDetail(stat.keyword)} style={{ cursor: 'pointer' }}>
+                    {loadingDetailFor === stat.keyword ? (
+                      <CircularProgress size={14} sx={{ flexShrink: 0 }} />
+                    ) : isExpanded ? (
+                      <KeyboardArrowDownIcon fontSize="small" color="action" sx={{ flexShrink: 0 }} />
+                    ) : (
+                      <KeyboardArrowRightIcon fontSize="small" color="action" sx={{ flexShrink: 0 }} />
+                    )}
                     <Typography variant="body2" sx={{ flex: 1, fontWeight: 600, minWidth: 0, wordBreak: 'break-all' }}>
                       {stat.keyword}
                     </Typography>
@@ -166,6 +206,8 @@ export default function KeywordStatsView() {
                       <Chip size="small" label={verdict.label} color={verdict.color} variant={verdict.color === 'default' ? 'outlined' : 'filled'} />
                     </ChipCell>
                   </StatRow>
+                  {isExpanded && detail && <KeywordDetailCard detail={detail} />}
+                  </Stack>
                 );
               })}
               <Typography variant="caption" color="text.secondary">
