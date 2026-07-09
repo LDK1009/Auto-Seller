@@ -25,7 +25,7 @@ import type { DomemeItem } from '@/shared/types/domeme';
 import { useSellerFixedInfo } from '../_hooks/useSellerFixedInfo';
 import { validateProductName, PROMO_WORDS, type NameCheckLevel } from '../_utils/validateProductName';
 import { detectComplianceRisk } from '../_utils/detectComplianceRisk';
-import { fetchKeywordStats } from '@/shared/services/keywordStatsService';
+import { fetchKeywordStats, fetchCategorySuggest, type CategoryCandidate } from '@/shared/services/keywordStatsService';
 import type { KeywordStat } from '@/shared/types/keywordStats';
 
 const SMARTSTORE_FEE_RATE = FEE_PRESETS[0].rate; // 5.6% (스마트스토어)
@@ -64,6 +64,8 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
   const [discountRate, setDiscountRate] = useState(0); // 할인율 표시 (0 = 표시 안 함)
   const [tagStats, setTagStats] = useState<Map<string, KeywordStat> | null>(null); // null = 미조회
   const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const [categoryCandidates, setCategoryCandidates] = useState<CategoryCandidate[] | null>(null); // null = 미조회
+  const [isLoadingCategory, setIsLoadingCategory] = useState(false);
 
   const nameChecks = validateProductName(productName);
   const complianceRisks = detectComplianceRisk(item.title, item.categoryPath);
@@ -146,6 +148,31 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
       });
     } finally {
       setIsLoadingStats(false);
+    }
+  };
+
+  ////////// 스스 카테고리 후보 조회 (상위 상품 카테고리 최빈값)
+  const handleLoadCategorySuggest = async () => {
+    setIsLoadingCategory(true);
+    try {
+      const response = await fetchCategorySuggest(productName);
+      if (!response.configured) {
+        enqueueSnackbar('카테고리 추천 기능이 아직 준비되지 않았습니다. (API 키 미설정)', { variant: 'info' });
+        return;
+      }
+      setCategoryCandidates(response.candidates);
+      if (response.candidates.length === 0) {
+        enqueueSnackbar('이 상품명으로는 카테고리 후보를 찾지 못했습니다. 상품명을 다듬어보세요.', {
+          variant: 'info',
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar(error instanceof Error ? error.message : '카테고리 후보 조회에 실패했습니다.', {
+        variant: 'error',
+      });
+    } finally {
+      setIsLoadingCategory(false);
     }
   };
 
@@ -399,6 +426,42 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
           caption="스마트스토어 카테고리는 등록 화면에서 가장 가까운 항목을 선택하세요"
           onCopy={item.categoryPath ? () => copyText('카테고리', item.categoryPath as string) : undefined}
         />
+
+        {/* 스스 카테고리 후보 — 네이버쇼핑 상위 상품들의 카테고리 최빈값 */}
+        <Stack spacing={1} sx={{ px: 1.5, py: 0.5 }}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            <Typography variant="body2" color="text.secondary" sx={{ width: 150, flexShrink: 0 }}>
+              스스 카테고리 후보
+            </Typography>
+            <Button size="small" onClick={handleLoadCategorySuggest} disabled={isLoadingCategory}>
+              {isLoadingCategory ? '조회 중…' : categoryCandidates === null ? '후보 확인' : '다시 확인'}
+            </Button>
+          </Stack>
+          {categoryCandidates !== null && categoryCandidates.length > 0 && (
+            <Stack spacing={0.5} sx={{ pl: '162px' }}>
+              {categoryCandidates.map((candidate, index) => (
+                <Stack key={candidate.path} direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                  <Typography variant="body2" sx={{ fontWeight: index === 0 ? 700 : 500 }}>
+                    {candidate.path}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    (상위 {candidate.sampleSize}개 중 {candidate.count}개)
+                  </Typography>
+                  <CopyButton
+                    aria-label="카테고리 후보 복사"
+                    onClick={() => copyText('스스 카테고리', candidate.path)}
+                  >
+                    <ContentCopyIcon fontSize="small" />
+                  </CopyButton>
+                </Stack>
+              ))}
+              <Typography variant="caption" color="text.secondary">
+                같은 키워드 상위 상품들이 실제로 등록된 카테고리입니다 — 1순위 후보를 등록 화면에서
+                검색해 선택하세요.
+              </Typography>
+            </Stack>
+          )}
+        </Stack>
         <SheetRow
           label="판매자 상품코드 (권장)"
           value={`DG-${item.no}`}

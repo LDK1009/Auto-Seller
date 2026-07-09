@@ -12,3 +12,17 @@ export async function fetchKeywordStats(keywords: string[]): Promise<KeywordStat
   }
   return body as KeywordStatsResponse;
 }
+
+////////// 스스 카테고리 후보 (상품명 → 네이버쇼핑 상위 상품 카테고리 최빈값)
+export type CategoryCandidate = { path: string; count: number; sampleSize: number };
+
+export async function fetchCategorySuggest(
+  query: string,
+): Promise<{ configured: boolean; candidates: CategoryCandidate[] }> {
+  const response = await fetch(`/api/category-suggest?q=${encodeURIComponent(query)}`);
+  const body = await response.json();
+  if (!response.ok) {
+    throw new Error(body?.error ?? '카테고리 후보 조회에 실패했습니다.');
+  }
+  return body;
+}
