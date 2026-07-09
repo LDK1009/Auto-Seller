@@ -7,11 +7,12 @@ import { createHmac } from 'crypto';
 import { NextResponse } from 'next/server';
 import type { KeywordStat, StarterKeywordsResponse } from '@/shared/types/keywordStats';
 
-export const maxDuration = 30; // 파이프라인 총 소요 ~6초 — 서버리스 기본 한도 여유 확보
+export const maxDuration = 60; // 시즌 표 채우기 위한 심화 탐색 최악 케이스(후보 120개) 대비
 
 const CACHE_TTL_MS = 1000 * 60 * 60 * 6;
 const FETCH_TIMEOUT_MS = 10_000;
-const CANDIDATE_LIMIT = 60; // 필터·시즌성 판정 대상
+const CANDIDATE_LIMIT = 120; // 심화 탐색 상한 (시즌 키워드는 검색량 상위에 드물어 깊이 파야 함)
+const DEEPEN_BATCH_SIZE = 20; // 20개 단위로 검증·판정하며 두 표가 차면 조기 종료
 const TABLE_SIZE = 10;
 const MIN_PRODUCT_COUNT = 1000; // 상품 키워드 판별 하한 (정보성 키워드는 등록 상품이 거의 없음 — 실측 "근처피부과" 5개)
 
@@ -76,48 +77,57 @@ export async function GET() {
       }
     }
 
-    ////////// 2) 검색량 내림차순 TOP 후보
+    ////////// 2) 검색량 내림차순 랭킹 (심화 탐색 상한까지)
     const rankedCandidates = Array.from(pool.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, CANDIDATE_LIMIT)
       .map(([keyword, monthly]) => ({ keyword, monthly }));
 
-    ////////// 3) shop 메타 (상품수·최빈 카테고리) — 상품 키워드 검증 겸용 (3콜 병렬 청크 + 간격, 429 방어)
+    ////////// 3~5) 심화 탐색: 20개씩 [상품 검증 → 시즌성 판정 → 분류]하며 두 표가 차면 조기 종료
+    // 검색량 상위권은 연중 꾸준 키워드가 지배 → 시즌 표(제철 한정)는 깊이 파야 채워짐
     const shopMetaByKeyword = new Map<string, { total: number | null; category: string | null }>();
-    for (let index = 0; index < rankedCandidates.length; index += 3) {
-      const chunk = rankedCandidates.slice(index, index + 3).map((entry) => entry.keyword);
-      const results = await Promise.all(chunk.map((keyword) => fetchShopMeta(keyword, clientId, clientSecret)));
-      chunk.forEach((keyword, chunkIndex) => shopMetaByKeyword.set(keyword, results[chunkIndex]));
-      if (index + 3 < rankedCandidates.length) await sleep(320);
-    }
+    const seasonal: { keyword: string; monthly: number }[] = [];
+    const steady: { keyword: string; monthly: number }[] = [];
 
-    // 등록 상품이 거의 없는 키워드 = 상품 검색어가 아님 → 배제
-    const candidates = rankedCandidates.filter((entry) => {
-      const total = shopMetaByKeyword.get(entry.keyword)?.total;
-      return total !== null && total !== undefined && total >= MIN_PRODUCT_COUNT;
-    });
+    for (
+      let batchStart = 0;
+      batchStart < rankedCandidates.length && (seasonal.length < TABLE_SIZE || steady.length < TABLE_SIZE);
+      batchStart += DEEPEN_BATCH_SIZE
+    ) {
+      const batch = rankedCandidates.slice(batchStart, batchStart + DEEPEN_BATCH_SIZE);
 
-    ////////// 4) 시즌성 판정 (데이터랩 5그룹 배치 — 그룹 간 스케일 공유라 자기 최대값으로 재정규화 후 판정)
-    const seasonality = new Map<string, { isSeasonal: boolean; isInSeason: boolean }>();
-    for (let index = 0; index < candidates.length; index += 5) {
-      const batch = candidates.slice(index, index + 5).map((entry) => entry.keyword);
-      const trends = await fetchTrendMulti(batch, openApiHeaders).catch(() => new Map<string, TrendMonthPoint[]>());
-      for (const [keyword, series] of trends) {
-        seasonality.set(keyword, judgeSeasonality(normalizeToOwnMax(series)));
+      // (a) shop 메타 — 상품 키워드 검증 겸용 (3콜 병렬 청크 + 간격, 429 방어)
+      for (let index = 0; index < batch.length; index += 3) {
+        const chunk = batch.slice(index, index + 3).map((entry) => entry.keyword);
+        const results = await Promise.all(chunk.map((keyword) => fetchShopMeta(keyword, clientId, clientSecret)));
+        chunk.forEach((keyword, chunkIndex) => shopMetaByKeyword.set(keyword, results[chunkIndex]));
+        if (index + 3 < batch.length) await sleep(320);
       }
-      if (index + 5 < candidates.length) await sleep(150);
-    }
+      // 등록 상품이 거의 없는 키워드 = 상품 검색어가 아님 → 배제
+      const validBatch = batch.filter((entry) => {
+        const total = shopMetaByKeyword.get(entry.keyword)?.total;
+        return total !== null && total !== undefined && total >= MIN_PRODUCT_COUNT;
+      });
 
-    ////////// 5) 분리: 제철 시즌 / 비시즌(꾸준) — 검색량 순서 유지
-    const seasonal = candidates
-      .filter((entry) => {
+      // (b) 시즌성 판정 (데이터랩 5그룹 배치 — 그룹 간 스케일 공유라 자기 최대값으로 재정규화 후 판정)
+      const seasonality = new Map<string, { isSeasonal: boolean; isInSeason: boolean }>();
+      for (let index = 0; index < validBatch.length; index += 5) {
+        const group = validBatch.slice(index, index + 5).map((entry) => entry.keyword);
+        const trends = await fetchTrendMulti(group, openApiHeaders).catch(() => new Map<string, TrendMonthPoint[]>());
+        for (const [keyword, series] of trends) {
+          seasonality.set(keyword, judgeSeasonality(normalizeToOwnMax(series)));
+        }
+        if (index + 5 < validBatch.length) await sleep(150);
+      }
+
+      // (c) 분류 — 검색량 순서 유지, 찬 표는 건너뜀
+      for (const entry of validBatch) {
         const judged = seasonality.get(entry.keyword);
-        return judged?.isSeasonal === true && judged.isInSeason;
-      })
-      .slice(0, TABLE_SIZE);
-    const steady = candidates
-      .filter((entry) => seasonality.get(entry.keyword)?.isSeasonal === false)
-      .slice(0, TABLE_SIZE);
+        if (!judged) continue;
+        if (judged.isSeasonal && judged.isInSeason && seasonal.length < TABLE_SIZE) seasonal.push(entry);
+        else if (!judged.isSeasonal && steady.length < TABLE_SIZE) steady.push(entry);
+      }
+    }
 
     ////////// 6) 조립 (KeywordStat 형태 — 표 컴포넌트 재사용)
     const toStat = (entry: { keyword: string; monthly: number }): KeywordStat => {
