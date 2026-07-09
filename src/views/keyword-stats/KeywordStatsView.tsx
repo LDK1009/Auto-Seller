@@ -63,7 +63,9 @@ export default function KeywordStatsView() {
   const [steadyStats, setSteadyStats] = useState<KeywordStat[]>([]);
   const [isStarterLoading, setIsStarterLoading] = useState(false);
   const [starterCategory, setStarterCategory] = useState<string>('all');
+  const starterCategoryRef = useRef('all'); // 비동기 응답 도착 시 현재 선택과 대조 (늦게 온 응답이 화면 덮어쓰기 방지)
   const starterCacheRef = useRef<Map<string, StarterKeywordsResponse>>(new Map()); // 카테고리별 클라 캐시
+  const starterPromiseRef = useRef<Map<string, Promise<StarterKeywordsResponse>>>(new Map()); // 진행 중 요청 공유 (프리페치·클릭 중복 방지)
 
   // 비교 상태
   const [checkedKeywords, setCheckedKeywords] = useState<Set<string>>(new Set());
@@ -150,7 +152,24 @@ export default function KeywordStatsView() {
     }
   };
 
-  ////////// 시작 키워드 실조회 (서버가 시드 풀→검색량 랭킹→시즌성 분리까지 완료 — 카테고리별 캐시)
+  ////////// 카테고리 단위 조회 (진행 중 요청은 공유 — 프리페치와 사용자 클릭이 중복 호출하지 않도록)
+  const fetchStarterCategory = (category: string): Promise<StarterKeywordsResponse> => {
+    const inFlight = starterPromiseRef.current.get(category);
+    if (inFlight) return inFlight;
+    const promise = fetchStarterKeywords(category)
+      .then((response) => {
+        starterCacheRef.current.set(category, response);
+        return response;
+      })
+      .catch((error) => {
+        starterPromiseRef.current.delete(category); // 실패분은 재시도 가능하게
+        throw error;
+      });
+    starterPromiseRef.current.set(category, promise);
+    return promise;
+  };
+
+  ////////// 시작 키워드 화면 반영 (서버가 시드 풀→검색량 랭킹→시즌성 분리까지 완료)
   const loadStarterStats = async (category: string) => {
     const cached = starterCacheRef.current.get(category);
     if (cached) {
@@ -162,20 +181,33 @@ export default function KeywordStatsView() {
     setSeasonalStats([]);
     setSteadyStats([]);
     try {
-      const response = await fetchStarterKeywords(category);
+      const response = await fetchStarterCategory(category);
       setIsConfigured(response.configured);
-      starterCacheRef.current.set(category, response);
+      if (starterCategoryRef.current !== category) return; // 그 사이 다른 칩으로 이동 — 화면 반영 생략
       setSeasonalStats(response.seasonal);
       setSteadyStats(response.steady);
     } catch (error) {
       console.error(error);
     } finally {
-      setIsStarterLoading(false);
+      if (starterCategoryRef.current === category) setIsStarterLoading(false);
+    }
+  };
+
+  ////////// 전 카테고리 프리페치 (첫 로드 직후 백그라운드 순차 — 칩 첫 클릭 대기 제거)
+  const prefetchAllCategories = async () => {
+    for (const category of NAVER_TOP_CATEGORIES) {
+      if (starterCacheRef.current.has(category)) continue;
+      try {
+        await fetchStarterCategory(category); // 순차 — 서버·API 속도 제한 배려
+      } catch (error) {
+        console.error(error);
+      }
     }
   };
 
   ////////// 카테고리 칩 선택
   const handleStarterCategory = (category: string) => {
+    starterCategoryRef.current = category;
     setStarterCategory(category);
     loadStarterStats(category);
   };
@@ -185,7 +217,9 @@ export default function KeywordStatsView() {
   const loadStarterOnce = () => {
     if (hasLoadedStarterRef.current) return;
     hasLoadedStarterRef.current = true;
-    loadStarterStats(starterCategory);
+    loadStarterStats(starterCategory).finally(() => {
+      void prefetchAllCategories();
+    });
   };
 
   const resetToStarter = () => {

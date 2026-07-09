@@ -10,7 +10,7 @@ import { NAVER_TOP_CATEGORIES, type NaverTopCategory } from '@/shared/constants/
 
 export const maxDuration = 60; // 시즌 표 채우기 위한 심화 탐색 최악 케이스(후보 120개) 대비
 
-const CACHE_TTL_MS = 1000 * 60 * 60 * 6;
+const CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 월간 검색량은 일 단위로 안 변함 — 24h면 충분 (전 카테고리 워밍 비용 절감)
 const FETCH_TIMEOUT_MS = 10_000;
 const CANDIDATE_LIMIT = 120; // 심화 탐색 상한 (시즌 키워드는 검색량 상위에 드물어 깊이 파야 함)
 const DEEPEN_BATCH_SIZE = 20; // 20개 단위로 검증·판정하며 두 표가 차면 조기 종료
@@ -175,7 +175,7 @@ export async function GET(request: Request) {
 
 ////////// CDN 캐시 (모든 방문자 동일 응답 — 엣지에서 재사용)
 function cdnCacheHeaders() {
-  return { 'Cache-Control': 'public, s-maxage=21600, stale-while-revalidate=86400' };
+  return { 'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=172800' };
 }
 
 //////////////////// 검색광고 keywordstool (힌트 최대 5개) ////////////////////
