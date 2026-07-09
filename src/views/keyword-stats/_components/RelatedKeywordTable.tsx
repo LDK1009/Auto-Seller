@@ -42,10 +42,10 @@ export default function RelatedKeywordTable({
       </Stack>
       <HeaderRow>
         <CheckCell />
-        <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>키워드</Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ width: 100, textAlign: 'right' }}>월간 검색수</Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ width: 100, textAlign: 'right' }}>상품 수</Typography>
-        <Typography variant="caption" color="text.secondary" sx={{ width: 80, textAlign: 'right' }}>경쟁강도</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ flex: 1, textAlign: 'center' }}>키워드</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ width: 100, textAlign: 'center' }}>월간 검색수</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ width: 100, textAlign: 'center' }}>상품 수</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ width: 80, textAlign: 'center' }}>경쟁강도</Typography>
         <Typography variant="caption" color="text.secondary" sx={{ width: 76, textAlign: 'center' }}>판정</Typography>
       </HeaderRow>
       <ListBox>
@@ -77,13 +77,13 @@ export default function RelatedKeywordTable({
                   {entry.keyword}
                 </Typography>
               </KeywordButton>
-              <Typography variant="body2" sx={{ width: 100, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+              <Typography variant="body2" sx={{ width: 100, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
                 {entry.isLowVolume ? '10 미만' : entry.monthlySearches.toLocaleString()}
               </Typography>
-              <Typography variant="body2" sx={{ width: 100, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+              <Typography variant="body2" sx={{ width: 100, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
                 {productCount !== null ? productCount.toLocaleString() : isCountsLoaded ? '—' : '…'}
               </Typography>
-              <Typography variant="body2" sx={{ width: 80, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+              <Typography variant="body2" sx={{ width: 80, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
                 {ratio !== null ? ratio : isCountsLoaded ? '—' : '…'}
               </Typography>
               <ChipCell>
