@@ -16,6 +16,8 @@ const MAX_KEYWORDS_PER_REQUEST = 10; // UI 요청 상한 (검색광고 5개 × 2
 const FETCH_TIMEOUT_MS = 10_000;
 
 const cache = new Map<string, { stat: KeywordStat; expiresAt: number }>();
+// 연관 키워드 풀 캐시 (요청 키워드 집합 단위) — stat 캐시 히트 시에도 연관 목록이 비지 않도록
+const relatedCache = new Map<string, { related: RelatedKeyword[]; expiresAt: number }>();
 
 export async function GET(request: Request) {
   const apiKey = process.env.NAVER_SEARCHAD_API_KEY;
@@ -129,9 +131,23 @@ export async function GET(request: Request) {
     const stats = keywords
       .map((keyword) => statsByKeyword.get(keyword))
       .filter((stat): stat is KeywordStat => Boolean(stat));
-    const related = Array.from(relatedPool.values())
-      .sort((a, b) => b.monthlySearches - a.monthlySearches)
-      .slice(0, 30);
+
+    ////////// 연관 목록: 새로 수집했으면 캐시에 저장, 전량 캐시 히트면 저장분 재사용
+    const relatedKey = keywords.join(',');
+    let related: RelatedKeyword[];
+    if (missing.length > 0) {
+      related = Array.from(relatedPool.values())
+        .sort((a, b) => b.monthlySearches - a.monthlySearches)
+        .slice(0, 30);
+      if (relatedCache.size >= CACHE_MAX_ENTRIES) {
+        const oldestKey = relatedCache.keys().next().value;
+        if (oldestKey) relatedCache.delete(oldestKey);
+      }
+      if (related.length > 0) relatedCache.set(relatedKey, { related, expiresAt: now + CACHE_TTL_MS });
+    } else {
+      const cachedRelated = relatedCache.get(relatedKey);
+      related = cachedRelated && cachedRelated.expiresAt > now ? cachedRelated.related : [];
+    }
     return NextResponse.json({ configured: true, stats, related } satisfies KeywordStatsResponse, {
       headers: { 'Cache-Control': 'public, max-age=3600' },
     });

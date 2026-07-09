@@ -25,6 +25,30 @@ export async function fetchKeywordDetail(keyword: string): Promise<KeywordDetail
   return body as KeywordDetail;
 }
 
+////////// 연관 키워드 상품 수 일괄 조회 (경쟁강도 계산용 — 검색수는 연관 풀에 이미 있음)
+export async function fetchRelatedCompetition(keywords: string[]): Promise<Record<string, number | null>> {
+  const query = encodeURIComponent(keywords.join(','));
+  const response = await fetch(`/api/keyword-competition?keywords=${query}`);
+  const body = await response.json();
+  if (!response.ok) {
+    throw new Error(body?.error ?? '연관 키워드 조회에 실패했습니다.');
+  }
+  return (body?.counts ?? {}) as Record<string, number | null>;
+}
+
+////////// 키워드 비교 (첫 번째 = 기준 키워드, 합계 2~5개)
+import type { KeywordCompareResponse } from '@/shared/types/keywordCompare';
+
+export async function fetchKeywordCompare(keywords: string[]): Promise<KeywordCompareResponse> {
+  const query = encodeURIComponent(keywords.join(','));
+  const response = await fetch(`/api/keyword-compare?keywords=${query}`);
+  const body = await response.json();
+  if (!response.ok) {
+    throw new Error(body?.error ?? '키워드 비교에 실패했습니다.');
+  }
+  return body as KeywordCompareResponse;
+}
+
 ////////// 스스 카테고리 후보 (상품명 → 네이버쇼핑 상위 상품 카테고리 최빈값)
 export type CategoryCandidate = { path: string; count: number; sampleSize: number };
 
