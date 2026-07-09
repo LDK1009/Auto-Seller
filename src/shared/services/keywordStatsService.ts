@@ -49,6 +49,31 @@ export async function fetchKeywordCompare(keywords: string[]): Promise<KeywordCo
   return body as KeywordCompareResponse;
 }
 
+////////// AI 판단 (로그인 필요 — 일일 무료 제한)
+import type { AiVerdictResponse } from '@/shared/types/keywordVerdict';
+import type { KeywordStat } from '@/shared/types/keywordStats';
+
+export async function fetchAiVerdict(params: {
+  keyword: string;
+  stat: KeywordStat;
+  detail: KeywordDetail | null;
+  accessToken: string;
+}): Promise<AiVerdictResponse> {
+  const response = await fetch('/api/keyword-verdict', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${params.accessToken}`,
+    },
+    body: JSON.stringify({ keyword: params.keyword, stat: params.stat, detail: params.detail }),
+  });
+  const body = await response.json();
+  if (!response.ok) {
+    throw new Error(body?.error ?? 'AI 판단에 실패했습니다.');
+  }
+  return body as AiVerdictResponse;
+}
+
 ////////// 스스 카테고리 후보 (상품명 → 네이버쇼핑 상위 상품 카테고리 최빈값)
 export type CategoryCandidate = { path: string; count: number; sampleSize: number };
 

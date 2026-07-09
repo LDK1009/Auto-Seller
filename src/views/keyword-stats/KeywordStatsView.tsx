@@ -28,6 +28,7 @@ import type { KeywordStat, RelatedKeyword } from '@/shared/types/keywordStats';
 import type { KeywordDetail } from '@/shared/types/keywordDetail';
 import type { KeywordCompareResponse } from '@/shared/types/keywordCompare';
 import KeywordDetailCard from './_components/KeywordDetailCard';
+import AiVerdictCard from './_components/AiVerdictCard';
 import StatSummaryCards from './_components/StatSummaryCards';
 import RelatedKeywordTable from './_components/RelatedKeywordTable';
 import CompareSection from './_components/CompareSection';
@@ -202,6 +203,9 @@ export default function KeywordStatsView() {
             docs/launch/naver-keys-guide.md)
           </Alert>
         )}
+
+        {/* ⓪ AI 판단 (로그인 게이트 — 분석 결과 최상단) */}
+        {hasResult && <AiVerdictCard keyword={currentKeyword} stat={stat} detail={detail} />}
 
         {/* ① 핵심 지표 카드 */}
         {hasResult && (
