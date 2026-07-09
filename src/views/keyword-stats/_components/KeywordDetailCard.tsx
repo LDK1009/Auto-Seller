@@ -399,7 +399,14 @@ function StackedRatioBar({ label, segments, colors, tooltipStyle }: StackedRatio
           <BarChart data={[row]} layout="vertical" margin={{ top: 0, right: 0, bottom: 0, left: 0 }} barSize={14}>
             <XAxis type="number" hide domain={[0, 100]} />
             <YAxis type="category" dataKey="name" hide />
-            <Tooltip contentStyle={tooltipStyle} formatter={(value) => `${value}%`} cursor={{ fill: 'transparent' }} />
+            {/* 차트 높이(30px)보다 툴팁이 커서 밖으로 그려짐 — 이웃 차트에 안 가리게 z-index + 영역 탈출 허용 */}
+            <Tooltip
+              contentStyle={tooltipStyle}
+              formatter={(value) => `${value}%`}
+              cursor={{ fill: 'transparent' }}
+              allowEscapeViewBox={{ x: false, y: true }}
+              wrapperStyle={{ zIndex: 10 }}
+            />
             {segments.map((segment, index) => (
               <Bar
                 key={segment.name}
