@@ -90,23 +90,34 @@ export default function KeywordStatsView() {
       setStat(response.stats[0] ?? null);
       setRelated(response.related);
 
-      // 연관 키워드 상품 수(경쟁강도) 지연 로드 — 표는 먼저 뜨고 칸만 늦게 채워짐
+      // 연관 키워드 상품 수(경쟁강도) 지연 로드 — 표는 먼저 뜨고 칸이 점진적으로 채워짐
       if (response.related.length > 0) {
-        fetchRelatedCompetition(response.related.map((entry) => entry.keyword))
-          .then((counts) => {
-            setProductCounts(new Map(Object.entries(counts)));
-            setIsCountsLoaded(true);
-          })
-          .catch((error) => {
-            console.error(error);
-            setIsCountsLoaded(true);
-          });
+        loadRelatedCounts(response.related.map((entry) => entry.keyword));
       }
     } catch (error) {
       console.error(error);
       enqueueSnackbar(error instanceof Error ? error.message : '조회에 실패했습니다.', { variant: 'error' });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  ////////// 연관 상품 수 로드 — 10개씩 순차 요청 (오픈API 속도 제한 회피, 429 실측 확인)
+  const loadRelatedCounts = async (keywords: string[]) => {
+    const BATCH_SIZE = 10;
+    try {
+      for (let index = 0; index < keywords.length; index += BATCH_SIZE) {
+        const counts = await fetchRelatedCompetition(keywords.slice(index, index + BATCH_SIZE));
+        setProductCounts((previous) => {
+          const next = new Map(previous);
+          for (const [keyword, count] of Object.entries(counts)) next.set(keyword, count);
+          return next;
+        });
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsCountsLoaded(true);
     }
   };
 
