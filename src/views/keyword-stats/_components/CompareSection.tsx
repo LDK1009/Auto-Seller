@@ -192,14 +192,14 @@ export default function CompareSection({ entries }: PropsType) {
                 label="기기"
                 entries={entries}
                 render={(entry) =>
-                  entry.deviceRatio ? `PC ${entry.deviceRatio.pc}% · 모바일 ${entry.deviceRatio.mobile}%` : '—'
+                  entry.deviceRatio ? `PC ${entry.deviceRatio.pc}% / 모바일 ${entry.deviceRatio.mobile}%` : '—'
                 }
               />
               <MetricRow
                 label="성별"
                 entries={entries}
                 render={(entry) =>
-                  entry.genderRatio ? `남 ${entry.genderRatio.male}% · 여 ${entry.genderRatio.female}%` : '—'
+                  entry.genderRatio ? `남 ${entry.genderRatio.male}% / 여 ${entry.genderRatio.female}%` : '—'
                 }
               />
               <MetricRow label="연령 1위" entries={entries} render={(entry) => entry.ageTop ?? '—'} />

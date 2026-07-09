@@ -379,7 +379,7 @@ function StackedRatioBar({ label, segments, colors, tooltipStyle }: StackedRatio
         </ResponsiveContainer>
       </BarFlex>
       <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-        {segments.map((segment) => `${segment.name} ${segment.percent}%`).join(' · ')}
+        {segments.map((segment) => `${segment.name} ${segment.percent}%`).join(' / ')}
       </Typography>
     </Stack>
   );
