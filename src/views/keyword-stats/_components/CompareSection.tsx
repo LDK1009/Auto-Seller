@@ -8,9 +8,14 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import Alert from '@mui/material/Alert';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import type { CompareEntry } from '@/shared/types/keywordCompare';
 import { judgeCompetition } from '../_utils/judgeCompetition';
-import TrendLineChart from './TrendLineChart';
+
+// "2025-08-01" → "25.08"
+function formatMonth(period: string): string {
+  return period.slice(2, 7).replace('-', '.');
+}
 
 type PropsType = {
   entries: CompareEntry[]; // 첫 번째 = 기준 키워드
@@ -36,6 +41,27 @@ export default function CompareSection({ entries }: PropsType) {
 
   const hasTrend = entries.some((entry) => entry.trend.length > 0);
 
+  ////////// 차트 데이터: 기준 키워드의 월 축에 각 키워드 값을 병합 (단일 요청이라 기간 축 동일)
+  const axisEntry = entries.reduce(
+    (longest, entry) => (entry.trend.length > longest.trend.length ? entry : longest),
+    entries[0],
+  );
+  const chartData = (axisEntry?.trend ?? []).map((point) => {
+    const row: Record<string, string | number> = { month: formatMonth(point.period) };
+    for (const entry of entries) {
+      const matched = entry.trend.find((candidate) => candidate.period === point.period);
+      if (matched) row[entry.keyword] = Math.round(matched.ratio);
+    }
+    return row;
+  });
+
+  const chartTooltipStyle = {
+    borderRadius: 8,
+    border: `1px solid ${theme.palette.divider}`,
+    fontSize: 12,
+    padding: '6px 10px',
+  };
+
   return (
     <Stack spacing={2.5}>
       <Typography variant="subtitle2">키워드 비교 ({entries.length}개)</Typography>
@@ -59,16 +85,31 @@ export default function CompareSection({ entries }: PropsType) {
               </LegendItem>
             ))}
           </Legend>
-          <TrendLineChart
-            height={180}
-            ariaLabel="키워드별 12개월 검색 트렌드 비교"
-            series={entries.map((entry, index) => ({
-              name: entry.keyword,
-              color: lineColors[index % lineColors.length],
-              points: entry.trend,
-              strokeWidth: index === 0 ? 2.5 : 1.75,
-            }))}
-          />
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme.palette.divider} />
+              <XAxis
+                dataKey="month"
+                tick={{ fontSize: 11, fill: theme.palette.text.secondary }}
+                tickLine={false}
+                axisLine={false}
+                interval="preserveStartEnd"
+              />
+              <YAxis hide domain={[0, 100]} />
+              <Tooltip contentStyle={chartTooltipStyle} />
+              {entries.map((entry, index) => (
+                <Line
+                  key={entry.keyword}
+                  type="monotone"
+                  dataKey={entry.keyword}
+                  stroke={lineColors[index % lineColors.length]}
+                  strokeWidth={index === 0 ? 2.5 : 1.75}
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
         </BlockCard>
       )}
 
