@@ -25,7 +25,8 @@ import type { DomemeItem } from '@/shared/types/domeme';
 import { useSellerFixedInfo } from '../_hooks/useSellerFixedInfo';
 import { validateProductName, PROMO_WORDS, type NameCheckLevel } from '../_utils/validateProductName';
 import { detectComplianceRisk } from '../_utils/detectComplianceRisk';
-import { fetchKeywordStats, fetchCategorySuggest, type CategoryCandidate } from '@/shared/services/keywordStatsService';
+import { fetchKeywordStats, fetchCategorySuggest, fetchKeywordDetail, type CategoryCandidate } from '@/shared/services/keywordStatsService';
+import type { KeywordDetail } from '@/shared/types/keywordDetail';
 import type { KeywordStat } from '@/shared/types/keywordStats';
 
 const SMARTSTORE_FEE_RATE = FEE_PRESETS[0].rate; // 5.6% (스마트스토어)
@@ -66,6 +67,8 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [categoryCandidates, setCategoryCandidates] = useState<CategoryCandidate[] | null>(null); // null = 미조회
   const [isLoadingCategory, setIsLoadingCategory] = useState(false);
+  const [marketDetail, setMarketDetail] = useState<KeywordDetail | null>(null); // 시장 분석 (⑬)
+  const [isLoadingMarket, setIsLoadingMarket] = useState(false);
 
   const nameChecks = validateProductName(productName);
   const complianceRisks = detectComplianceRisk(item.title, item.categoryPath);
@@ -148,6 +151,26 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
       });
     } finally {
       setIsLoadingStats(false);
+    }
+  };
+
+  ////////// 시장 분석 (⑬ — 대표 태그 키워드의 가격대·브랜드·시즌을 시트에 이식)
+  const handleLoadMarket = async () => {
+    const seedKeyword = tagCandidates[0];
+    if (!seedKeyword) return;
+    setIsLoadingMarket(true);
+    try {
+      const detail = await fetchKeywordDetail(seedKeyword);
+      if (!detail.configured) {
+        enqueueSnackbar('시장 분석 기능이 아직 준비되지 않았습니다. (API 키 미설정)', { variant: 'info' });
+        return;
+      }
+      setMarketDetail(detail);
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar(error instanceof Error ? error.message : '시장 분석에 실패했습니다.', { variant: 'error' });
+    } finally {
+      setIsLoadingMarket(false);
     }
   };
 
@@ -371,6 +394,45 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
             <Alert severity="warning">
               {reverseResult.achievable === false ? reverseResult.reason : '가격 정보를 불러오지 못했습니다.'}
             </Alert>
+          )}
+          {/* ⑬ 시장 가격 비교 — 대표 태그 키워드 기준 */}
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+            <Button size="small" onClick={handleLoadMarket} disabled={isLoadingMarket || tagCandidates.length === 0}>
+              {isLoadingMarket ? '분석 중…' : marketDetail === null ? '시장 가격 비교' : '다시 분석'}
+            </Button>
+            {marketDetail?.priceBand && recommendedPrice !== null && (
+              <Typography variant="body2">
+                시장가 {KRW(marketDetail.priceBand.min)}~{KRW(marketDetail.priceBand.max)} · 중앙{' '}
+                {KRW(marketDetail.priceBand.median)} —{' '}
+                <b>
+                  {recommendedPrice <= marketDetail.priceBand.median
+                    ? '추천가가 시장 중앙 이하 (가격 경쟁력 있음)'
+                    : recommendedPrice <= marketDetail.priceBand.max
+                      ? '추천가가 시장 범위 내'
+                      : '추천가가 시장 상단 초과 — 마진율 조정 검토'}
+                </b>
+              </Typography>
+            )}
+          </Stack>
+          {marketDetail && (
+            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+              {marketDetail.trendDirection === 'up' && <Chip size="small" color="success" label="검색 수요 상승 중" />}
+              {marketDetail.trendDirection === 'down' && <Chip size="small" color="error" label="검색 수요 하락 중" />}
+              {marketDetail.seasonality.label && (
+                <Chip size="small" variant="outlined" label={`${marketDetail.seasonality.label}${marketDetail.seasonality.isInSeason ? ' — 지금 시즌' : ''}`} />
+              )}
+              {marketDetail.brandShare !== null && (
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  color={marketDetail.brandShare >= 60 ? 'error' : marketDetail.brandShare >= 30 ? 'warning' : 'success'}
+                  label={`브랜드 장악 ${marketDetail.brandShare}%${marketDetail.brandShare >= 60 ? ' — 진입 비추천' : ''}`}
+                />
+              )}
+              {marketDetail.categorySeason && marketDetail.categoryName && (
+                <Chip size="small" variant="outlined" label={`${marketDetail.categoryName} ${marketDetail.categorySeason}`} />
+              )}
+            </Stack>
           )}
           <Typography variant="caption" color="text.secondary">
             {FEE_DISCLAIMER}
