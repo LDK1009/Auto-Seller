@@ -2,6 +2,8 @@
 // 데이터랩 쇼핑인사이트 분야(1depth) = shop.json category1 체계 (실측 검증 07-09).
 // 시작 키워드 카테고리 필터(서버·클라이언트)가 공유한다.
 
+// '여가/생활편의'는 제외 (07-10 실측): 이 대분류의 실물 상품은 티켓·상품권·여행이라 위탁 대상이 아니고,
+// 관련 시드(차량용품·문구)도 쇼핑 데이터상 '생활/건강'으로 분류돼 표가 비어버림
 export const NAVER_TOP_CATEGORIES = [
   '패션의류',
   '패션잡화',
@@ -12,7 +14,6 @@ export const NAVER_TOP_CATEGORIES = [
   '식품',
   '스포츠/레저',
   '생활/건강',
-  '여가/생활편의',
 ] as const;
 
 export type NaverTopCategory = (typeof NAVER_TOP_CATEGORIES)[number];
