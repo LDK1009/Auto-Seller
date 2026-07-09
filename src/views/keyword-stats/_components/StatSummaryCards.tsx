@@ -41,12 +41,14 @@ export default function StatSummaryCards({ stat }: PropsType) {
       </StatCard>
       <StatCard>
         <Typography variant="caption" color="text.secondary">경쟁강도 (상품수÷검색수)</Typography>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          {stat.ratio !== null ? stat.ratio : '—'}
+        </Typography>
+      </StatCard>
+      <StatCard>
+        <Typography variant="caption" color="text.secondary">판정</Typography>
         <ChipLine>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>
-            {stat.ratio !== null ? stat.ratio : '—'}
-          </Typography>
           <Chip
-            size="small"
             label={verdict.label}
             color={verdict.color}
             variant={verdict.color === 'default' ? 'outlined' : 'filled'}
@@ -61,7 +63,7 @@ export default function StatSummaryCards({ stat }: PropsType) {
 //////////////////////////////////////// 스타일 ////////////////////////////////////////
 const CardGrid = styled.div(({ theme }) => ({
   display: 'grid',
-  gridTemplateColumns: 'repeat(4, 1fr)',
+  gridTemplateColumns: 'repeat(5, 1fr)',
   gap: theme.spacing(1.5),
   [theme.breakpoints.down('md')]: {
     gridTemplateColumns: 'repeat(2, 1fr)',

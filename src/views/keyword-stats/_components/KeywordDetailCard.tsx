@@ -160,21 +160,25 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
         <BlockCard>
           <BlockLabel>검색 고객 분석</BlockLabel>
           {detail.deviceRatio !== null && (
-            <RatioLine
+            <StackedRatioBar
               label="기기"
-              majorLabel={detail.deviceRatio.mobile >= detail.deviceRatio.pc ? '모바일' : 'PC'}
-              majorPercent={Math.max(detail.deviceRatio.mobile, detail.deviceRatio.pc)}
-              minorLabel={detail.deviceRatio.mobile >= detail.deviceRatio.pc ? 'PC' : '모바일'}
-              minorPercent={Math.min(detail.deviceRatio.mobile, detail.deviceRatio.pc)}
+              segments={[
+                { name: '모바일', percent: detail.deviceRatio.mobile },
+                { name: 'PC', percent: detail.deviceRatio.pc },
+              ]}
+              colors={[theme.palette.primary.main, theme.palette.action.selected]}
+              tooltipStyle={chartTooltipStyle}
             />
           )}
           {detail.genderRatio !== null && (
-            <RatioLine
+            <StackedRatioBar
               label="성별"
-              majorLabel={detail.genderRatio.male >= detail.genderRatio.female ? '남성' : '여성'}
-              majorPercent={Math.max(detail.genderRatio.male, detail.genderRatio.female)}
-              minorLabel={detail.genderRatio.male >= detail.genderRatio.female ? '여성' : '남성'}
-              minorPercent={Math.min(detail.genderRatio.male, detail.genderRatio.female)}
+              segments={[
+                { name: '여성', percent: detail.genderRatio.female },
+                { name: '남성', percent: detail.genderRatio.male },
+              ]}
+              colors={[theme.palette.secondary.main, theme.palette.info.main]}
+              tooltipStyle={chartTooltipStyle}
             />
           )}
           {ageData.length > 0 && (
@@ -190,6 +194,7 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
                     interval={0}
                   />
                   <YAxis hide />
+                  <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => [`${value}%`, '비중']} cursor={{ fill: theme.palette.action.hover }} />
                   <Bar dataKey="percent" radius={[4, 4, 0, 0]} isAnimationActive={false}>
                     <LabelList dataKey="percent" position="top" fontSize={10} formatter={(value) => `${value}%`} />
                     {ageData.map((bucket) => (
@@ -218,6 +223,7 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
                     interval={0}
                   />
                   <YAxis hide />
+                  <Tooltip contentStyle={chartTooltipStyle} formatter={(value) => [`${value}%`, '비중']} cursor={{ fill: theme.palette.action.hover }} />
                   <Bar dataKey="percent" radius={[4, 4, 0, 0]} isAnimationActive={false}>
                     <LabelList dataKey="percent" position="top" fontSize={10} formatter={(value) => `${value}%`} />
                     {weekdayData.map((day, index) => (
@@ -270,7 +276,7 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
             <Typography variant="caption" color="text.secondary">중고·직구 제외</Typography>
           </MarketBox>
           <MarketBox>
-            <Typography variant="caption" color="text.secondary">블로그 문서</Typography>
+            <Typography variant="caption" color="text.secondary">블로그 글</Typography>
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
               {detail.blogCount !== null ? formatCompact(detail.blogCount) : '—'}
             </Typography>
@@ -293,14 +299,12 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
 type PriceRangeSliderProps = { min: number; median: number; max: number };
 
 function PriceRangeSlider({ min, median, max }: PriceRangeSliderProps) {
-  // 중앙값 위치 % (min=max 엣지는 가운데 고정)
-  const medianPercent = max > min ? Math.round(((median - min) / (max - min)) * 100) : 50;
-  const clampedPercent = Math.min(92, Math.max(8, medianPercent)); // 라벨이 양끝과 겹치지 않게
+  // 중앙값 마커는 트랙 정중앙 고정 — 가격 분포가 쏠려도 "최소·중앙·최대" 도식으로 읽히게
 
   return (
     <SliderWrapper>
       {/* 중앙값 (위) */}
-      <MedianLabel style={{ left: `${clampedPercent}%` }}>
+      <MedianLabel style={{ left: '50%' }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
           {KRW(median)}
         </Typography>
@@ -309,8 +313,8 @@ function PriceRangeSlider({ min, median, max }: PriceRangeSliderProps) {
 
       {/* 트랙 + 마커 */}
       <SliderTrack>
-        <SliderFill style={{ width: `${medianPercent}%` }} />
-        <MedianDot style={{ left: `${medianPercent}%` }} />
+        <SliderFill style={{ width: '50%' }} />
+        <MedianDot style={{ left: '50%' }} />
       </SliderTrack>
 
       {/* 최소/최대 (아래 양끝) */}
@@ -328,19 +332,42 @@ function PriceRangeSlider({ min, median, max }: PriceRangeSliderProps) {
   );
 }
 
-//////////////////// 비율 한 줄 (기기·성별) ////////////////////
-type RatioLineProps = { label: string; majorLabel: string; majorPercent: number; minorLabel: string; minorPercent: number };
+//////////////////// 비율 스택 바 (기기·성별 — Recharts, 호버 시 상세) ////////////////////
+type StackedRatioBarProps = {
+  label: string;
+  segments: { name: string; percent: number }[]; // 왼쪽부터 순서대로
+  colors: string[];
+  tooltipStyle: React.CSSProperties;
+};
 
-function RatioLine({ label, majorLabel, majorPercent, minorLabel, minorPercent }: RatioLineProps) {
+function StackedRatioBar({ label, segments, colors, tooltipStyle }: StackedRatioBarProps) {
+  const row: Record<string, string | number> = { name: label };
+  for (const segment of segments) row[segment.name] = segment.percent;
+
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
       <Typography variant="body2" color="text.secondary" sx={{ width: 40, flexShrink: 0 }}>{label}</Typography>
-      <RatioTrack>
-        <RatioFill style={{ width: `${majorPercent}%` }} />
-      </RatioTrack>
-      <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>
-        <b>{majorLabel} {majorPercent}%</b>
-        <Typography component="span" variant="caption" color="text.secondary"> · {minorLabel} {minorPercent}%</Typography>
+      <BarFlex>
+        <ResponsiveContainer width="100%" height={30}>
+          <BarChart data={[row]} layout="vertical" margin={{ top: 0, right: 0, bottom: 0, left: 0 }} barSize={14}>
+            <XAxis type="number" hide domain={[0, 100]} />
+            <YAxis type="category" dataKey="name" hide />
+            <Tooltip contentStyle={tooltipStyle} formatter={(value) => `${value}%`} cursor={{ fill: 'transparent' }} />
+            {segments.map((segment, index) => (
+              <Bar
+                key={segment.name}
+                dataKey={segment.name}
+                stackId="ratio"
+                fill={colors[index % colors.length]}
+                radius={index === 0 ? [7, 0, 0, 7] : index === segments.length - 1 ? [0, 7, 7, 0] : 0}
+                isAnimationActive={false}
+              />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </BarFlex>
+      <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+        {segments.map((segment) => `${segment.name} ${segment.percent}%`).join(' · ')}
       </Typography>
     </Stack>
   );
@@ -458,18 +485,8 @@ const MarketBox = styled.div(({ theme }) => ({
   backgroundColor: theme.palette.background.default,
 }));
 
-////////// 기기·성별 비율 바
-const RatioTrack = styled.div(({ theme }) => ({
+////////// 기기·성별 비율 스택 바 컨테이너
+const BarFlex = styled.div({
   flex: 1,
-  maxWidth: 200,
-  height: 10,
-  borderRadius: 5,
-  backgroundColor: theme.palette.action.hover,
-  overflow: 'hidden',
-}));
-
-const RatioFill = styled.div(({ theme }) => ({
-  height: '100%',
-  borderRadius: 5,
-  backgroundColor: theme.palette.primary.main,
-}));
+  minWidth: 0,
+});
