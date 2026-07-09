@@ -19,7 +19,7 @@ import { useSnackbar } from 'notistack';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
 import { fetchKeywordStats } from '@/shared/services/keywordStatsService';
-import type { KeywordStat } from '@/shared/types/keywordStats';
+import type { KeywordStat, RelatedKeyword } from '@/shared/types/keywordStats';
 
 const MAX_KEYWORDS = 10;
 
@@ -37,31 +37,47 @@ export default function KeywordStatsView() {
   // 순수 UI 상태
   const [rawInput, setRawInput] = useState('');
   const [stats, setStats] = useState<KeywordStat[]>([]);
+  const [related, setRelated] = useState<RelatedKeyword[]>([]);
   const [isConfigured, setIsConfigured] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLookup = async () => {
-    const keywords = rawInput
-      .split(/[,\n]/)
-      .map((keyword) => keyword.trim())
-      .filter((keyword) => keyword.length > 0)
-      .slice(0, MAX_KEYWORDS);
+  const runLookup = async (keywords: string[]) => {
     if (keywords.length === 0) return;
-
     setIsLoading(true);
     try {
-      const response = await fetchKeywordStats(keywords);
+      const response = await fetchKeywordStats(keywords.slice(0, MAX_KEYWORDS));
       setIsConfigured(response.configured);
       // 경쟁강도 낮은 순 (틈새 먼저)
       setStats(
         [...response.stats].sort((a, b) => (a.ratio ?? Number.MAX_VALUE) - (b.ratio ?? Number.MAX_VALUE)),
       );
+      setRelated(response.related);
     } catch (error) {
       console.error(error);
       enqueueSnackbar(error instanceof Error ? error.message : '조회에 실패했습니다.', { variant: 'error' });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleLookup = () => {
+    const keywords = rawInput
+      .split(/[,\n]/)
+      .map((keyword) => keyword.trim())
+      .filter((keyword) => keyword.length > 0);
+    runLookup(keywords);
+  };
+
+  ////////// 연관 키워드 클릭 → 조회 목록에 추가하고 재조회 (상품수·경쟁강도까지 확보)
+  const handleAddRelated = (keyword: string) => {
+    const current = rawInput
+      .split(/[,\n]/)
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0);
+    if (current.includes(keyword)) return;
+    const next = [...current, keyword].slice(-MAX_KEYWORDS);
+    setRawInput(next.join(', '));
+    runLookup(next);
   };
 
   return (
@@ -120,9 +136,10 @@ export default function KeywordStatsView() {
             <Stack spacing={1}>
               <HeaderRow>
                 <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>키워드</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ width: 110, textAlign: 'right' }}>월간 검색수</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ width: 110, textAlign: 'right' }}>상품 수</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ width: 110, textAlign: 'center' }}>경쟁강도</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ width: 100, textAlign: 'right' }}>월간 검색수</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ width: 100, textAlign: 'right' }}>월 클릭 (률)</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ width: 100, textAlign: 'right' }}>상품 수</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ width: 100, textAlign: 'center' }}>경쟁강도</Typography>
               </HeaderRow>
               {stats.map((stat) => {
                 const verdict = judgeRatio(stat.ratio);
@@ -131,10 +148,18 @@ export default function KeywordStatsView() {
                     <Typography variant="body2" sx={{ flex: 1, fontWeight: 600, minWidth: 0, wordBreak: 'break-all' }}>
                       {stat.keyword}
                     </Typography>
-                    <Typography variant="body2" sx={{ width: 110, textAlign: 'right' }}>
+                    <Typography variant="body2" sx={{ width: 100, textAlign: 'right' }}>
                       {stat.monthlySearches === null ? '—' : stat.isLowVolume ? '10 미만' : stat.monthlySearches.toLocaleString()}
                     </Typography>
-                    <Typography variant="body2" sx={{ width: 110, textAlign: 'right' }}>
+                    <Typography variant="body2" sx={{ width: 100, textAlign: 'right' }}>
+                      {stat.monthlyClicks !== null ? stat.monthlyClicks.toLocaleString() : '—'}
+                      {stat.avgCtr !== null && (
+                        <Typography component="span" variant="caption" color="text.secondary">
+                          {' '}({stat.avgCtr}%)
+                        </Typography>
+                      )}
+                    </Typography>
+                    <Typography variant="body2" sx={{ width: 100, textAlign: 'right' }}>
                       {stat.productCount !== null ? stat.productCount.toLocaleString() : '—'}
                     </Typography>
                     <ChipCell>
@@ -144,9 +169,33 @@ export default function KeywordStatsView() {
                 );
               })}
               <Typography variant="caption" color="text.secondary">
-                경쟁강도(상품수÷검색수)가 낮은 순으로 정렬했습니다. 검색량이 있어도 경쟁정도
-                {stats.some((stat) => stat.competition) && ' (광고 경쟁: ' + Array.from(new Set(stats.map((s) => s.competition).filter(Boolean))).join('·') + ')'}
-                와 1페이지 리뷰 수는 직접 확인하세요.
+                경쟁강도(상품수÷검색수)가 낮은 순으로 정렬했습니다. 1페이지 리뷰 수는 직접 확인하세요.
+              </Typography>
+            </Stack>
+          </Paper>
+        )}
+
+        {/* 연관 키워드 — keywordstool이 덤으로 주는 확장 후보 */}
+        {related.length > 0 && (
+          <Paper variant="outlined" sx={{ p: 3 }}>
+            <Stack spacing={1.5}>
+              <Typography variant="subtitle2">
+                연관 키워드 {related.length}개 — 클릭하면 조회 목록에 추가됩니다
+              </Typography>
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+                {related.map((entry) => (
+                  <Chip
+                    key={entry.keyword}
+                    size="small"
+                    variant="outlined"
+                    disabled={isLoading}
+                    onClick={() => handleAddRelated(entry.keyword)}
+                    label={`${entry.keyword} · ${entry.isLowVolume ? '<10' : entry.monthlySearches.toLocaleString()}회`}
+                  />
+                ))}
+              </Stack>
+              <Typography variant="caption" color="text.secondary">
+                검색량 높은 순 상위 30개입니다. 추가하면 상품 수·경쟁강도까지 조회됩니다.
               </Typography>
             </Stack>
           </Paper>

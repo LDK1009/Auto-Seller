@@ -6,7 +6,7 @@
 
 import { createHmac } from 'crypto';
 import { NextResponse } from 'next/server';
-import type { KeywordStat, KeywordStatsResponse } from '@/shared/types/keywordStats';
+import type { KeywordStat, KeywordStatsResponse, RelatedKeyword } from '@/shared/types/keywordStats';
 
 const SEARCHAD_BASE = 'https://api.searchad.naver.com';
 const SHOP_API_URL = 'https://openapi.naver.com/v1/search/shop.json';
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   const clientSecret = process.env.NAVER_OPENAPI_CLIENT_SECRET;
 
   if (!apiKey || !secretKey || !customerId) {
-    return NextResponse.json({ configured: false, stats: [] } satisfies KeywordStatsResponse);
+    return NextResponse.json({ configured: false, stats: [], related: [] } satisfies KeywordStatsResponse);
   }
 
   const { searchParams } = new URL(request.url);
@@ -47,6 +47,7 @@ export async function GET(request: Request) {
     ////////// 캐시 분리: 캐시된 것과 새로 조회할 것
     const now = Date.now();
     const statsByKeyword = new Map<string, KeywordStat>();
+    const relatedPool = new Map<string, RelatedKeyword>();
     const missing: string[] = [];
     for (const keyword of keywords) {
       const cached = cache.get(keyword);
@@ -57,19 +58,37 @@ export async function GET(request: Request) {
     if (missing.length > 0) {
       ////////// 1) 검색광고 keywordstool (5개씩 배치)
       // 검색광고 인증·장애 시에도 전체를 죽이지 않는다 — 상품 수(쇼핑API)만이라도 반환 (부분 가동)
-      const searchVolumes = new Map<string, { monthly: number; isLow: boolean; comp: string | null }>();
+      const searchVolumes = new Map<
+        string,
+        { monthly: number; isLow: boolean; comp: string | null; clicks: number | null; ctr: number | null }
+      >();
+      const wanted = new Set(missing.map((keyword) => keyword.toLowerCase()));
       try {
         for (let index = 0; index < missing.length; index += 5) {
           const batch = missing.slice(index, index + 5);
           const list = await fetchKeywordTool(batch, { apiKey, secretKey, customerId });
           for (const entry of list) {
+            const relKeyword = String(entry.relKeyword ?? '').replace(/\s+/g, '');
             const pc = parseCount(entry.monthlyPcQcCnt);
             const mobile = parseCount(entry.monthlyMobileQcCnt);
-            searchVolumes.set(String(entry.relKeyword), {
+            const record = {
               monthly: pc.value + mobile.value,
               isLow: pc.isLow && mobile.isLow,
               comp: entry.compIdx ? String(entry.compIdx) : null,
-            });
+              clicks: toRoundedOrNull(Number(entry.monthlyAvePcClkCnt ?? NaN) + Number(entry.monthlyAveMobileClkCnt ?? NaN)),
+              ctr: toRoundedOrNull((Number(entry.monthlyAvePcCtr ?? NaN) + Number(entry.monthlyAveMobileCtr ?? NaN)) / 2, 2),
+            };
+            if (wanted.has(relKeyword.toLowerCase())) {
+              searchVolumes.set(relKeyword, record);
+            } else if (!relatedPool.has(relKeyword)) {
+              // 연관 키워드 풀 수집 (상품수 미조회 — 검색량만)
+              relatedPool.set(relKeyword, {
+                keyword: relKeyword,
+                monthlySearches: record.monthly,
+                isLowVolume: record.isLow,
+                competition: record.comp,
+              });
+            }
           }
         }
       } catch (error) {
@@ -88,6 +107,8 @@ export async function GET(request: Request) {
           monthlySearches: monthly,
           isLowVolume: volume?.isLow ?? false,
           competition: volume?.comp ?? null,
+          monthlyClicks: volume?.clicks ?? null,
+          avgCtr: volume?.ctr ?? null,
           productCount,
           ratio:
             monthly !== null && monthly > 0 && productCount !== null
@@ -108,7 +129,10 @@ export async function GET(request: Request) {
     const stats = keywords
       .map((keyword) => statsByKeyword.get(keyword))
       .filter((stat): stat is KeywordStat => Boolean(stat));
-    return NextResponse.json({ configured: true, stats } satisfies KeywordStatsResponse, {
+    const related = Array.from(relatedPool.values())
+      .sort((a, b) => b.monthlySearches - a.monthlySearches)
+      .slice(0, 30);
+    return NextResponse.json({ configured: true, stats, related } satisfies KeywordStatsResponse, {
       headers: { 'Cache-Control': 'public, max-age=3600' },
     });
   } catch (error) {
@@ -139,10 +163,8 @@ async function fetchKeywordTool(
   });
   if (!response.ok) throw new Error(`검색광고 API 오류 (HTTP ${response.status})`);
   const body = await response.json();
-  const list: any[] = Array.isArray(body?.keywordList) ? body.keywordList : [];
-  // keywordstool은 연관키워드까지 돌려주므로, 요청한 키워드만 추린다 (공백 제거 대소문자 무시 비교)
-  const wanted = new Set(batch.map((keyword) => keyword.toLowerCase()));
-  return list.filter((entry) => wanted.has(String(entry.relKeyword ?? '').replace(/\s+/g, '').toLowerCase()));
+  // keywordstool은 요청 키워드 + 연관키워드 수백 개를 함께 돌려준다 — 호출부에서 분리
+  return Array.isArray(body?.keywordList) ? body.keywordList : [];
 }
 
 ////////// 쇼핑 검색 — 등록 상품 수 (total)
@@ -160,6 +182,13 @@ async function fetchShopTotal(keyword: string, clientId: string, clientSecret: s
   } catch {
     return null; // 상품 수 실패는 검색량 표시를 막지 않음
   }
+}
+
+////////// 숫자 반올림 (NaN이면 null)
+function toRoundedOrNull(value: number, digits = 0): number | null {
+  if (!Number.isFinite(value)) return null;
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
 }
 
 ////////// "< 10" 형태 수치 파싱
