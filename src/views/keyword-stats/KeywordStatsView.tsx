@@ -9,6 +9,7 @@ import styled from '@emotion/styled';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
+import Chip from '@mui/material/Chip';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
@@ -29,6 +30,12 @@ import type { KeywordDetail } from '@/shared/types/keywordDetail';
 import type { KeywordCompareResponse } from '@/shared/types/keywordCompare';
 import KeywordDetailCard from './_components/KeywordDetailCard';
 // import AiVerdictCard from './_components/AiVerdictCard'; // AI 판단 가동(카카오·키·테이블 셋업) 전까지 숨김 — 백로그 F-4
+import {
+  getSeasonalKeywords,
+  STEADY_KEYWORDS,
+  loadRecentKeywords,
+  saveRecentKeyword,
+} from './_constants/starterKeywords';
 import StatSummaryCards from './_components/StatSummaryCards';
 import RelatedKeywordTable from './_components/RelatedKeywordTable';
 import CompareSection from './_components/CompareSection';
@@ -47,6 +54,10 @@ export default function KeywordStatsView() {
   const [isConfigured, setIsConfigured] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
+
+  // 시작 키워드 (빈 화면용 — 시즌 큐레이션 + 최근 검색)
+  const [recentKeywords, setRecentKeywords] = useState<string[]>([]);
+  const seasonalKeywords = getSeasonalKeywords();
 
   // 비교 상태
   const [checkedKeywords, setCheckedKeywords] = useState<Set<string>>(new Set());
@@ -72,8 +83,9 @@ export default function KeywordStatsView() {
     setIsLoading(true);
     setIsDetailLoading(true);
 
-    // URL 동기화 (공유·새로고침 대응)
+    // URL 동기화 (공유·새로고침 대응) + 최근 검색 기록
     window.history.replaceState(null, '', `?keyword=${encodeURIComponent(keyword)}`);
+    setRecentKeywords(saveRecentKeyword(keyword));
 
     // 종합차트는 별도 트랙으로 병렬 로드 (기본 지표보다 느림)
     fetchKeywordDetail(keyword)
@@ -121,8 +133,9 @@ export default function KeywordStatsView() {
     }
   };
 
-  ////////// 최초 진입: URL의 ?keyword= 자동 검색
+  ////////// 최초 진입: URL의 ?keyword= 자동 검색 + 최근 검색 복원
   useEffect(() => {
+    setRecentKeywords(loadRecentKeywords());
     const initialKeyword = new URLSearchParams(window.location.search).get('keyword');
     if (initialKeyword && initialKeyword.trim().length > 0) {
       runSearch(initialKeyword);
@@ -209,6 +222,40 @@ export default function KeywordStatsView() {
             아직 준비 중인 기능입니다. (운영자: 네이버 API 키 발급 후 환경변수 설정 —
             docs/launch/naver-keys-guide.md)
           </Alert>
+        )}
+
+        {/* 시작 키워드 (검색 전 빈 화면) — 시즌 큐레이션 + 최근 검색. 도매꾹 인기검색어 승인 후 교체 예정 */}
+        {!hasResult && !isLoading && (
+          <Paper variant="outlined" sx={{ p: 3 }}>
+            <Stack spacing={2.5}>
+              {recentKeywords.length > 0 && (
+                <Stack spacing={1}>
+                  <Typography variant="subtitle2">최근 분석한 키워드</Typography>
+                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+                    {recentKeywords.map((keyword) => (
+                      <Chip key={keyword} label={keyword} variant="outlined" onClick={() => runSearch(keyword)} />
+                    ))}
+                  </Stack>
+                </Stack>
+              )}
+              <Stack spacing={1}>
+                <Typography variant="subtitle2">이번 달 시즌 키워드로 시작해보세요</Typography>
+                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+                  {seasonalKeywords.map((keyword) => (
+                    <Chip key={keyword} label={keyword} color="primary" variant="outlined" onClick={() => runSearch(keyword)} />
+                  ))}
+                </Stack>
+              </Stack>
+              <Stack spacing={1}>
+                <Typography variant="subtitle2">계절 안 타는 스테디 카테고리</Typography>
+                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+                  {STEADY_KEYWORDS.map((keyword) => (
+                    <Chip key={keyword} label={keyword} variant="outlined" onClick={() => runSearch(keyword)} />
+                  ))}
+                </Stack>
+              </Stack>
+            </Stack>
+          </Paper>
         )}
 
         {/* ⓪ AI 판단 — 가동 셋업 완료 후 노출 (백로그 F-4)
