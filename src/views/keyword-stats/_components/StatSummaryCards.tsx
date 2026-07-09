@@ -48,6 +48,9 @@ export default function StatSummaryCards({ stat }: PropsType) {
             variant={verdict.color === 'default' ? 'outlined' : 'filled'}
             sx={{ fontWeight: 700 }}
           />
+          {stat.ratio !== null && (
+            <Typography variant="caption" color="text.secondary">{stat.ratio}</Typography>
+          )}
         </ChipLine>
       </StatCard>
     </CardGrid>
@@ -73,8 +76,9 @@ const StatCard = styled.div(({ theme }) => ({
   backgroundColor: theme.palette.background.default, // 인셋 서피스 (보더 없이 톤으로 구분 — 토스 규칙)
 }));
 
-const ChipLine = styled.div({
+const ChipLine = styled.div(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
+  gap: theme.spacing(0.75),
   minHeight: 32,
-});
+}));

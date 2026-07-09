@@ -89,6 +89,9 @@ export default function RelatedKeywordTable({
                   color={verdict.color}
                   variant={verdict.color === 'default' ? 'outlined' : 'filled'}
                 />
+                {ratio !== null && (
+                  <Typography variant="caption" color="text.secondary">{ratio}</Typography>
+                )}
               </ChipCell>
             </Row>
           );
@@ -144,8 +147,10 @@ const KeywordButton = styled(ButtonBase)(({ theme }) => ({
   },
 }));
 
-const ChipCell = styled.div({
+const ChipCell = styled.div(({ theme }) => ({
   width: 100,
   display: 'flex',
+  alignItems: 'center',
   justifyContent: 'center',
-});
+  gap: theme.spacing(0.5),
+}));

@@ -163,12 +163,17 @@ export default function CompareSection({ entries }: PropsType) {
                   const verdict = judgeCompetition(entry.ratio);
                   return (
                     <td key={entry.keyword}>
-                      <Chip
-                        size="small"
-                        label={verdict.label}
-                        color={verdict.color}
-                        variant={verdict.color === 'default' ? 'outlined' : 'filled'}
-                      />
+                      <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', justifyContent: 'center' }}>
+                        <Chip
+                          size="small"
+                          label={verdict.label}
+                          color={verdict.color}
+                          variant={verdict.color === 'default' ? 'outlined' : 'filled'}
+                        />
+                        {entry.ratio !== null && (
+                          <Typography variant="caption" color="text.secondary">{entry.ratio}</Typography>
+                        )}
+                      </Stack>
                     </td>
                   );
                 })}
