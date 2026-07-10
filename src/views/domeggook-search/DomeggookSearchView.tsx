@@ -48,6 +48,12 @@ import { transientOptions } from '@/shared/utils/emotionTransientProps';
 
 const KRW = (value: number) => `${value.toLocaleString()}원`;
 
+// 가격 인풋 실시간 쉼표 포맷 (숫자 외 제거 → 3자리 쉼표)
+const formatPriceInput = (raw: string) => {
+  const digits = raw.replace(/[^\d]/g, '');
+  return digits ? Number(digits).toLocaleString() : '';
+};
+
 export default function DomeggookSearchView() {
   const { enqueueSnackbar } = useSnackbar();
   const router = useRouter();
@@ -321,7 +327,7 @@ export default function DomeggookSearchView() {
                     <TextField
                       size="small"
                       value={priceInputMin}
-                      onChange={(event) => setPriceInputMin(event.target.value)}
+                      onChange={(event) => setPriceInputMin(formatPriceInput(event.target.value))}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter') applyPriceInput();
                       }}
@@ -332,7 +338,7 @@ export default function DomeggookSearchView() {
                     <TextField
                       size="small"
                       value={priceInputMax}
-                      onChange={(event) => setPriceInputMax(event.target.value)}
+                      onChange={(event) => setPriceInputMax(formatPriceInput(event.target.value))}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter') applyPriceInput();
                       }}
@@ -351,8 +357,8 @@ export default function DomeggookSearchView() {
                     <IconButton
                       size="small"
                       onClick={() => {
-                        setPriceInputMin(String(priceRange[0]));
-                        setPriceInputMax(String(priceRange[1]));
+                        setPriceInputMin(priceRange[0].toLocaleString());
+                        setPriceInputMax(priceRange[1].toLocaleString());
                         setIsPriceEditing(true);
                       }}
                     >
