@@ -29,7 +29,7 @@ import NoAccountsIcon from '@mui/icons-material/NoAccounts';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import { APP_NAME, APP_NAME_EN, APP_DESCRIPTION, SLOGAN_LINES } from '@/shared/constants/app';
-import { TOOLS, TOOL_GROUPS } from '@/shared/constants/tools';
+import { TOOLS, TOOL_GROUPS, FLAGSHIP_TOOL } from '@/shared/constants/tools';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
 import { trackEvent } from '@/shared/utils/analytics';
 
@@ -113,14 +113,27 @@ export default function MainView() {
             <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400, maxWidth: 560 }}>
               도매꾹 링크 하나로 — 이미지 가공부터 다운로드까지.
             </Typography>
-            <LinkForm />
-            {/* 소싱 미결정자 탈출구 (SERVICE 1장 수용 원칙) — 클릭률이 높아지면 여정 서사 개편 근거 */}
-            <Typography variant="body2" color="text.secondary">
-              아직 팔 상품을 못 정했다면?{' '}
-              <StarterHintLink href="/keyword-stats" onClick={() => trackEvent('keyword_start_from_landing')}>
-                키워드 분석으로 시작 →
-              </StarterHintLink>
-            </Typography>
+            <Stack spacing={1.5} sx={{ width: '100%', maxWidth: 640, alignItems: 'center' }}>
+              <LinkForm />
+              {/* 구경 방문자용 큰 진입 버튼 — 헤더 작업 공간 버튼이 작아 발견성이 낮음 (07-10) */}
+              <Button
+                component={Link}
+                href={FLAGSHIP_TOOL.href}
+                variant="outlined"
+                size="large"
+                fullWidth
+                onClick={() => trackEvent('workspace_from_landing')}
+              >
+                가입 없이 작업 공간 둘러보기
+              </Button>
+              {/* 소싱 미결정자 탈출구 (SERVICE 1장 수용 원칙) — 클릭률이 높아지면 여정 서사 개편 근거 */}
+              <Typography variant="body2" color="text.secondary">
+                아직 팔 상품을 못 정했다면?{' '}
+                <StarterHintLink href="/keyword-stats" onClick={() => trackEvent('keyword_start_from_landing')}>
+                  키워드 분석으로 시작 →
+                </StarterHintLink>
+              </Typography>
+            </Stack>
           </Stack>
         </Container>
       </HeroBand>
