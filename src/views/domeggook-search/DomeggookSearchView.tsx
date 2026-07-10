@@ -226,6 +226,11 @@ export default function DomeggookSearchView() {
 
   const canLoadMore = page < totalPages && items.length > 0;
 
+  // 결과 헤더 분류 경로 (예: 취미/도서 > 자기계발, 미선택 시 전체)
+  const headerTop = categories.find((category) => category.code === topCategory);
+  const headerSub = headerTop?.children.find((child) => child.code === subCategory);
+  const categoryPathLabel = headerSub ? `${headerTop?.name} > ${headerSub.name}` : '전체';
+
   ////////// 카드 클릭 → 원링크 등록 준비
   const handlePick = (no: number) => {
     trackEvent('domeggook_search_pick', { no });
@@ -328,9 +333,14 @@ export default function DomeggookSearchView() {
         {/* 결과 */}
         {hasSearched && !isLoading && items.length > 0 && (
           <Stack spacing={1.5}>
-            {/* 결과 헤더 — 좌 타이틀 · 우 정렬 드롭다운 */}
-            <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle2">총 {totalItems.toLocaleString()}개 상품</Typography>
+            {/* 결과 헤더 — 분류 경로 · 상품 수 · 우측 정렬 드롭다운 */}
+            <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
+              <Stack spacing={0.25}>
+                <Typography variant="caption" color="text.secondary">
+                  {categoryPathLabel}
+                </Typography>
+                <Typography variant="subtitle2">총 {totalItems.toLocaleString()}개 상품</Typography>
+              </Stack>
               <SortDropdown sort={sort} onChange={setSort} />
             </Stack>
             <CardGrid>
