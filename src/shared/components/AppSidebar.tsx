@@ -119,11 +119,11 @@ export function SidebarNav({ onNavigate, isCollapsed = false }: SidebarNavProps)
           <Stack key={group.key} spacing={0.5}>
             {/* 그룹 라벨 = 접기 토글 */}
             <GroupToggle onClick={() => toggleGroup(group.key)} aria-expanded={isOpen}>
-              <GroupLabel variant="caption">{group.label}</GroupLabel>
+              <GroupLabel variant="body2">{group.label}</GroupLabel>
               <GroupChevron $isOpen={isOpen} fontSize="small" />
             </GroupToggle>
             <Collapse in={isOpen}>
-              <Stack spacing={0.5}>
+              <IndentedList spacing={0.5}>
                 {TOOLS.filter((tool) => tool.group === group.key).map((tool) => (
                   <NavItem
                     key={tool.href}
@@ -137,7 +137,7 @@ export function SidebarNav({ onNavigate, isCollapsed = false }: SidebarNavProps)
                     </Typography>
                   </NavItem>
                 ))}
-              </Stack>
+              </IndentedList>
             </Collapse>
           </Stack>
         );
@@ -146,10 +146,11 @@ export function SidebarNav({ onNavigate, isCollapsed = false }: SidebarNavProps)
       {/* 등록 — 준비 중 (클릭하면 상태 안내) */}
       <Stack spacing={0.5}>
         <GroupToggle onClick={() => toggleGroup('register')} aria-expanded={!closedGroups.has('register')}>
-          <GroupLabel variant="caption">등록</GroupLabel>
+          <GroupLabel variant="body2">등록</GroupLabel>
           <GroupChevron $isOpen={!closedGroups.has('register')} fontSize="small" />
         </GroupToggle>
         <Collapse in={!closedGroups.has('register')}>
+          <IndentedList spacing={0.5}>
           <UpcomingItem onClick={handleUpcomingClick}>
             <StorefrontIcon fontSize="small" color="disabled" />
             <Typography variant="body2" color="text.disabled" sx={{ flex: 1, textAlign: 'left' }}>
@@ -157,6 +158,7 @@ export function SidebarNav({ onNavigate, isCollapsed = false }: SidebarNavProps)
             </Typography>
             <Chip size="small" label="준비 중" />
           </UpcomingItem>
+          </IndentedList>
         </Collapse>
       </Stack>
     </Stack>
@@ -241,7 +243,7 @@ const GroupToggle = styled(ButtonBase)(({ theme }) => ({
 }));
 
 const GroupLabel = styled(Typography)(({ theme }) => ({
-  color: theme.palette.text.secondary,
+  color: theme.palette.text.primary, // 그룹 = 제목 위계 (아이템보다 진하게)
   fontWeight: 700,
 }));
 
@@ -267,6 +269,13 @@ const FlagshipItem = styled(Link, transientOptions)<{ $isActive: boolean }>(({ t
   '&:hover': {
     backgroundColor: $isActive ? theme.palette.primary.dark : theme.palette.action.hover,
   },
+}));
+
+// 하위 메뉴 들여쓰기 + 수직 가이드 선 (그룹 소속 관계 명시 — 1px 연회색으로 절제)
+const IndentedList = styled(Stack)(({ theme }) => ({
+  marginLeft: theme.spacing(1.75),
+  paddingLeft: theme.spacing(1),
+  borderLeft: `1px solid ${theme.palette.divider}`,
 }));
 
 const NavItem = styled(Link, transientOptions)<{ $isActive: boolean }>(({ theme, $isActive }) => ({
