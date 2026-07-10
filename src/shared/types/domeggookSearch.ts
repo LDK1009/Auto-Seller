@@ -37,6 +37,7 @@ export type DomeggookSearchItem = {
   isBusinessOnly: boolean; // comOnly — 사업자 전용 뱃지
   url: string; // 도매꾹 원본 링크
   shipping: { isFree: boolean; fee: number | null }; // deli.who === 'S' / deli.fee
+  isOverseaShipping: boolean; // deli.fromOversea — 해외직배송 뱃지
 };
 
 export type DomeggookSearchResponse = {

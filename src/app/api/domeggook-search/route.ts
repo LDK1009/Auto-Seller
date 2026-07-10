@@ -103,6 +103,7 @@ export async function GET(request: Request) {
           isFree: String(item?.deli?.who ?? '') === 'S',
           fee: Number(item?.deli?.fee) > 0 ? Number(item.deli.fee) : null,
         },
+        isOverseaShipping: String(item?.deli?.fromOversea) === 'true',
       }));
 
     const response: DomeggookSearchResponse = {

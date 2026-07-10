@@ -632,12 +632,14 @@ function ProductCardItem({ item, onPick }: ProductCardItemProps) {
           {item.shipping.isFree ? '무료배송' : item.shipping.fee !== null ? `배송비 ${KRW(item.shipping.fee)}` : '배송비 별도'}
           {item.unitQty > 1 && ` · ${item.unitQty}개 단위`}
         </Typography>
-        {(item.isLowestPrice || item.isBusinessOnly) && (
-          <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }} useFlexGap>
-            {item.isLowestPrice && <Chip size="small" color="success" variant="outlined" label="최저가" />}
-            {item.isBusinessOnly && <Chip size="small" variant="outlined" label="사업자 전용" />}
-          </Stack>
-        )}
+        {/* 필터 대응 속성 뱃지 (빠른배송은 응답 미제공 — 뱃지 불가) */}
+        <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }} useFlexGap>
+          {item.unitQty === 1 && <Chip size="small" color="info" variant="outlined" label="낱개 구매" />}
+          {item.shipping.isFree && <Chip size="small" color="primary" variant="outlined" label="무료배송" />}
+          {item.isLowestPrice && <Chip size="small" color="success" variant="outlined" label="최저가" />}
+          {item.isOverseaShipping && <Chip size="small" color="warning" variant="outlined" label="해외직배송" />}
+          {item.isBusinessOnly && <Chip size="small" variant="outlined" label="사업자 전용" />}
+        </Stack>
       </Stack>
     </ProductCard>
   );
