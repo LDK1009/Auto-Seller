@@ -265,6 +265,7 @@ export default function DomeggookSearchView() {
                 select
                 size="small"
                 label="대분류"
+                slotProps={{ select: { MenuProps: { disableScrollLock: true } } }}
                 value={topCategory}
                 onChange={(event) => {
                   setTopCategory(event.target.value);
@@ -283,6 +284,7 @@ export default function DomeggookSearchView() {
                 select
                 size="small"
                 label="중분류"
+                slotProps={{ select: { MenuProps: { disableScrollLock: true } } }}
                 value={subCategory}
                 onChange={(event) => setSubCategory(event.target.value)}
                 disabled={!selectedTop}
