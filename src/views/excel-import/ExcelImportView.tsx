@@ -74,7 +74,7 @@ export default function ExcelImportView() {
       const files: { name: string; blob: Blob }[] = [];
       for (let index = 0; index < limited.length; index += 1) {
         setProgress(`이미지 내려받는 중… ${index + 1}/${limited.length}`);
-        const response = await fetch(`/api/domeme-image?url=${encodeURIComponent(limited[index])}`);
+        const response = await fetch(`/api/domeggook-image?url=${encodeURIComponent(limited[index])}`);
         if (!response.ok) continue; // 개별 실패는 건너뜀 (전체 중단 방지)
         const blob = await response.blob();
         const urlName = limited[index].split('/').pop()?.split('?')[0] ?? '';
@@ -112,7 +112,7 @@ export default function ExcelImportView() {
       help={
         <HelpPanel storageKey="excel-import">
           <Stack spacing={0.75}>
-            <Typography variant="body2">① 도매꾹/도매매 대량등록 엑셀(xlsx)을 업로드하세요</Typography>
+            <Typography variant="body2">① 도매꾹 대량등록 엑셀(xlsx)을 업로드하세요</Typography>
             <Typography variant="body2">② 상품별로 발견된 이미지 URL을 확인하고 필요한 행만 선택하세요</Typography>
             <Typography variant="body2">③ [누끼 일괄 시작]을 누르면 이미지를 모아 배경 제거가 자동 시작됩니다</Typography>
             <Typography variant="caption" color="text.secondary">

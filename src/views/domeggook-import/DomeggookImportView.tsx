@@ -25,8 +25,8 @@ import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
 import { useImageHandoffStore } from '@/shared/store/imageHandoffStore';
 import { trackEvent } from '@/shared/utils/analytics';
-import { downloadDomemeImages } from '@/shared/services/domemeItemService';
-import { useDomemeItem } from './_hooks/useDomemeItem';
+import { downloadDomeggookImages } from '@/shared/services/domeggookItemService';
+import { useDomeggookItem } from './_hooks/useDomeggookItem';
 import { mergeImagesVertically } from './_utils/mergeImagesVertically';
 import { buildZipWithNames, downloadBlob } from '@/shared/utils/zip';
 import LicenseGate from './_components/LicenseGate';
@@ -51,10 +51,10 @@ const HANDOFF_TARGETS = [
   },
 ];
 
-export default function DomemeImportView() {
+export default function DomeggookImportView() {
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
-  const { status, item, errorMessage, lookup } = useDomemeItem();
+  const { status, item, errorMessage, lookup } = useDomeggookItem();
 
   // 순수 UI 상태
   const [rawInput, setRawInput] = useState('');
@@ -67,7 +67,7 @@ export default function DomemeImportView() {
     setLicenseConfirmed(false);
     setSelectedUrls(new Set());
     const fetched = await lookup(input);
-    trackEvent('domeme_lookup', { result: fetched ? 'success' : 'fail' });
+    trackEvent('domeggook_lookup', { result: fetched ? 'success' : 'fail' });
     if (fetched) {
       const thumbUrls = fetched.images.filter((image) => image.kind === 'thumb').map((image) => image.url);
       setSelectedUrls(new Set(thumbUrls));
@@ -104,11 +104,11 @@ export default function DomemeImportView() {
     if (selectedImages.length === 0) return;
 
     try {
-      const files = await downloadDomemeImages(selectedImages, item.no, (done, total) =>
+      const files = await downloadDomeggookImages(selectedImages, item.no, (done, total) =>
         setDownloadProgress(`이미지 내려받는 중… ${done}/${total}`),
       );
       useImageHandoffStore.getState().setImages(files, autoStart);
-      trackEvent('handoff', { from: 'domeme-import', to: path.replace('/', '') });
+      trackEvent('handoff', { from: 'domeggook-import', to: path.replace('/', '') });
       router.push(path);
     } catch (error) {
       console.error(error);
@@ -128,7 +128,7 @@ export default function DomemeImportView() {
     if (detailImages.length === 0) return;
 
     try {
-      const files = await downloadDomemeImages(detailImages, item.no, (done, total) =>
+      const files = await downloadDomeggookImages(detailImages, item.no, (done, total) =>
         setDownloadProgress(`상세 이미지 내려받는 중… ${done}/${total}`),
       );
       setDownloadProgress('통이미지 조립 중…');
@@ -174,7 +174,7 @@ export default function DomemeImportView() {
       description="도매꾹 링크 하나로 — 이미지 완성까지 자동으로 준비합니다."
       maxWidth="md"
       help={
-        <HelpPanel storageKey="domeme-import">
+        <HelpPanel storageKey="domeggook-import">
           <Stack spacing={0.75}>
             <Typography variant="body2">① 도매꾹 상품 링크(또는 상품번호)를 붙여넣고 조회하세요</Typography>
             <Typography variant="body2">② 공급사의 이미지 사용 조건을 확인하고 체크합니다</Typography>
@@ -194,7 +194,7 @@ export default function DomemeImportView() {
               fullWidth
               size="small"
               label="도매꾹 상품 링크 또는 상품번호"
-              placeholder="https://domeme.domeggook.com/s/12345678"
+              placeholder="https://domeggook.domeggook.com/s/12345678"
               value={rawInput}
               onChange={(event) => setRawInput(event.target.value)}
               onKeyDown={(event) => {

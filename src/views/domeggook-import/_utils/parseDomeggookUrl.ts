@@ -1,13 +1,13 @@
 //////////////////////////////////////// 도매꾹 링크 파싱 ////////////////////////////////////////
 // 사용자가 붙여넣는 형태: 상품 URL 또는 상품번호.
-// 예) https://domeme.domeggook.com/s/50659920
+// 예) https://domeggook.domeggook.com/s/50659920
 //     https://domeggook.com/50659920
 //     50659920
 
 // 상품번호 자릿수 (도매꾹 상품번호는 통상 7~9자리 — 여유 범위로 검증)
 const PRODUCT_NO_PATTERN = /^\d{4,12}$/;
 
-export function parseDomemeProductNo(rawInput: string): string | null {
+export function parseDomeggookProductNo(rawInput: string): string | null {
   const input = rawInput.trim();
   if (input.length === 0) return null;
 
@@ -21,7 +21,7 @@ export function parseDomemeProductNo(rawInput: string): string | null {
   } catch {
     return null;
   }
-  if (!parsed.hostname.endsWith('domeggook.com') && !parsed.hostname.endsWith('domeme.com')) {
+  if (!parsed.hostname.endsWith('domeggook.com') && !parsed.hostname.endsWith('domeggook.com')) {
     return null;
   }
 

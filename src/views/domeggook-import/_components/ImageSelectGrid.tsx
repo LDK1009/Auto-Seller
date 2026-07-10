@@ -9,10 +9,10 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import type { DomemeItemImage } from '@/shared/types/domeme';
+import type { DomeggookItemImage } from '@/shared/types/domeggook';
 
 type ImageSelectGridProps = {
-  images: DomemeItemImage[];
+  images: DomeggookItemImage[];
   selectedUrls: Set<string>;
   onToggle: (url: string) => void;
   onSelectAll: () => void;

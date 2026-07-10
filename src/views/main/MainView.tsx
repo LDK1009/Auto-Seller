@@ -352,7 +352,7 @@ function LinkForm() {
       inputRef.current?.focus();
       return;
     }
-    router.push(`/domeme-import?input=${encodeURIComponent(trimmed)}`);
+    router.push(`/domeggook-import?input=${encodeURIComponent(trimmed)}`);
   };
 
   return (

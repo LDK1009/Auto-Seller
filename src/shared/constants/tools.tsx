@@ -29,7 +29,7 @@ export type ToolInfo = {
 // 골(SERVICE 킬러 시나리오): 도매꾹 URL 하나 → 네이버 상품등록까지.
 // 현재 구현 범위는 "등록 준비"(이미지 자동 가공)까지 — 사이드바 최상단 고정, 개별 도구와 분리 노출.
 export const FLAGSHIP_TOOL = {
-  href: '/domeme-import',
+  href: '/domeggook-import',
   title: '원링크',
   description: '링크 하나로 등록 준비까지',
 };

@@ -13,13 +13,13 @@ import Typography from '@mui/material/Typography';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import Link from '@mui/material/Link';
-import type { DomemeLicense } from '@/shared/types/domeme';
+import type { DomeggookLicense } from '@/shared/types/domeggook';
 
 // 사용 금지 뉘앙스 감지 패턴
 const FORBIDDEN_PATTERNS = ['금합', '금지', '불가', '허용하지 않', '사용할 수 없'];
 
 type LicenseGateProps = {
-  license: DomemeLicense;
+  license: DomeggookLicense;
   itemUrl: string;
   confirmed: boolean;
   onConfirmedChange: (confirmed: boolean) => void;

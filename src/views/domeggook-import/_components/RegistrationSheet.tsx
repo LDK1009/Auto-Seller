@@ -21,7 +21,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useSnackbar } from 'notistack';
 import { FEE_PRESETS, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from '@/shared/constants/marketFees';
 import { calculateReversePrice, PRICE_ROUND_UNIT } from '@/shared/utils/marginCalculation';
-import type { DomemeItem } from '@/shared/types/domeme';
+import type { DomeggookItem } from '@/shared/types/domeggook';
 import { useSellerFixedInfo } from '../_hooks/useSellerFixedInfo';
 import { validateProductName, PROMO_WORDS, type NameCheckLevel } from '../_utils/validateProductName';
 import { detectComplianceRisk } from '../_utils/detectComplianceRisk';
@@ -50,7 +50,7 @@ const BENEFIT_PRESET_LINES = [
 ];
 
 type RegistrationSheetProps = {
-  item: DomemeItem;
+  item: DomeggookItem;
 };
 
 const KRW = (value: number) => `${Math.round(value).toLocaleString()}원`;

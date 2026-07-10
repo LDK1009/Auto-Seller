@@ -2,11 +2,11 @@
 // 상품번호 → 도매꾹 오픈API getItemView 호출(키 은닉) → 화면에 필요한 정보만 정제해 반환.
 // - 24시간 인메모리 캐시 (동일 상품 재조회 시 API 호출 없음 — 쿼터 보호)
 // - 일시 오류 1회 재시도
-// - 상세 이미지 URL에는 HMAC 서명을 붙여 이미지 프록시(domeme-image)의 오픈 프록시 악용을 차단
+// - 상세 이미지 URL에는 HMAC 서명을 붙여 이미지 프록시(domeggook-image)의 오픈 프록시 악용을 차단
 
 import { NextResponse } from 'next/server';
-import { signDomemeImageUrl } from '@/shared/utils/domemeImageSignature';
-import type { DomemeItem, DomemeItemImage } from '@/shared/types/domeme';
+import { signDomeggookImageUrl } from '@/shared/utils/domeggookImageSignature';
+import type { DomeggookItem, DomeggookItemImage } from '@/shared/types/domeggook';
 
 const API_BASE = 'https://domeggook.com/ssl/api/';
 const API_VERSION = '4.6';
@@ -16,7 +16,7 @@ const FETCH_TIMEOUT_MS = 10_000;
 const MAX_DETAIL_IMAGES = 60;
 
 // 인메모리 캐시 (서버리스 인스턴스별 — 완전하진 않지만 쿼터 보호에 충분)
-const cache = new Map<string, { data: DomemeItem; expiresAt: number }>();
+const cache = new Map<string, { data: DomeggookItem; expiresAt: number }>();
 
 ////////// 상세설명 HTML에서 <img> src 추출
 function extractImageUrls(html: string): string[] {
@@ -88,7 +88,7 @@ export async function GET(request: Request) {
     const detailHtml: string =
       typeof root.desc?.contents === 'string' ? root.desc.contents : (root.desc?.contents?.item ?? '');
 
-    const images: DomemeItemImage[] = [];
+    const images: DomeggookItemImage[] = [];
     if (thumbOriginal) {
       images.push({ url: thumbOriginal, proxyUrl: buildProxyUrl(thumbOriginal, apiKey), kind: 'thumb' });
     }
@@ -107,7 +107,7 @@ export async function GET(request: Request) {
       root.category?.current?.name,
     ].filter(Boolean);
 
-    const data: DomemeItem = {
+    const data: DomeggookItem = {
       no,
       title: String(root.basis.title ?? ''),
       itemUrl: `https://domeggook.com/${no}`,
@@ -170,8 +170,8 @@ export async function GET(request: Request) {
 
 ////////// 이미지 프록시 URL 생성
 function buildProxyUrl(url: string, secret: string): string {
-  const signature = signDomemeImageUrl(url, secret);
-  return `/api/domeme-image?url=${encodeURIComponent(url)}&sig=${signature}`;
+  const signature = signDomeggookImageUrl(url, secret);
+  return `/api/domeggook-image?url=${encodeURIComponent(url)}&sig=${signature}`;
 }
 
 ////////// 값 정규화 (외부 API 응답 — 문자열/숫자 혼재)

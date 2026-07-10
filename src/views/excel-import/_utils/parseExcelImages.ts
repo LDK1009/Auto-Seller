@@ -12,7 +12,7 @@ export type ExcelProductRow = {
 
 const IMAGE_URL_PATTERN = /^https?:\/\/\S+\.(jpe?g|png|gif|webp|bmp)(\?\S*)?$/i;
 const NAME_HEADER_KEYWORDS = ['상품명', '상품 명', '제목', 'title', 'name'];
-// 서버 프록시(domeme-image)가 서명 없이 허용하는 호스트와 동기화할 것
+// 서버 프록시(domeggook-image)가 서명 없이 허용하는 호스트와 동기화할 것
 const TRUSTED_HOST_SUFFIXES = ['domeggook.com', 'esmplus.com'];
 
 export function isProxyableImageUrl(url: string): boolean {

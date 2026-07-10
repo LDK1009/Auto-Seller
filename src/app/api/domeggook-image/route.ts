@@ -1,10 +1,10 @@
 //////////////////////////////////////// 도매꾹 이미지 중계 프록시 ////////////////////////////////////////
 // 공급사 호스팅 이미지를 서버 경유로 전달한다 (canvas 가공을 위한 CORS 해소).
 // 상세 이미지는 호스팅 도메인이 제각각이라 허용 목록 대신 HMAC 서명으로 통제:
-// domeme-item이 발급한 서명된 URL만 통과 → 오픈 프록시 악용 차단.
+// domeggook-item이 발급한 서명된 URL만 통과 → 오픈 프록시 악용 차단.
 
 import { NextResponse } from 'next/server';
-import { signDomemeImageUrl } from '@/shared/utils/domemeImageSignature';
+import { signDomeggookImageUrl } from '@/shared/utils/domeggookImageSignature';
 
 const CACHE_SECONDS = 60 * 60 * 24;
 const FETCH_TIMEOUT_MS = 15_000;
@@ -55,9 +55,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: '이미지 URL(url)이 필요합니다.' }, { status: 400 });
   }
 
-  // 통과 조건: ① 도매꾹 CDN 호스트(P-2 엑셀 URL — 서명 불필요) 또는 ② domeme-item이 발급한 HMAC 서명
+  // 통과 조건: ① 도매꾹 CDN 호스트(P-2 엑셀 URL — 서명 불필요) 또는 ② domeggook-item이 발급한 HMAC 서명
   if (!isTrustedHost(url)) {
-    if (!signature || signDomemeImageUrl(url, apiKey) !== signature) {
+    if (!signature || signDomeggookImageUrl(url, apiKey) !== signature) {
       return NextResponse.json({ error: '허용되지 않은 이미지 요청입니다.' }, { status: 403 });
     }
   }
