@@ -31,6 +31,7 @@ import StorefrontIcon from '@mui/icons-material/Storefront';
 import { APP_NAME, APP_NAME_EN, APP_DESCRIPTION, SLOGAN_LINES } from '@/shared/constants/app';
 import { TOOLS, TOOL_GROUPS } from '@/shared/constants/tools';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
+import { trackEvent } from '@/shared/utils/analytics';
 
 //////////////////// 진행 3단계 (여정 메시지 — 도구 나열이 아니라 흐름) ////////////////////
 const JOURNEY_STEPS = [
@@ -113,6 +114,13 @@ export default function MainView() {
               도매꾹 링크 하나로 — 이미지 가공부터 다운로드까지.
             </Typography>
             <LinkForm />
+            {/* 소싱 미결정자 탈출구 (SERVICE 1장 수용 원칙) — 클릭률이 높아지면 여정 서사 개편 근거 */}
+            <Typography variant="body2" color="text.secondary">
+              아직 팔 상품을 못 정했다면?{' '}
+              <StarterHintLink href="/keyword-stats" onClick={() => trackEvent('keyword_start_from_landing')}>
+                키워드 분석으로 시작 →
+              </StarterHintLink>
+            </Typography>
           </Stack>
         </Container>
       </HeroBand>
@@ -391,6 +399,16 @@ const CheckerboardLayer = styled.div(({ theme }) => {
 const SloganLine = styled('span', transientOptions)<{ $isAccent: boolean }>(({ theme, $isAccent }) => ({
   display: 'block',
   color: $isAccent ? theme.palette.primary.main : theme.palette.text.primary,
+}));
+
+// 소싱 미결정자용 보조 링크 (히어로 전용)
+const StarterHintLink = styled(Link)(({ theme }) => ({
+  color: theme.palette.primary.main,
+  fontWeight: 600,
+  textDecoration: 'none',
+  '&:hover': {
+    textDecoration: 'underline',
+  },
 }));
 
 // 메인 액션 카드: 링크 입력 + 시작 버튼
