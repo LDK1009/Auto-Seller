@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import styled from '@emotion/styled';
+import { alpha } from '@mui/material/styles';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
@@ -430,7 +431,7 @@ function CategoryPicker({ categories, topCode, subCode, onSelect }: CategoryPick
 
   const selectedTop = categories.find((category) => category.code === topCode);
   const selectedSub = selectedTop?.children.find((child) => child.code === subCode);
-  const label = selectedSub ? `${selectedTop?.name} > ${selectedSub.name}` : '분류 전체';
+  const label = selectedSub ? `${selectedTop?.name} > ${selectedSub.name}` : '전체';
   const active = categories.find((category) => category.code === activeTop);
 
   const close = () => setAnchor(null);
@@ -466,7 +467,7 @@ function CategoryPicker({ categories, topCode, subCode, onSelect }: CategoryPick
                 close();
               }}
             >
-              <Typography variant="body2">분류 전체</Typography>
+              <Typography variant="body2">전체</Typography>
             </PickerItem>
             {categories.map((category) => (
               <PickerItem
@@ -579,9 +580,9 @@ const PickerItem = styled(ButtonBase, transientOptions)<{ $isActive: boolean }>(
   width: '100%',
   padding: theme.spacing(0.75, 1.25),
   borderRadius: theme.shape.borderRadius,
-  backgroundColor: $isActive ? theme.palette.action.selected : 'transparent',
+  backgroundColor: $isActive ? alpha(theme.palette.primary.main, 0.12) : 'transparent',
   '&:hover': {
-    backgroundColor: theme.palette.action.hover,
+    backgroundColor: alpha(theme.palette.primary.main, 0.08),
   },
 }));
 
