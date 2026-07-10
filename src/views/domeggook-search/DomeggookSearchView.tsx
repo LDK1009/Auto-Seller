@@ -80,16 +80,14 @@ export default function DomeggookSearchView() {
   const [categories, setCategories] = useState<DomeggookCategory[]>([]);
 
   ////////// 현재 조건 조립 (필터 상태 → 요청 파라미터)
-  const currentKeywordRef = useRef('');
   // 분류는 '전체' 또는 중분류 확정 2가지만 (대분류 단독은 API가 미지원 — 피커에서 입력 자체를 막음)
-  const isBrowseAll = (keyword: string) => !keyword && !subCategory;
+  // 조건 전무(초기 화면)는 서버가 ev=all 전체 검색으로 처리
+  const currentKeywordRef = useRef('');
   const buildParams = (targetPage: number): DomeggookSearchParams => ({
     keyword: currentKeywordRef.current || undefined,
     category: subCategory || undefined,
     sort,
     page: targetPage,
-    // 조건 없는 전체 탐색 = BEST TOP 100 (1콜 고정, 더보기 없음)
-    pageSize: isBrowseAll(currentKeywordRef.current) ? 100 : undefined,
     // 슬라이더가 상·하한에서 좁혀졌을 때만 가격 필터 전송
     minPrice: priceBounds && priceRange[0] > priceBounds.min ? priceRange[0] : undefined,
     maxPrice: priceBounds && priceRange[1] < priceBounds.max ? priceRange[1] : undefined,
@@ -226,8 +224,7 @@ export default function DomeggookSearchView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sort, subCategory, singleUnit, freeShipping, lowestPriceOnly, fastShipping, excludeOversea]);
 
-  // BEST TOP 100 모드(조건 없는 전체 탐색)는 100개 고정 — 더보기 없음
-  const canLoadMore = !isBrowseAll(currentKeywordRef.current) && page < totalPages && items.length > 0;
+  const canLoadMore = page < totalPages && items.length > 0;
 
   ////////// 카드 클릭 → 원링크 등록 준비
   const handlePick = (no: number) => {
@@ -333,9 +330,7 @@ export default function DomeggookSearchView() {
           <Stack spacing={1.5}>
             {/* 결과 헤더 — 좌 타이틀 · 우 정렬 드롭다운 */}
             <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle2">
-                {isBrowseAll(currentKeywordRef.current) ? 'BEST TOP 100' : `총 ${totalItems.toLocaleString()}개 상품`}
-              </Typography>
+              <Typography variant="subtitle2">총 {totalItems.toLocaleString()}개 상품</Typography>
               <SortDropdown sort={sort} onChange={setSort} />
             </Stack>
             <CardGrid>
