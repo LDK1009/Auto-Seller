@@ -74,6 +74,11 @@ export default function DomeggookSearchView() {
   // 카테고리 트리
   const [categories, setCategories] = useState<DomeggookCategory[]>([]);
 
+  // 초기 인기 섹션 (검색 전 빈 화면 — 상품수 상위 대분류의 대표 중분류 6개, 각 인기 6개)
+  type PopularSection = { name: string; code: string; parentCode: string; items: DomeggookSearchItem[] };
+  const [popularSections, setPopularSections] = useState<PopularSection[]>([]);
+  const [isPopularLoading, setIsPopularLoading] = useState(false);
+
   ////////// 현재 조건 조립 (필터 상태 → 요청 파라미터)
   const currentKeywordRef = useRef('');
   const buildParams = (targetPage: number): DomeggookSearchParams => ({
@@ -142,7 +147,34 @@ export default function DomeggookSearchView() {
     if (!hasLoadedCategoriesRef.current) {
       hasLoadedCategoriesRef.current = true;
       fetchDomeggookCategories()
-        .then((response) => setCategories(response.categories))
+        .then(async (response) => {
+          setCategories(response.categories);
+          // 대분류별 최다 중분류 1개 → 상품수 순 상위 6개 섹션 (큐레이션 없이 데이터 기반)
+          const candidates = response.categories
+            .map((top) => {
+              const biggest = [...top.children].sort((a, b) => b.itemCount - a.itemCount)[0];
+              return biggest ? { name: biggest.name, code: biggest.code, parentCode: top.code, count: biggest.itemCount } : null;
+            })
+            .filter((entry): entry is NonNullable<typeof entry> => entry !== null)
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 6);
+          setIsPopularLoading(true);
+          try {
+            const sections = await Promise.all(
+              candidates.map(async (candidate) => ({
+                name: candidate.name,
+                code: candidate.code,
+                parentCode: candidate.parentCode,
+                items: (await fetchDomeggookSearch({ category: candidate.code, sort: 'ha', pageSize: 6 })).items,
+              })),
+            );
+            setPopularSections(sections.filter((section) => section.items.length > 0));
+          } catch (error) {
+            console.error(error);
+          } finally {
+            setIsPopularLoading(false);
+          }
+        })
         .catch((error) => console.error(error));
     }
     const keyword = (searchParams.get('kw') ?? '').trim();
@@ -159,6 +191,19 @@ export default function DomeggookSearchView() {
 
   const selectedTop = categories.find((category) => category.code === topCategory);
   const canLoadMore = page < totalPages && items.length > 0;
+
+  ////////// 카드 클릭 → 원링크 등록 준비
+  const handlePick = (no: number) => {
+    trackEvent('domeggook_search_pick', { no });
+    router.push(`/domeggook-import?input=${no}`);
+  };
+
+  ////////// 인기 섹션 [전체 보기] → 해당 카테고리로 검색 (필터 UI 재사용)
+  const handleSectionMore = (section: { code: string; parentCode: string }) => {
+    setTopCategory(section.parentCode);
+    setSubCategory(section.code);
+    setHasSearched(true); // subCategory 이펙트가 재조회 실행
+  };
 
   return (
     <PageLayout
@@ -306,46 +351,7 @@ export default function DomeggookSearchView() {
             <Typography variant="subtitle2">총 {totalItems.toLocaleString()}개 상품</Typography>
             <CardGrid>
               {items.map((item) => (
-                <ProductCard
-                  key={`${item.no}-${page}`}
-                  onClick={() => {
-                    trackEvent('domeggook_search_pick', { no: item.no });
-                    router.push(`/domeggook-import?input=${item.no}`);
-                  }}
-                >
-                  <ThumbBox>
-                    {/* CDN 원본 노출 — next/image 미사용 (외부 호스트·목록 대량) */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={item.thumb} alt={item.title} loading="lazy" />
-                    <Tooltip title="도매꾹에서 보기">
-                      <ExternalButton
-                        size="small"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          window.open(item.url, '_blank', 'noopener');
-                        }}
-                      >
-                        <OpenInNewIcon sx={{ fontSize: 14 }} />
-                      </ExternalButton>
-                    </Tooltip>
-                  </ThumbBox>
-                  <Stack spacing={0.5} sx={{ p: 1.5, flex: 1 }}>
-                    <TitleText variant="body2">{item.title}</TitleText>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                      {KRW(item.price)}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {item.shipping.isFree ? '무료배송' : item.shipping.fee !== null ? `배송비 ${KRW(item.shipping.fee)}` : '배송비 별도'}
-                      {item.unitQty > 1 && ` · ${item.unitQty}개 단위`}
-                    </Typography>
-                    {(item.isLowestPrice || item.isBusinessOnly) && (
-                      <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }} useFlexGap>
-                        {item.isLowestPrice && <Chip size="small" color="success" variant="outlined" label="최저가" />}
-                        {item.isBusinessOnly && <Chip size="small" variant="outlined" label="사업자 전용" />}
-                      </Stack>
-                    )}
-                  </Stack>
-                </ProductCard>
+                <ProductCardItem key={`${item.no}-${page}`} item={item} onPick={handlePick} />
               ))}
             </CardGrid>
             {canLoadMore && (
@@ -370,11 +376,36 @@ export default function DomeggookSearchView() {
           </Stack>
         )}
 
-        {/* 빈 상태 */}
+        {/* 빈 상태 — 카테고리별 인기 상품 섹션 (A안) */}
         {!hasSearched && !isLoading && (
-          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 6 }}>
-            검색어를 입력하거나 카테고리를 골라보세요
-          </Typography>
+          <Stack spacing={3}>
+            {isPopularLoading && (
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', p: 2 }}>
+                <CircularProgress size={18} />
+                <Typography variant="body2" color="text.secondary">인기 상품 불러오는 중…</Typography>
+              </Stack>
+            )}
+            {popularSections.map((section) => (
+              <Stack key={section.code} spacing={1.5}>
+                <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="subtitle2">{section.name} 인기</Typography>
+                  <Button size="small" onClick={() => handleSectionMore(section)}>
+                    전체 보기 →
+                  </Button>
+                </Stack>
+                <CardGrid>
+                  {section.items.map((item) => (
+                    <ProductCardItem key={item.no} item={item} onPick={handlePick} />
+                  ))}
+                </CardGrid>
+              </Stack>
+            ))}
+            {!isPopularLoading && popularSections.length === 0 && (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 6 }}>
+                검색어를 입력하거나 카테고리를 골라보세요
+              </Typography>
+            )}
+          </Stack>
         )}
         {hasSearched && !isLoading && items.length === 0 && isConfigured && (
           <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 6 }}>
@@ -383,6 +414,48 @@ export default function DomeggookSearchView() {
         )}
       </Stack>
     </PageLayout>
+  );
+}
+
+//////////////////// 상품 카드 (메인 그리드·인기 섹션 공용) ////////////////////
+type ProductCardItemProps = { item: DomeggookSearchItem; onPick: (no: number) => void };
+
+function ProductCardItem({ item, onPick }: ProductCardItemProps) {
+  return (
+    <ProductCard onClick={() => onPick(item.no)}>
+      <ThumbBox>
+        {/* CDN 원본 노출 — next/image 미사용 (외부 호스트·목록 대량) */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={item.thumb} alt={item.title} loading="lazy" />
+        <Tooltip title="도매꾹에서 보기">
+          <ExternalButton
+            size="small"
+            onClick={(event) => {
+              event.stopPropagation();
+              window.open(item.url, '_blank', 'noopener');
+            }}
+          >
+            <OpenInNewIcon sx={{ fontSize: 14 }} />
+          </ExternalButton>
+        </Tooltip>
+      </ThumbBox>
+      <Stack spacing={0.5} sx={{ p: 1.5, flex: 1 }}>
+        <TitleText variant="body2">{item.title}</TitleText>
+        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+          {KRW(item.price)}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {item.shipping.isFree ? '무료배송' : item.shipping.fee !== null ? `배송비 ${KRW(item.shipping.fee)}` : '배송비 별도'}
+          {item.unitQty > 1 && ` · ${item.unitQty}개 단위`}
+        </Typography>
+        {(item.isLowestPrice || item.isBusinessOnly) && (
+          <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }} useFlexGap>
+            {item.isLowestPrice && <Chip size="small" color="success" variant="outlined" label="최저가" />}
+            {item.isBusinessOnly && <Chip size="small" variant="outlined" label="사업자 전용" />}
+          </Stack>
+        )}
+      </Stack>
+    </ProductCard>
   );
 }
 

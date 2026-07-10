@@ -20,6 +20,7 @@ export async function fetchDomeggookSearch(params: DomeggookSearchParams): Promi
   if (params.lowestPriceOnly) query.set('lwp', '1');
   if (params.fastShipping) query.set('fdl', '1');
   if (params.excludeOversea) query.set('nooversea', '1');
+  if (params.pageSize) query.set('sz', String(params.pageSize));
 
   const response = await fetch(`/api/domeggook-search?${query.toString()}`);
   const body = await response.json();

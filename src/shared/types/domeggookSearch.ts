@@ -23,6 +23,7 @@ export type DomeggookSearchParams = {
   lowestPriceOnly?: boolean; // lwp=true
   fastShipping?: boolean; // fdl=true
   excludeOversea?: boolean; // dfos=false
+  pageSize?: number; // sz (기본 40 — 인기 섹션은 6)
 };
 
 // 상품 카드 1개

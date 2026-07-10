@@ -34,6 +34,7 @@ export async function GET(request: Request) {
   }
 
   const sort = SORT_KEYS.has(searchParams.get('so') ?? '') ? (searchParams.get('so') as string) : 'ha';
+  const pageSize = Math.min(PAGE_SIZE, Math.max(1, Number(searchParams.get('sz') ?? PAGE_SIZE) || PAGE_SIZE));
   const page = Math.max(1, Number(searchParams.get('pg') ?? '1') || 1);
   const minPrice = Number(searchParams.get('mnp')) || 0;
   const maxPrice = Number(searchParams.get('mxp')) || 0;
@@ -50,7 +51,7 @@ export async function GET(request: Request) {
   upstream.searchParams.set('aid', apiKey);
   upstream.searchParams.set('market', 'dome');
   upstream.searchParams.set('om', 'json');
-  upstream.searchParams.set('sz', String(PAGE_SIZE));
+  upstream.searchParams.set('sz', String(pageSize));
   upstream.searchParams.set('pg', String(page));
   upstream.searchParams.set('so', sort);
   if (keyword) upstream.searchParams.set('kw', keyword);
