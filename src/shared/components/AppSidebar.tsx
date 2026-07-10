@@ -186,6 +186,7 @@ export default function AppSidebar() {
 
   return (
     <SidebarBox $isCollapsed={isCollapsed}>
+      <SidebarSticky>
       <CollapseToggleRow $isCollapsed={isCollapsed}>
         <Tooltip title={isCollapsed ? '사이드바 펼치기' : '사이드바 접기'} placement="right">
           <IconButton size="small" onClick={toggleCollapsed} aria-label={isCollapsed ? '사이드바 펼치기' : '사이드바 접기'}>
@@ -194,20 +195,16 @@ export default function AppSidebar() {
         </Tooltip>
       </CollapseToggleRow>
       <SidebarNav isCollapsed={isCollapsed} />
+      </SidebarSticky>
     </SidebarBox>
   );
 }
 
 //////////////////////////////////////// 스타일 ////////////////////////////////////////
+// 바깥: 콘텐츠 전체 높이를 따라 늘어남 (보더·배경이 페이지 끝까지) — sticky는 안쪽 래퍼만
 const SidebarBox = styled('aside', transientOptions)<{ $isCollapsed: boolean }>(({ theme, $isCollapsed }) => ({
   width: $isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH,
   flexShrink: 0,
-  position: 'sticky',
-  top: HEADER_HEIGHT,
-  alignSelf: 'flex-start',
-  height: `calc(100vh - ${HEADER_HEIGHT}px)`,
-  overflowY: 'auto',
-  overflowX: 'hidden',
   borderRight: `1px solid ${theme.palette.divider}`,
   backgroundColor: theme.palette.background.default,
   transition: 'width 0.2s ease',
@@ -215,6 +212,15 @@ const SidebarBox = styled('aside', transientOptions)<{ $isCollapsed: boolean }>(
     display: 'none',
   },
 }));
+
+// 안쪽: 뷰포트에 붙어 따라오는 네비 — 네비가 화면보다 길 때만 자체 스크롤
+const SidebarSticky = styled.div({
+  position: 'sticky',
+  top: HEADER_HEIGHT,
+  maxHeight: `calc(100vh - ${HEADER_HEIGHT}px)`,
+  overflowY: 'auto',
+  overflowX: 'hidden',
+});
 
 const CollapseToggleRow = styled('div', transientOptions)<{ $isCollapsed: boolean }>(({ theme, $isCollapsed }) => ({
   display: 'flex',

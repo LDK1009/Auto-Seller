@@ -1,18 +1,19 @@
 //////////////////////////////////////// 도구 목록 (전역 공유) ////////////////////////////////////////
 // 랜딩 그리드·사이드바가 함께 사용. 배치 원칙: 셀러 작업 플로우 순서 (SERVICE 6장)
 // ① 소싱 (뭘 팔지 정하기) → ② 등록 준비 (이미지 파이프라인 순) → ③ 운영·정산 (판매 후)
+// 아이콘: Outlined 통일 (07-10 A/B 결과 확정)
 
 import type { ReactNode } from 'react';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
-import AspectRatioIcon from '@mui/icons-material/AspectRatio';
-import CalculateIcon from '@mui/icons-material/Calculate';
-import FactCheckIcon from '@mui/icons-material/FactCheck';
-import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
-import VerticalSplitIcon from '@mui/icons-material/VerticalSplit';
-import CampaignIcon from '@mui/icons-material/Campaign';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
-import QueryStatsIcon from '@mui/icons-material/QueryStats';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import AutoFixHighOutlinedIcon from '@mui/icons-material/AutoFixHighOutlined';
+import AspectRatioOutlinedIcon from '@mui/icons-material/AspectRatioOutlined';
+import CalculateOutlinedIcon from '@mui/icons-material/CalculateOutlined';
+import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
+import BrandingWatermarkOutlinedIcon from '@mui/icons-material/BrandingWatermarkOutlined';
+import VerticalSplitOutlinedIcon from '@mui/icons-material/VerticalSplitOutlined';
+import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
+import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
+import QueryStatsOutlinedIcon from '@mui/icons-material/QueryStatsOutlined';
+import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 
 export type ToolGroupKey = 'sourcing' | 'image' | 'ops';
 
@@ -45,14 +46,14 @@ export const TOOLS: ToolInfo[] = [
   //////////////////// ① 소싱 ////////////////////
   {
     href: '/keyword-stats',
-    icon: <QueryStatsIcon color="primary" fontSize="large" />,
+    icon: <QueryStatsOutlinedIcon color="primary" fontSize="large" />,
     title: '키워드 분석',
     description: '월간 검색수 ÷ 등록 상품 수로 틈새 키워드 판정',
     group: 'sourcing',
   },
   {
     href: '/margin-calculator',
-    icon: <CalculateIcon color="primary" fontSize="large" />,
+    icon: <CalculateOutlinedIcon color="primary" fontSize="large" />,
     title: '마진 계산',
     description: '순이익 계산과 목표 마진 최소 판매가 역산',
     group: 'sourcing',
@@ -60,42 +61,42 @@ export const TOOLS: ToolInfo[] = [
   //////////////////// ② 등록 준비 (이미지 파이프라인 순) ////////////////////
   {
     href: '/background-removal',
-    icon: <AutoFixHighIcon color="primary" fontSize="large" />,
+    icon: <AutoFixHighOutlinedIcon color="primary" fontSize="large" />,
     title: '누끼',
     description: '여러 상품 이미지의 배경을 한 번에 제거하고 원하는 배경으로 교체',
     group: 'image',
   },
   {
     href: '/image-resize',
-    icon: <AspectRatioIcon color="primary" fontSize="large" />,
+    icon: <AspectRatioOutlinedIcon color="primary" fontSize="large" />,
     title: '규격 맞추기',
     description: '마켓별 대표이미지 규격(1000×1000 등)에 맞춰 일괄 변환',
     group: 'image',
   },
   {
     href: '/image-check',
-    icon: <FactCheckIcon color="primary" fontSize="large" />,
+    icon: <FactCheckOutlinedIcon color="primary" fontSize="large" />,
     title: '규정 검사',
     description: '대표이미지가 마켓 규정(해상도·비율·용량)에 맞는지 즉시 검사',
     group: 'image',
   },
   {
     href: '/watermark',
-    icon: <BrandingWatermarkIcon color="primary" fontSize="large" />,
+    icon: <BrandingWatermarkOutlinedIcon color="primary" fontSize="large" />,
     title: '워터마크',
     description: '텍스트/로고 워터마크를 여러 이미지에 한 번에 합성 (도용 방지)',
     group: 'image',
   },
   {
     href: '/image-split',
-    icon: <VerticalSplitIcon color="primary" fontSize="large" />,
+    icon: <VerticalSplitOutlinedIcon color="primary" fontSize="large" />,
     title: '상세 분할',
     description: '긴 상세 이미지를 마켓 높이 제한에 맞춰 순서대로 자동 분할',
     group: 'image',
   },
   {
     href: '/excel-import',
-    icon: <UploadFileIcon color="primary" fontSize="large" />,
+    icon: <UploadFileOutlinedIcon color="primary" fontSize="large" />,
     title: '엑셀 대량 가공',
     description: '대량등록 엑셀 속 상품 이미지를 모아 배경 제거까지 한 번에',
     group: 'image',
@@ -103,14 +104,14 @@ export const TOOLS: ToolInfo[] = [
   //////////////////// ③ 운영·정산 (판매 후) ////////////////////
   {
     href: '/roas-calculator',
-    icon: <CampaignIcon color="primary" fontSize="large" />,
+    icon: <CampaignOutlinedIcon color="primary" fontSize="large" />,
     title: '광고 손익',
     description: '내 마진 기준 손익분기 ROAS와 광고 손익 시뮬레이션',
     group: 'ops',
   },
   {
     href: '/vat-calculator',
-    icon: <ReceiptLongIcon color="primary" fontSize="large" />,
+    icon: <ReceiptLongOutlinedIcon color="primary" fontSize="large" />,
     title: '부가세 계산',
     description: '간이/일반 과세 유형별 부가세 납부 예상액',
     group: 'ops',
