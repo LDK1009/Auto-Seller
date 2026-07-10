@@ -65,7 +65,7 @@ export function SidebarNav({ onNavigate, isCollapsed = false }: SidebarNavProps)
   ////////// 레일 모드: 아이콘만 세로 나열 (툴팁으로 이름)
   if (isCollapsed) {
     return (
-      <Stack spacing={0.75} sx={{ p: 1, alignItems: 'center' }}>
+      <Stack spacing={0.75} sx={{ p: 1, alignItems: 'center', width: SIDEBAR_WIDTH_COLLAPSED }}>
         <Tooltip title={`${FLAGSHIP_TOOL.title} — ${FLAGSHIP_TOOL.description}`} placement="right">
           <RailFlagship href={FLAGSHIP_TOOL.href} $isActive={pathname === FLAGSHIP_TOOL.href} onClick={onNavigate}>
             <BoltIcon fontSize="small" />
@@ -95,7 +95,7 @@ export function SidebarNav({ onNavigate, isCollapsed = false }: SidebarNavProps)
 
   ////////// 기본(펼침) 모드
   return (
-    <Stack spacing={3} sx={{ p: 2 }}>
+    <Stack spacing={3} sx={{ p: 2, width: SIDEBAR_WIDTH }}>
       {/* 플래그십: 원링크 — 주 사용 동선, 최상단 고정 (미선택 시 흰 배경으로 도드라지게) */}
       <FlagshipItem
         href={FLAGSHIP_TOOL.href}
