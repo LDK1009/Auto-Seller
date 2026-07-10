@@ -530,8 +530,9 @@ function ProductCardItem({ item, onPick }: ProductCardItemProps) {
     <ProductCard onClick={() => onPick(item.no)}>
       <ThumbBox>
         {/* CDN 원본 노출 — next/image 미사용 (외부 호스트·목록 대량) */}
+        {/* referrerPolicy 필수 — 도매꾹 CDN이 일부 상품을 Referer 기준 핫링크 차단 (403 실측) */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={item.thumb} alt={item.title} loading="lazy" />
+        <img src={item.thumb} alt={item.title} loading="lazy" referrerPolicy="no-referrer" />
         <Tooltip title="도매꾹에서 보기">
           <ExternalButton
             size="small"
