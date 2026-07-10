@@ -1,5 +1,6 @@
 //////////////////////////////////////// 도매꾹 상품 검색 프록시 ////////////////////////////////////////
-// getItemList(ver 4.1 — 4.6 미지원 실측). 검색조건 kw/ca 중 1개 필수, 정렬 so=ha 인기순 기본.
+// getItemList(ver 4.1 — 4.6 미지원 실측). 검색조건 없으면 ev=all 전체 검색(실측), 정렬 so=ha 인기순 기본.
+// ca 대분류는 kw와 조합될 때만 필터됨 (단독은 API 거부 — 클라이언트에서 차단).
 // 성인전용(adultOnly) 상품은 서버단 제외. 1시간 캐시 (조건 조합 키).
 
 import { NextResponse } from 'next/server';
@@ -29,9 +30,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const keyword = (searchParams.get('kw') ?? '').trim();
   const category = (searchParams.get('ca') ?? '').trim();
-  if (keyword.length === 0 && category.length === 0) {
-    return NextResponse.json({ error: '검색어 또는 카테고리가 필요합니다.' }, { status: 400 });
-  }
+  // 조건 전무 = 전체 인기 탐색 — ev=all이 전체 상품을 반환 (실측, 문서 미기재 동작)
+  const searchAll = keyword.length === 0 && category.length === 0;
 
   const sort = SORT_KEYS.has(searchParams.get('so') ?? '') ? (searchParams.get('so') as string) : 'ha';
   const pageSize = Math.min(PAGE_SIZE, Math.max(1, Number(searchParams.get('sz') ?? PAGE_SIZE) || PAGE_SIZE));
@@ -56,6 +56,7 @@ export async function GET(request: Request) {
   upstream.searchParams.set('so', sort);
   if (keyword) upstream.searchParams.set('kw', keyword);
   if (category) upstream.searchParams.set('ca', category);
+  if (searchAll) upstream.searchParams.set('ev', 'all');
   if (minPrice > 0) upstream.searchParams.set('mnp', String(minPrice));
   if (maxPrice > 0) upstream.searchParams.set('mxp', String(maxPrice));
   if (singleUnit) upstream.searchParams.set('mxq', '1');

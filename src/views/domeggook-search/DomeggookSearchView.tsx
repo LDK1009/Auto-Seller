@@ -56,6 +56,7 @@ export default function DomeggookSearchView() {
   // 가격 슬라이더 — 상·하한은 현 조건의 저가순/고가순 각 1건으로 실측 (헤더에 min/max 없음)
   const [priceBounds, setPriceBounds] = useState<{ min: number; max: number } | null>(null);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
+  const priceBoundsRef = useRef<{ min: number; max: number } | null>(null);
   const [singleUnit, setSingleUnit] = useState(false);
   const [freeShipping, setFreeShipping] = useState(false);
   const [lowestPriceOnly, setLowestPriceOnly] = useState(false);
@@ -75,16 +76,13 @@ export default function DomeggookSearchView() {
   // 카테고리 트리
   const [categories, setCategories] = useState<DomeggookCategory[]>([]);
 
-  // 초기 인기 섹션 (검색 전 빈 화면 — 상품수 상위 대분류의 대표 중분류 6개, 각 인기 6개)
-  type PopularSection = { name: string; code: string; parentCode: string; items: DomeggookSearchItem[] };
-  const [popularSections, setPopularSections] = useState<PopularSection[]>([]);
-  const [isPopularLoading, setIsPopularLoading] = useState(false);
-
   ////////// 현재 조건 조립 (필터 상태 → 요청 파라미터)
   const currentKeywordRef = useRef('');
+  // 대분류 ca는 검색어와 조합될 때만 필터됨 (실측 — 단독은 API 거부, 문서: "대분류만으로 검색 불가")
+  const resolveCategory = (keyword: string) => subCategory || (keyword ? topCategory : '') || undefined;
   const buildParams = (targetPage: number): DomeggookSearchParams => ({
     keyword: currentKeywordRef.current || undefined,
-    category: subCategory || undefined,
+    category: resolveCategory(currentKeywordRef.current),
     sort,
     page: targetPage,
     // 슬라이더가 상·하한에서 좁혀졌을 때만 가격 필터 전송
@@ -99,8 +97,11 @@ export default function DomeggookSearchView() {
 
   ////////// 검색 실행 (1페이지부터)
   const runSearch = async (keyword: string) => {
+    if (!keyword && !subCategory && topCategory) {
+      enqueueSnackbar('대분류만으로는 검색할 수 없어요 — 검색어를 입력해주세요', { variant: 'info' });
+      return;
+    }
     currentKeywordRef.current = keyword;
-    if (!keyword && !subCategory) return; // 검색조건 없음
     setIsLoading(true);
     setHasSearched(true);
     setItems([]);
@@ -126,7 +127,7 @@ export default function DomeggookSearchView() {
     try {
       const base = {
         keyword: keyword || undefined,
-        category: subCategory || undefined,
+        category: resolveCategory(keyword),
         singleUnit,
         freeShipping,
         lowestPriceOnly,
@@ -141,9 +142,14 @@ export default function DomeggookSearchView() {
       const min = lowest.items[0]?.price;
       const max = highest.items[0]?.price;
       if (min !== undefined && max !== undefined && min < max) {
-        setPriceBounds({ min, max });
-        setPriceRange([min, max]);
+        // 상·하한이 그대로면 유지 — 슬라이더로 좁힌 뒤 재검색 시 범위가 풀리는 것 방지
+        if (!priceBoundsRef.current || priceBoundsRef.current.min !== min || priceBoundsRef.current.max !== max) {
+          priceBoundsRef.current = { min, max };
+          setPriceBounds({ min, max });
+          setPriceRange([min, max]);
+        }
       } else {
+        priceBoundsRef.current = null;
         setPriceBounds(null);
       }
     } catch (error) {
@@ -170,7 +176,6 @@ export default function DomeggookSearchView() {
   ////////// 검색 트리거 — URL만 변경 (실행은 searchParams 이펙트)
   const navigateToKeyword = (rawKeyword: string) => {
     const keyword = rawKeyword.trim();
-    if (keyword.length === 0 && !subCategory) return;
     if ((searchParams.get('kw') ?? '') === keyword) runSearch(keyword);
     else router.push(keyword ? `?kw=${encodeURIComponent(keyword)}` : '?');
   };
@@ -181,62 +186,27 @@ export default function DomeggookSearchView() {
     if (!hasLoadedCategoriesRef.current) {
       hasLoadedCategoriesRef.current = true;
       fetchDomeggookCategories()
-        .then(async (response) => {
-          setCategories(response.categories);
-          // 대분류별 최다 중분류 1개 → 상품수 순 상위 6개 섹션 (큐레이션 없이 데이터 기반)
-          const candidates = response.categories
-            .map((top) => {
-              const biggest = [...top.children].sort((a, b) => b.itemCount - a.itemCount)[0];
-              return biggest ? { name: biggest.name, code: biggest.code, parentCode: top.code, count: biggest.itemCount } : null;
-            })
-            .filter((entry): entry is NonNullable<typeof entry> => entry !== null)
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 6);
-          setIsPopularLoading(true);
-          try {
-            const sections = await Promise.all(
-              candidates.map(async (candidate) => ({
-                name: candidate.name,
-                code: candidate.code,
-                parentCode: candidate.parentCode,
-                items: (await fetchDomeggookSearch({ category: candidate.code, sort: 'ha', pageSize: 6 })).items,
-              })),
-            );
-            setPopularSections(sections.filter((section) => section.items.length > 0));
-          } catch (error) {
-            console.error(error);
-          } finally {
-            setIsPopularLoading(false);
-          }
-        })
+        .then((response) => setCategories(response.categories))
         .catch((error) => console.error(error));
     }
     const keyword = (searchParams.get('kw') ?? '').trim();
     setInputValue(keyword);
-    if (keyword.length > 0) runSearch(keyword);
+    runSearch(keyword); // 빈 키워드 = 전체 인기순 (서버 ev=all)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   ////////// 정렬·필터 변경 시 재조회 (검색한 적 있을 때만)
   useEffect(() => {
-    if (hasSearched && (currentKeywordRef.current || subCategory)) runSearch(currentKeywordRef.current);
+    if (hasSearched) runSearch(currentKeywordRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sort, subCategory, singleUnit, freeShipping, lowestPriceOnly, fastShipping, excludeOversea]);
+  }, [sort, topCategory, subCategory, singleUnit, freeShipping, lowestPriceOnly, fastShipping, excludeOversea]);
 
-  const selectedTop = categories.find((category) => category.code === topCategory);
   const canLoadMore = page < totalPages && items.length > 0;
 
   ////////// 카드 클릭 → 원링크 등록 준비
   const handlePick = (no: number) => {
     trackEvent('domeggook_search_pick', { no });
     router.push(`/domeggook-import?input=${no}`);
-  };
-
-  ////////// 인기 섹션 [전체 보기] → 해당 카테고리로 검색 (필터 UI 재사용)
-  const handleSectionMore = (section: { code: string; parentCode: string }) => {
-    setTopCategory(section.parentCode);
-    setSubCategory(section.code);
-    setHasSearched(true); // subCategory 이펙트가 재조회 실행
   };
 
   return (
@@ -281,7 +251,7 @@ export default function DomeggookSearchView() {
               <Button
                 variant="contained"
                 onClick={() => navigateToKeyword(inputValue)}
-                disabled={isLoading || (inputValue.trim().length === 0 && !subCategory)}
+                disabled={isLoading}
                 startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : <SearchIcon />}
                 sx={{ flexShrink: 0, px: 3 }}
               >
@@ -376,37 +346,6 @@ export default function DomeggookSearchView() {
           </Stack>
         )}
 
-        {/* 빈 상태 — 카테고리별 인기 상품 섹션 (A안) */}
-        {!hasSearched && !isLoading && (
-          <Stack spacing={3}>
-            {isPopularLoading && (
-              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', p: 2 }}>
-                <CircularProgress size={18} />
-                <Typography variant="body2" color="text.secondary">인기 상품 불러오는 중…</Typography>
-              </Stack>
-            )}
-            {popularSections.map((section) => (
-              <Stack key={section.code} spacing={1.5}>
-                <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="subtitle2">{section.name} 인기</Typography>
-                  <Button size="small" onClick={() => handleSectionMore(section)}>
-                    전체 보기 →
-                  </Button>
-                </Stack>
-                <CardGrid>
-                  {section.items.map((item) => (
-                    <ProductCardItem key={item.no} item={item} onPick={handlePick} />
-                  ))}
-                </CardGrid>
-              </Stack>
-            ))}
-            {!isPopularLoading && popularSections.length === 0 && (
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 6 }}>
-                검색어를 입력하거나 카테고리를 골라보세요
-              </Typography>
-            )}
-          </Stack>
-        )}
         {hasSearched && !isLoading && items.length === 0 && isConfigured && (
           <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 6 }}>
             조건에 맞는 상품이 없어요 — 필터를 풀어보세요
@@ -431,7 +370,7 @@ function CategoryPicker({ categories, topCode, subCode, onSelect }: CategoryPick
 
   const selectedTop = categories.find((category) => category.code === topCode);
   const selectedSub = selectedTop?.children.find((child) => child.code === subCode);
-  const label = selectedSub ? `${selectedTop?.name} > ${selectedSub.name}` : '전체';
+  const label = selectedSub ? `${selectedTop?.name} > ${selectedSub.name}` : selectedTop ? selectedTop.name : '전체';
   const active = categories.find((category) => category.code === activeTop);
 
   const close = () => setAnchor(null);
@@ -474,7 +413,10 @@ function CategoryPicker({ categories, topCode, subCode, onSelect }: CategoryPick
                 key={category.code}
                 $isActive={activeTop === category.code}
                 onMouseEnter={() => setActiveTop(category.code)}
-                onClick={() => setActiveTop(category.code)}
+                onClick={() => {
+                  onSelect(category.code, '');
+                  close();
+                }}
               >
                 <Typography variant="body2" sx={{ flex: 1, textAlign: 'left' }}>
                   {category.name}
@@ -485,23 +427,38 @@ function CategoryPicker({ categories, topCode, subCode, onSelect }: CategoryPick
           </PickerColumn>
           {/* 우: 중분류 (클릭 = 선택) */}
           <PickerColumn>
-            {(active?.children ?? []).map((child) => (
+            {active && (
               <PickerItem
-                key={child.code}
-                $isActive={subCode === child.code}
+                $isActive={topCode === active.code && !subCode}
                 onClick={() => {
-                  onSelect(active?.code ?? '', child.code);
+                  onSelect(active.code, '');
                   close();
                 }}
               >
                 <Typography variant="body2" sx={{ flex: 1, textAlign: 'left' }}>
-                  {child.name}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {child.itemCount.toLocaleString()}
+                  전체
                 </Typography>
               </PickerItem>
-            ))}
+            )}
+            {[...(active?.children ?? [])]
+              .sort((a, b) => b.itemCount - a.itemCount)
+              .map((child) => (
+                <PickerItem
+                  key={child.code}
+                  $isActive={subCode === child.code}
+                  onClick={() => {
+                    onSelect(active?.code ?? '', child.code);
+                    close();
+                  }}
+                >
+                  <Typography variant="body2" sx={{ flex: 1, textAlign: 'left' }}>
+                    {child.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10 }}>
+                    {child.itemCount.toLocaleString()}
+                  </Typography>
+                </PickerItem>
+              ))}
             {!active && (
               <Typography variant="caption" color="text.secondary" sx={{ p: 1.5 }}>
                 대분류에 마우스를 올려보세요
@@ -568,6 +525,14 @@ const PickerColumn = styled.div(({ theme }) => ({
   minWidth: 180,
   overflowY: 'auto',
   padding: theme.spacing(0.75),
+  scrollbarWidth: 'thin', // Firefox
+  '&::-webkit-scrollbar': {
+    width: 4,
+  },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: theme.palette.divider,
+    borderRadius: 2,
+  },
   '&:first-of-type': {
     borderRight: `1px solid ${theme.palette.divider}`,
   },
