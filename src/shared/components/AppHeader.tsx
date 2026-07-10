@@ -48,10 +48,10 @@ export default function AppHeader() {
             </LogoLink>
           </LeftSlot>
 
-          {/* 랜딩 전용: 작업 공간 진입 버튼 하나 */}
+          {/* 랜딩 전용: 도구 진입 버튼 하나 — "작업 공간"은 앱 용어라 셀러 언어로 (07-10) */}
           {!isWorkspace && (
             <Button component={Link} href={FLAGSHIP_TOOL.href} variant="contained" size="small">
-              작업 공간
+              도구 둘러보기
             </Button>
           )}
         </Inner>
