@@ -19,6 +19,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Popover from '@mui/material/Popover';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import Slider from '@mui/material/Slider';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -27,6 +29,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import CheckIcon from '@mui/icons-material/Check';
 import { useSnackbar } from 'notistack';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
@@ -328,23 +331,12 @@ export default function DomeggookSearchView() {
         {/* 결과 */}
         {hasSearched && !isLoading && items.length > 0 && (
           <Stack spacing={1.5}>
-            {/* 결과 헤더 — 좌 타이틀 · 우 정렬 칩 */}
-            <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+            {/* 결과 헤더 — 좌 타이틀 · 우 정렬 드롭다운 */}
+            <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="subtitle2">
                 {isBrowseAll(currentKeywordRef.current) ? 'BEST TOP 100' : `총 ${totalItems.toLocaleString()}개 상품`}
               </Typography>
-              <Stack direction="row" spacing={0.75}>
-                {DOMEGGOOK_SORTS.map((entry) => (
-                  <Chip
-                    key={entry.key}
-                    size="small"
-                    label={entry.label}
-                    color={sort === entry.key ? 'primary' : 'default'}
-                    variant={sort === entry.key ? 'filled' : 'outlined'}
-                    onClick={() => setSort(entry.key)}
-                  />
-                ))}
-              </Stack>
+              <SortDropdown sort={sort} onChange={setSort} />
             </Stack>
             <CardGrid>
               {items.map((item) => (
@@ -479,6 +471,53 @@ function CategoryPicker({ categories, topCode, subCode, onSelect }: CategoryPick
           </PickerColumn>
         </PickerPanel>
       </Popover>
+    </>
+  );
+}
+
+//////////////////// 정렬 드롭다운 (텍스트 버튼 + 메뉴) ////////////////////
+type SortDropdownProps = {
+  sort: DomeggookSortKey;
+  onChange: (next: DomeggookSortKey) => void;
+};
+
+function SortDropdown({ sort, onChange }: SortDropdownProps) {
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const current = DOMEGGOOK_SORTS.find((entry) => entry.key === sort);
+
+  return (
+    <>
+      <Button
+        size="small"
+        color="inherit"
+        endIcon={<ArrowDropDownIcon />}
+        onClick={(event) => setAnchor(event.currentTarget)}
+        sx={{ color: 'text.secondary', fontWeight: 400 }}
+      >
+        {current?.label}
+      </Button>
+      <Menu
+        open={Boolean(anchor)}
+        anchorEl={anchor}
+        onClose={() => setAnchor(null)}
+        disableScrollLock
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        {DOMEGGOOK_SORTS.map((entry) => (
+          <MenuItem
+            key={entry.key}
+            selected={entry.key === sort}
+            onClick={() => {
+              onChange(entry.key);
+              setAnchor(null);
+            }}
+          >
+            <Typography variant="body2">{entry.label}</Typography>
+            {entry.key === sort && <CheckIcon sx={{ fontSize: 16, ml: 1 }} color="primary" />}
+          </MenuItem>
+        ))}
+      </Menu>
     </>
   );
 }
