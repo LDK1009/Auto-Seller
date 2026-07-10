@@ -7,7 +7,7 @@
 // - 흰/회색 밴드 교차로 섹션 호흡 (토스식 리듬)
 // - 문구는 docs/BRAND.md 준수 (검증 안 된 수치·과장 금지)
 
-import { useRef, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styled from '@emotion/styled';
 import Link from 'next/link';
@@ -156,61 +156,65 @@ export default function MainView() {
             </Stack>
 
             {TOOL_GROUPS.map((group) => (
-              <Stack key={group.key} spacing={1.5}>
-                <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-                  <StepNumber>{group.step}</StepNumber>
-                  <Stack>
-                    <Typography variant="subtitle1">{group.label}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {group.description}
-                    </Typography>
+              <Fragment key={group.key}>
+                <Stack spacing={1.5}>
+                  <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                    <StepNumber>{group.step}</StepNumber>
+                    <Stack>
+                      <Typography variant="subtitle1">{group.label}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {group.description}
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                  <Stack spacing={1.5}>
+                    {TOOLS.filter((tool) => tool.group === group.key).map((tool) => (
+                      <ToolRow key={tool.href} href={tool.href}>
+                        <ToolIconBox>{tool.icon}</ToolIconBox>
+                        <Stack spacing={0.25} sx={{ flex: 1 }}>
+                          <Typography variant="subtitle1">{tool.title}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {tool.description}
+                          </Typography>
+                        </Stack>
+                        <ChevronRightIcon color="disabled" />
+                      </ToolRow>
+                    ))}
                   </Stack>
                 </Stack>
-                <Stack spacing={1.5}>
-                  {TOOLS.filter((tool) => tool.group === group.key).map((tool) => (
-                    <ToolRow key={tool.href} href={tool.href}>
-                      <ToolIconBox>{tool.icon}</ToolIconBox>
-                      <Stack spacing={0.25} sx={{ flex: 1 }}>
-                        <Typography variant="subtitle1">{tool.title}</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {tool.description}
+
+                {/* STEP 3 — 등록 (준비 중 예고): 여정 순서상 등록 준비(2) 바로 다음 */}
+                {group.key === 'image' && (
+                  <Stack spacing={1.5}>
+                    <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                      <StepNumber>3</StepNumber>
+                      <Stack>
+                        <Typography variant="subtitle1">등록</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          완성한 이미지로 마켓에 올립니다
                         </Typography>
                       </Stack>
-                      <ChevronRightIcon color="disabled" />
-                    </ToolRow>
-                  ))}
-                </Stack>
-              </Stack>
-            ))}
-
-            {/* STEP 3 — 등록 (준비 중 예고) */}
-            <Stack spacing={1.5}>
-              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-                <StepNumber>3</StepNumber>
-                <Stack>
-                  <Typography variant="subtitle1">등록</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    완성한 이미지로 마켓에 올립니다
-                  </Typography>
-                </Stack>
-              </Stack>
-              <UpcomingRow>
-                <ToolIconBox>
-                  <StorefrontIcon color="disabled" fontSize="large" />
-                </ToolIconBox>
-                <Stack spacing={0.25} sx={{ flex: 1 }}>
-                  <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                    <Typography variant="subtitle1" color="text.secondary">
-                      스마트스토어 원클릭 등록
-                    </Typography>
-                    <Chip size="small" label="준비 중" />
+                    </Stack>
+                    <UpcomingRow>
+                      <ToolIconBox>
+                        <StorefrontIcon color="disabled" fontSize="large" />
+                      </ToolIconBox>
+                      <Stack spacing={0.25} sx={{ flex: 1 }}>
+                        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                          <Typography variant="subtitle1" color="text.secondary">
+                            스마트스토어 원클릭 등록
+                          </Typography>
+                          <Chip size="small" label="준비 중" />
+                        </Stack>
+                        <Typography variant="body2" color="text.secondary">
+                          준비된 이미지 세트를 스마트스토어에 바로 등록하는 기능을 만들고 있습니다.
+                        </Typography>
+                      </Stack>
+                    </UpcomingRow>
                   </Stack>
-                  <Typography variant="body2" color="text.secondary">
-                    준비된 이미지 세트를 스마트스토어에 바로 등록하는 기능을 만들고 있습니다.
-                  </Typography>
-                </Stack>
-              </UpcomingRow>
-            </Stack>
+                )}
+              </Fragment>
+            ))}
           </SectionColumn>
         </Container>
       </Band>

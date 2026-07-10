@@ -33,11 +33,11 @@ export const FLAGSHIP_TOOL = {
   description: '링크 하나로 등록 준비까지',
 };
 
-// 플로우 그룹 정의 (표시 순서 = 작업 순서)
+// 플로우 그룹 정의 (표시 순서 = 작업 순서) — step 3은 '등록'(준비 중, 랜딩 예고 전용) 몫으로 비워둠
 export const TOOL_GROUPS: { key: ToolGroupKey; step: string; label: string; description: string }[] = [
   { key: 'sourcing', step: '1', label: '소싱', description: '뭘 팔지 정하고, 남는 장사인지 확인합니다' },
   { key: 'image', step: '2', label: '등록 준비', description: '등록용 이미지를 가공 순서대로 완성합니다' },
-  { key: 'ops', step: '3', label: '운영·정산', description: '판매 후 광고 손익과 세금을 챙깁니다' },
+  { key: 'ops', step: '4', label: '운영·정산', description: '판매 후 광고 손익과 세금을 챙깁니다' },
 ];
 
 // 개별 도구 목록 (원링크는 FLAGSHIP_TOOL로 별도 — 같은 페이지 중복 노출 방지 위해 여기선 제외)
@@ -97,7 +97,7 @@ export const TOOLS: ToolInfo[] = [
     href: '/excel-import',
     icon: <UploadFileIcon color="primary" fontSize="large" />,
     title: '엑셀 대량 가공',
-    description: '대량등록 엑셀의 상품 이미지를 모아 누끼 파이프라인에 일괄 투입',
+    description: '대량등록 엑셀 속 상품 이미지를 모아 배경 제거까지 한 번에',
     group: 'image',
   },
   //////////////////// ③ 운영·정산 (판매 후) ////////////////////

@@ -107,7 +107,7 @@ export default function ExcelImportView() {
   return (
     <PageLayout
       title="엑셀 대량 가공"
-      description="대량등록 엑셀의 상품 이미지를 한 번에 모아 누끼 파이프라인에 투입합니다."
+      description="대량등록 엑셀 속 상품 이미지를 한 번에 모아 배경 제거까지 이어드립니다."
       maxWidth="md"
       help={
         <HelpPanel storageKey="excel-import">

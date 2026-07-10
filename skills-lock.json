@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "toss-tech-design": {
+      "source": "Ilbie/Toss-Design-Skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "27019dc5baea2747c450256a888c850194f9c60fb0ef1269533e35c7fdbeba2d"
+    }
+  }
+}

@@ -45,9 +45,8 @@ export function SidebarNav({ onNavigate }: SidebarNavProps) {
 
       {TOOL_GROUPS.map((group) => (
         <Stack key={group.key} spacing={0.5}>
-          <GroupLabel variant="caption">
-            {group.step}. {group.label}
-          </GroupLabel>
+          {/* 번호 없이 라벨만 — 순서가 이미 흐름을 말해줌 (번호는 랜딩 여정 전용) */}
+          <GroupLabel variant="caption">{group.label}</GroupLabel>
           {TOOLS.filter((tool) => tool.group === group.key).map((tool) => (
             <NavItem
               key={tool.href}
