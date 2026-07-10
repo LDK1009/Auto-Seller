@@ -30,6 +30,8 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CheckIcon from '@mui/icons-material/Check';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import InputAdornment from '@mui/material/InputAdornment';
 import { useSnackbar } from 'notistack';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
@@ -60,6 +62,10 @@ export default function DomeggookSearchView() {
   const [priceBounds, setPriceBounds] = useState<{ min: number; max: number } | null>(null);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
   const priceBoundsRef = useRef<{ min: number; max: number } | null>(null);
+  // 가격 직접 입력 (연필 토글)
+  const [isPriceEditing, setIsPriceEditing] = useState(false);
+  const [priceInputMin, setPriceInputMin] = useState('');
+  const [priceInputMax, setPriceInputMax] = useState('');
   const [singleUnit, setSingleUnit] = useState(false);
   const [freeShipping, setFreeShipping] = useState(false);
   const [lowestPriceOnly, setLowestPriceOnly] = useState(false);
@@ -83,29 +89,33 @@ export default function DomeggookSearchView() {
   // 분류는 '전체' 또는 중분류 확정 2가지만 (대분류 단독은 API가 미지원 — 피커에서 입력 자체를 막음)
   // 조건 전무(초기 화면)는 서버가 ev=all 전체 검색으로 처리
   const currentKeywordRef = useRef('');
-  const buildParams = (targetPage: number): DomeggookSearchParams => ({
+  const buildParams = (targetPage: number, priceOverride?: [number, number]): DomeggookSearchParams => {
+    // 직접 입력 직후엔 setState 반영 전이라 override로 최신 범위 전달
+    const range = priceOverride ?? priceRange;
+    return {
     keyword: currentKeywordRef.current || undefined,
     category: subCategory || undefined,
     sort,
     page: targetPage,
     // 슬라이더가 상·하한에서 좁혀졌을 때만 가격 필터 전송
-    minPrice: priceBounds && priceRange[0] > priceBounds.min ? priceRange[0] : undefined,
-    maxPrice: priceBounds && priceRange[1] < priceBounds.max ? priceRange[1] : undefined,
+    minPrice: priceBounds && range[0] > priceBounds.min ? range[0] : undefined,
+    maxPrice: priceBounds && range[1] < priceBounds.max ? range[1] : undefined,
     singleUnit,
     freeShipping,
     lowestPriceOnly,
     fastShipping,
     excludeOversea,
-  });
+    };
+  };
 
   ////////// 검색 실행 (1페이지부터)
-  const runSearch = async (keyword: string) => {
+  const runSearch = async (keyword: string, priceOverride?: [number, number]) => {
     currentKeywordRef.current = keyword;
     setIsLoading(true);
     setHasSearched(true);
     setItems([]);
     try {
-      const response = await fetchDomeggookSearch(buildParams(1));
+      const response = await fetchDomeggookSearch(buildParams(1, priceOverride));
       setIsConfigured(response.configured);
       setItems(response.items);
       setTotalItems(response.totalItems);
@@ -155,6 +165,22 @@ export default function DomeggookSearchView() {
       console.error(error);
       setPriceBounds(null);
     }
+  };
+
+  ////////// 가격 직접 입력 적용 — 실측 상·하한으로 클램프 후 재검색
+  const applyPriceInput = () => {
+    if (!priceBounds) return;
+    const parse = (raw: string, fallback: number) => {
+      const value = Number(raw.replaceAll(',', '').trim());
+      return Number.isFinite(value) && value > 0 ? value : fallback;
+    };
+    const clamp = (value: number) => Math.min(priceBounds.max, Math.max(priceBounds.min, value));
+    const low = clamp(parse(priceInputMin, priceBounds.min));
+    const high = clamp(parse(priceInputMax, priceBounds.max));
+    const nextRange: [number, number] = low <= high ? [low, high] : [high, low];
+    setPriceRange(nextRange);
+    setIsPriceEditing(false);
+    runSearch(currentKeywordRef.current, nextRange);
   };
 
   ////////// 더보기 (append) — 스크롤로 버튼이 보이면 자동 실행
@@ -287,12 +313,53 @@ export default function DomeggookSearchView() {
               </Button>
             </Stack>
 
-            {/* 가격 범위 슬라이더 (검색 후 실측 상·하한) */}
+            {/* 가격 범위 슬라이더 (검색 후 실측 상·하한) + 연필로 직접 입력 */}
             {hasSearched && priceBounds && (
               <Stack spacing={0.5} sx={{ px: 1 }}>
-                <Typography variant="caption" color="text.secondary">
-                  가격 {KRW(priceRange[0])} ~ {KRW(priceRange[1])}
-                </Typography>
+                {isPriceEditing ? (
+                  <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
+                    <TextField
+                      size="small"
+                      value={priceInputMin}
+                      onChange={(event) => setPriceInputMin(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') applyPriceInput();
+                      }}
+                      slotProps={{ input: { endAdornment: <InputAdornment position="end">원</InputAdornment> } }}
+                      sx={{ width: 140 }}
+                    />
+                    <Typography variant="caption" color="text.secondary">~</Typography>
+                    <TextField
+                      size="small"
+                      value={priceInputMax}
+                      onChange={(event) => setPriceInputMax(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') applyPriceInput();
+                      }}
+                      slotProps={{ input: { endAdornment: <InputAdornment position="end">원</InputAdornment> } }}
+                      sx={{ width: 140 }}
+                    />
+                    <IconButton size="small" color="primary" onClick={applyPriceInput}>
+                      <CheckIcon sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Stack>
+                ) : (
+                  <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary">
+                      가격 {KRW(priceRange[0])} ~ {KRW(priceRange[1])}
+                    </Typography>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        setPriceInputMin(String(priceRange[0]));
+                        setPriceInputMax(String(priceRange[1]));
+                        setIsPriceEditing(true);
+                      }}
+                    >
+                      <EditOutlinedIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </Stack>
+                )}
                 <Slider
                   size="small"
                   value={priceRange}
