@@ -164,7 +164,11 @@ export default function DomeggookSearchView() {
     setIsLoadingMore(true);
     try {
       const response = await fetchDomeggookSearch(buildParams(page + 1));
-      setItems((previous) => [...previous, ...response.items]);
+      // 페이지 경계에서 같은 상품이 다시 올 수 있음(순위 변동) — no 기준 중복 제거 (key 충돌 방지)
+      setItems((previous) => {
+        const seen = new Set(previous.map((item) => item.no));
+        return [...previous, ...response.items.filter((item) => !seen.has(item.no))];
+      });
       setPage(response.page);
     } catch (error) {
       console.error(error);
@@ -344,7 +348,7 @@ export default function DomeggookSearchView() {
             </Stack>
             <CardGrid>
               {items.map((item) => (
-                <ProductCardItem key={`${item.no}-${page}`} item={item} onPick={handlePick} />
+                <ProductCardItem key={item.no} item={item} onPick={handlePick} />
               ))}
             </CardGrid>
             {canLoadMore && (
