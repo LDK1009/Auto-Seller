@@ -1,7 +1,7 @@
 //////////////////////////////////////// 도매꾹 검색 타입 (API 라우트 ↔ 클라이언트 공유) ////////////////////////////////////////
 
 // 정렬 (getItemList so 파라미터 중 노출 4종)
-export type DomeggookSortKey = 'ha' | 'rd' | 'aa' | 'da';
+export type DomeggookSortKey = 'ha' | 'rd' | 'aa' | 'da' | 'ad'; // ad = 슬라이더 상한 측정 전용 (칩 미노출)
 
 export const DOMEGGOOK_SORTS: { key: DomeggookSortKey; label: string }[] = [
   { key: 'ha', label: '인기순' },

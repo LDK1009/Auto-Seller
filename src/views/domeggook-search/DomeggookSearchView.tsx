@@ -14,13 +14,18 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Alert from '@mui/material/Alert';
-import MenuItem from '@mui/material/MenuItem';
-import InputAdornment from '@mui/material/InputAdornment';
 import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
+import Popover from '@mui/material/Popover';
+import Slider from '@mui/material/Slider';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import ButtonBase from '@mui/material/ButtonBase';
 import SearchIcon from '@mui/icons-material/Search';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useSnackbar } from 'notistack';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
@@ -37,12 +42,6 @@ import { transientOptions } from '@/shared/utils/emotionTransientProps';
 
 const KRW = (value: number) => `${value.toLocaleString()}원`;
 
-// 숫자 입력 파싱 (빈 값·비정상 입력은 0)
-function parseAmount(raw: string): number {
-  const value = Number(raw.replaceAll(',', ''));
-  return Number.isFinite(value) && value >= 0 ? value : 0;
-}
-
 export default function DomeggookSearchView() {
   const { enqueueSnackbar } = useSnackbar();
   const router = useRouter();
@@ -53,8 +52,9 @@ export default function DomeggookSearchView() {
   const [sort, setSort] = useState<DomeggookSortKey>('ha');
   const [topCategory, setTopCategory] = useState(''); // 대분류 code
   const [subCategory, setSubCategory] = useState(''); // 중분류 code (실제 ca 파라미터)
-  const [minPrice, setMinPrice] = useState(0);
-  const [maxPrice, setMaxPrice] = useState(0);
+  // 가격 슬라이더 — 상·하한은 현 조건의 저가순/고가순 각 1건으로 실측 (헤더에 min/max 없음)
+  const [priceBounds, setPriceBounds] = useState<{ min: number; max: number } | null>(null);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
   const [singleUnit, setSingleUnit] = useState(false);
   const [freeShipping, setFreeShipping] = useState(false);
   const [lowestPriceOnly, setLowestPriceOnly] = useState(false);
@@ -86,8 +86,9 @@ export default function DomeggookSearchView() {
     category: subCategory || undefined,
     sort,
     page: targetPage,
-    minPrice: minPrice || undefined,
-    maxPrice: maxPrice || undefined,
+    // 슬라이더가 상·하한에서 좁혀졌을 때만 가격 필터 전송
+    minPrice: priceBounds && priceRange[0] > priceBounds.min ? priceRange[0] : undefined,
+    maxPrice: priceBounds && priceRange[1] < priceBounds.max ? priceRange[1] : undefined,
     singleUnit,
     freeShipping,
     lowestPriceOnly,
@@ -110,11 +111,43 @@ export default function DomeggookSearchView() {
       setTotalPages(response.totalPages);
       setPage(1);
       trackEvent('domeggook_search', { keyword, category: subCategory || '' });
+      void loadPriceBounds(keyword);
     } catch (error) {
       console.error(error);
       enqueueSnackbar(error instanceof Error ? error.message : '검색에 실패했습니다.', { variant: 'error' });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  ////////// 가격 범위 실측 — 저가순·고가순 각 1건 (가격 필터 제외 동일 조건, 캐시 재사용)
+  const loadPriceBounds = async (keyword: string) => {
+    try {
+      const base = {
+        keyword: keyword || undefined,
+        category: subCategory || undefined,
+        singleUnit,
+        freeShipping,
+        lowestPriceOnly,
+        fastShipping,
+        excludeOversea,
+        pageSize: 1,
+      };
+      const [lowest, highest] = await Promise.all([
+        fetchDomeggookSearch({ ...base, sort: 'aa' }),
+        fetchDomeggookSearch({ ...base, sort: 'ad' }),
+      ]);
+      const min = lowest.items[0]?.price;
+      const max = highest.items[0]?.price;
+      if (min !== undefined && max !== undefined && min < max) {
+        setPriceBounds({ min, max });
+        setPriceRange([min, max]);
+      } else {
+        setPriceBounds(null);
+      }
+    } catch (error) {
+      console.error(error);
+      setPriceBounds(null);
     }
   };
 
@@ -224,6 +257,15 @@ export default function DomeggookSearchView() {
         <Paper variant="outlined" sx={{ p: 3 }}>
           <Stack spacing={2}>
             <Stack direction="row" spacing={1.5}>
+              <CategoryPicker
+                categories={categories}
+                topCode={topCategory}
+                subCode={subCategory}
+                onSelect={(nextTop, nextSub) => {
+                  setTopCategory(nextTop);
+                  setSubCategory(nextSub);
+                }}
+              />
               <TextField
                 fullWidth
                 size="medium"
@@ -259,70 +301,27 @@ export default function DomeggookSearchView() {
               ))}
             </Stack>
 
-            {/* 카테고리 2단 + 가격 */}
-            <FilterRow>
-              <TextField
-                select
-                size="small"
-                label="대분류"
-                slotProps={{ select: { MenuProps: { disableScrollLock: true } } }}
-                value={topCategory}
-                onChange={(event) => {
-                  setTopCategory(event.target.value);
-                  setSubCategory('');
-                }}
-                sx={{ minWidth: 160 }}
-              >
-                <MenuItem value="">전체</MenuItem>
-                {categories.map((category) => (
-                  <MenuItem key={category.code} value={category.code}>
-                    {category.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                select
-                size="small"
-                label="중분류"
-                slotProps={{ select: { MenuProps: { disableScrollLock: true } } }}
-                value={subCategory}
-                onChange={(event) => setSubCategory(event.target.value)}
-                disabled={!selectedTop}
-                sx={{ minWidth: 180 }}
-              >
-                <MenuItem value="">전체</MenuItem>
-                {(selectedTop?.children ?? []).map((child) => (
-                  <MenuItem key={child.code} value={child.code}>
-                    {child.name} ({child.itemCount.toLocaleString()})
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                size="small"
-                type="number"
-                label="최소 가격"
-                value={minPrice === 0 ? '' : minPrice}
-                placeholder="0"
-                onChange={(event) => setMinPrice(parseAmount(event.target.value))}
-                onBlur={() => hasSearched && runSearch(currentKeywordRef.current)}
-                slotProps={{ input: { endAdornment: <InputAdornment position="end">원</InputAdornment> } }}
-                sx={{ width: 140 }}
-              />
-              <TextField
-                size="small"
-                type="number"
-                label="최대 가격"
-                value={maxPrice === 0 ? '' : maxPrice}
-                placeholder="0"
-                onChange={(event) => setMaxPrice(parseAmount(event.target.value))}
-                onBlur={() => hasSearched && runSearch(currentKeywordRef.current)}
-                slotProps={{ input: { endAdornment: <InputAdornment position="end">원</InputAdornment> } }}
-                sx={{ width: 140 }}
-              />
-            </FilterRow>
+            {/* 가격 범위 슬라이더 (검색 후 실측 상·하한) */}
+            {hasSearched && priceBounds && (
+              <Stack spacing={0.5} sx={{ px: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  가격 {KRW(priceRange[0])} ~ {KRW(priceRange[1])}
+                </Typography>
+                <Slider
+                  size="small"
+                  value={priceRange}
+                  min={priceBounds.min}
+                  max={priceBounds.max}
+                  onChange={(_, next) => setPriceRange(next as [number, number])}
+                  onChangeCommitted={() => runSearch(currentKeywordRef.current)}
+                  valueLabelDisplay="auto"
+                  valueLabelFormat={(value) => KRW(value)}
+                />
+              </Stack>
+            )}
 
-            {/* 필터 토글 칩 */}
-            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+            {/* 필터 체크박스 */}
+            <Stack direction="row" sx={{ flexWrap: 'wrap', columnGap: 2 }} useFlexGap>
               {(
                 [
                   ['낱개 구매', singleUnit, setSingleUnit],
@@ -332,12 +331,10 @@ export default function DomeggookSearchView() {
                   ['해외직배송 제외', excludeOversea, setExcludeOversea],
                 ] as [string, boolean, (next: boolean) => void][]
               ).map(([label, value, setter]) => (
-                <Chip
+                <FormControlLabel
                   key={label}
-                  label={label}
-                  color={value ? 'primary' : 'default'}
-                  variant={value ? 'filled' : 'outlined'}
-                  onClick={() => setter(!value)}
+                  control={<Checkbox size="small" checked={value} onChange={() => setter(!value)} />}
+                  label={<Typography variant="body2">{label}</Typography>}
                 />
               ))}
             </Stack>
@@ -419,6 +416,103 @@ export default function DomeggookSearchView() {
   );
 }
 
+//////////////////// 분류 피커 (대분류 호버 → 우측 중분류 캐스케이드) ////////////////////
+type CategoryPickerProps = {
+  categories: DomeggookCategory[];
+  topCode: string;
+  subCode: string;
+  onSelect: (topCode: string, subCode: string) => void;
+};
+
+function CategoryPicker({ categories, topCode, subCode, onSelect }: CategoryPickerProps) {
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const [activeTop, setActiveTop] = useState('');
+
+  const selectedTop = categories.find((category) => category.code === topCode);
+  const selectedSub = selectedTop?.children.find((child) => child.code === subCode);
+  const label = selectedSub ? `${selectedTop?.name} > ${selectedSub.name}` : '분류 전체';
+  const active = categories.find((category) => category.code === activeTop);
+
+  const close = () => setAnchor(null);
+
+  return (
+    <>
+      <Button
+        variant="outlined"
+        color="inherit"
+        endIcon={<ArrowDropDownIcon />}
+        onClick={(event) => {
+          setActiveTop(topCode || categories[0]?.code || '');
+          setAnchor(event.currentTarget);
+        }}
+        sx={{ flexShrink: 0, whiteSpace: 'nowrap', color: 'text.primary', borderColor: 'divider' }}
+      >
+        {label}
+      </Button>
+      <Popover
+        open={Boolean(anchor)}
+        anchorEl={anchor}
+        onClose={close}
+        disableScrollLock
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <PickerPanel>
+          {/* 좌: 대분류 (호버로 우측 갱신) */}
+          <PickerColumn>
+            <PickerItem
+              $isActive={!topCode}
+              onClick={() => {
+                onSelect('', '');
+                close();
+              }}
+            >
+              <Typography variant="body2">분류 전체</Typography>
+            </PickerItem>
+            {categories.map((category) => (
+              <PickerItem
+                key={category.code}
+                $isActive={activeTop === category.code}
+                onMouseEnter={() => setActiveTop(category.code)}
+                onClick={() => setActiveTop(category.code)}
+              >
+                <Typography variant="body2" sx={{ flex: 1, textAlign: 'left' }}>
+                  {category.name}
+                </Typography>
+                <ChevronRightIcon sx={{ fontSize: 16 }} color="disabled" />
+              </PickerItem>
+            ))}
+          </PickerColumn>
+          {/* 우: 중분류 (클릭 = 선택) */}
+          <PickerColumn>
+            {(active?.children ?? []).map((child) => (
+              <PickerItem
+                key={child.code}
+                $isActive={subCode === child.code}
+                onClick={() => {
+                  onSelect(active?.code ?? '', child.code);
+                  close();
+                }}
+              >
+                <Typography variant="body2" sx={{ flex: 1, textAlign: 'left' }}>
+                  {child.name}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {child.itemCount.toLocaleString()}
+                </Typography>
+              </PickerItem>
+            ))}
+            {!active && (
+              <Typography variant="caption" color="text.secondary" sx={{ p: 1.5 }}>
+                대분류에 마우스를 올려보세요
+              </Typography>
+            )}
+          </PickerColumn>
+        </PickerPanel>
+      </Popover>
+    </>
+  );
+}
+
 //////////////////// 상품 카드 (메인 그리드·인기 섹션 공용) ////////////////////
 type ProductCardItemProps = { item: DomeggookSearchItem; onPick: (no: number) => void };
 
@@ -462,11 +556,33 @@ function ProductCardItem({ item, onPick }: ProductCardItemProps) {
 }
 
 //////////////////////////////////////// 스타일 ////////////////////////////////////////
-const FilterRow = styled.div(({ theme }) => ({
+const PickerPanel = styled.div({
   display: 'flex',
-  flexWrap: 'wrap',
-  gap: theme.spacing(1.5),
+  maxHeight: 420,
+});
+
+const PickerColumn = styled.div(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  minWidth: 180,
+  overflowY: 'auto',
+  padding: theme.spacing(0.75),
+  '&:first-of-type': {
+    borderRight: `1px solid ${theme.palette.divider}`,
+  },
+}));
+
+const PickerItem = styled(ButtonBase, transientOptions)<{ $isActive: boolean }>(({ theme, $isActive }) => ({
+  display: 'flex',
   alignItems: 'center',
+  gap: theme.spacing(1),
+  width: '100%',
+  padding: theme.spacing(0.75, 1.25),
+  borderRadius: theme.shape.borderRadius,
+  backgroundColor: $isActive ? theme.palette.action.selected : 'transparent',
+  '&:hover': {
+    backgroundColor: theme.palette.action.hover,
+  },
 }));
 
 const CardGrid = styled.div(({ theme }) => ({
