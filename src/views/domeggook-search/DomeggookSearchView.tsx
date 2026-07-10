@@ -630,7 +630,7 @@ function ProductCardItem({ item, onPick }: ProductCardItemProps) {
         </Typography>
         <Typography variant="caption" color="text.secondary">
           {item.shipping.isFree ? '무료배송' : item.shipping.fee !== null ? `배송비 ${KRW(item.shipping.fee)}` : '배송비 별도'}
-          {item.unitQty > 1 && ` · ${item.unitQty}개 단위`}
+          {` · 최소 ${item.unitQty}개`}
         </Typography>
         {/* 필터 대응 속성 뱃지 (빠른배송은 응답 미제공 — 뱃지 불가) */}
         <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap' }} useFlexGap>
