@@ -78,13 +78,15 @@ export default function DomeggookSearchView() {
 
   ////////// 현재 조건 조립 (필터 상태 → 요청 파라미터)
   const currentKeywordRef = useRef('');
-  // 대분류 ca는 검색어와 조합될 때만 필터됨 (실측 — 단독은 API 거부, 문서: "대분류만으로 검색 불가")
-  const resolveCategory = (keyword: string) => subCategory || (keyword ? topCategory : '') || undefined;
+  // 분류는 '전체' 또는 중분류 확정 2가지만 (대분류 단독은 API가 미지원 — 피커에서 입력 자체를 막음)
+  const isBrowseAll = (keyword: string) => !keyword && !subCategory;
   const buildParams = (targetPage: number): DomeggookSearchParams => ({
     keyword: currentKeywordRef.current || undefined,
-    category: resolveCategory(currentKeywordRef.current),
+    category: subCategory || undefined,
     sort,
     page: targetPage,
+    // 조건 없는 전체 탐색 = BEST TOP 100 (1콜 고정, 더보기 없음)
+    pageSize: isBrowseAll(currentKeywordRef.current) ? 100 : undefined,
     // 슬라이더가 상·하한에서 좁혀졌을 때만 가격 필터 전송
     minPrice: priceBounds && priceRange[0] > priceBounds.min ? priceRange[0] : undefined,
     maxPrice: priceBounds && priceRange[1] < priceBounds.max ? priceRange[1] : undefined,
@@ -97,10 +99,6 @@ export default function DomeggookSearchView() {
 
   ////////// 검색 실행 (1페이지부터)
   const runSearch = async (keyword: string) => {
-    if (!keyword && !subCategory && topCategory) {
-      enqueueSnackbar('대분류만으로는 검색할 수 없어요 — 검색어를 입력해주세요', { variant: 'info' });
-      return;
-    }
     currentKeywordRef.current = keyword;
     setIsLoading(true);
     setHasSearched(true);
@@ -127,7 +125,7 @@ export default function DomeggookSearchView() {
     try {
       const base = {
         keyword: keyword || undefined,
-        category: resolveCategory(keyword),
+        category: subCategory || undefined,
         singleUnit,
         freeShipping,
         lowestPriceOnly,
@@ -219,9 +217,10 @@ export default function DomeggookSearchView() {
   useEffect(() => {
     if (hasSearched) runSearch(currentKeywordRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sort, topCategory, subCategory, singleUnit, freeShipping, lowestPriceOnly, fastShipping, excludeOversea]);
+  }, [sort, subCategory, singleUnit, freeShipping, lowestPriceOnly, fastShipping, excludeOversea]);
 
-  const canLoadMore = page < totalPages && items.length > 0;
+  // BEST TOP 100 모드(조건 없는 전체 탐색)는 100개 고정 — 더보기 없음
+  const canLoadMore = !isBrowseAll(currentKeywordRef.current) && page < totalPages && items.length > 0;
 
   ////////// 카드 클릭 → 원링크 등록 준비
   const handlePick = (no: number) => {
@@ -338,7 +337,9 @@ export default function DomeggookSearchView() {
         {/* 결과 */}
         {hasSearched && !isLoading && items.length > 0 && (
           <Stack spacing={1.5}>
-            <Typography variant="subtitle2">총 {totalItems.toLocaleString()}개 상품</Typography>
+            <Typography variant="subtitle2">
+              {isBrowseAll(currentKeywordRef.current) ? 'BEST TOP 100' : `총 ${totalItems.toLocaleString()}개 상품`}
+            </Typography>
             <CardGrid>
               {items.map((item) => (
                 <ProductCardItem key={`${item.no}-${page}`} item={item} onPick={handlePick} />
@@ -391,7 +392,7 @@ function CategoryPicker({ categories, topCode, subCode, onSelect }: CategoryPick
 
   const selectedTop = categories.find((category) => category.code === topCode);
   const selectedSub = selectedTop?.children.find((child) => child.code === subCode);
-  const label = selectedSub ? `${selectedTop?.name} > ${selectedSub.name}` : selectedTop ? selectedTop.name : '전체';
+  const label = selectedSub ? `${selectedTop?.name} > ${selectedSub.name}` : '전체';
   const active = categories.find((category) => category.code === activeTop);
 
   const close = () => setAnchor(null);
@@ -434,10 +435,7 @@ function CategoryPicker({ categories, topCode, subCode, onSelect }: CategoryPick
                 key={category.code}
                 $isActive={activeTop === category.code}
                 onMouseEnter={() => setActiveTop(category.code)}
-                onClick={() => {
-                  onSelect(category.code, '');
-                  close();
-                }}
+                onClick={() => setActiveTop(category.code)}
               >
                 <Typography variant="body2" sx={{ flex: 1, textAlign: 'left' }}>
                   {category.name}
@@ -448,19 +446,6 @@ function CategoryPicker({ categories, topCode, subCode, onSelect }: CategoryPick
           </PickerColumn>
           {/* 우: 중분류 (클릭 = 선택) */}
           <PickerColumn>
-            {active && (
-              <PickerItem
-                $isActive={topCode === active.code && !subCode}
-                onClick={() => {
-                  onSelect(active.code, '');
-                  close();
-                }}
-              >
-                <Typography variant="body2" sx={{ flex: 1, textAlign: 'left' }}>
-                  전체
-                </Typography>
-              </PickerItem>
-            )}
             {[...(active?.children ?? [])]
               .sort((a, b) => b.itemCount - a.itemCount)
               .map((child) => (

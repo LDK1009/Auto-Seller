@@ -34,7 +34,8 @@ export async function GET(request: Request) {
   const searchAll = keyword.length === 0 && category.length === 0;
 
   const sort = SORT_KEYS.has(searchParams.get('so') ?? '') ? (searchParams.get('so') as string) : 'ha';
-  const pageSize = Math.min(PAGE_SIZE, Math.max(1, Number(searchParams.get('sz') ?? PAGE_SIZE) || PAGE_SIZE));
+  // 상한 200 = API 스펙 최대 (기본 40, 전체 탐색 BEST TOP 100은 sz=100)
+  const pageSize = Math.min(200, Math.max(1, Number(searchParams.get('sz') ?? PAGE_SIZE) || PAGE_SIZE));
   const page = Math.max(1, Number(searchParams.get('pg') ?? '1') || 1);
   const minPrice = Number(searchParams.get('mnp')) || 0;
   const maxPrice = Number(searchParams.get('mxp')) || 0;
