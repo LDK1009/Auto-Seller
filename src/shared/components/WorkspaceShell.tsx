@@ -6,6 +6,7 @@
 import type { ReactNode } from 'react';
 import styled from '@emotion/styled';
 import AppSidebar from '@/shared/components/AppSidebar';
+import { HEADER_HEIGHT } from '@/shared/constants/layout';
 
 type WorkspaceShellProps = {
   children: ReactNode;
@@ -24,6 +25,7 @@ export default function WorkspaceShell({ children }: WorkspaceShellProps) {
 const Shell = styled.div({
   display: 'flex',
   alignItems: 'stretch',
+  minHeight: `calc(100vh - ${HEADER_HEIGHT}px)`, // 콘텐츠가 짧아도 사이드바 보더가 뷰포트 끝까지
 });
 
 const Content = styled.div({
