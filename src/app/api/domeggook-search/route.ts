@@ -11,7 +11,7 @@ const CACHE_TTL_MS = 1000 * 60 * 60;
 const CACHE_MAX_ENTRIES = 500;
 const PAGE_SIZE = 40;
 const FETCH_TIMEOUT_MS = 10_000;
-const SORT_KEYS = new Set(['ha', 'rd', 'aa', 'da', 'ad']); // ad(고가순)는 UI 미노출 — 가격 슬라이더 상한 측정용
+const SORT_KEYS = new Set(['ha', 'rd', 'aa', 'da', 'ad']);
 
 const cache = new Map<string, { response: DomeggookSearchResponse; expiresAt: number }>();
 

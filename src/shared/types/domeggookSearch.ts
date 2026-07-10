@@ -1,11 +1,11 @@
 //////////////////////////////////////// 도매꾹 검색 타입 (API 라우트 ↔ 클라이언트 공유) ////////////////////////////////////////
 
 // 정렬 (getItemList so 파라미터 중 노출 4종)
-export type DomeggookSortKey = 'ha' | 'rd' | 'aa' | 'da' | 'ad'; // ad = 슬라이더 상한 측정 전용 (칩 미노출)
+export type DomeggookSortKey = 'ha' | 'rd' | 'aa' | 'da' | 'ad';
 
 export const DOMEGGOOK_SORTS: { key: DomeggookSortKey; label: string }[] = [
   { key: 'ha', label: '인기순' },
-  { key: 'rd', label: '도매꾹랭킹' },
+  { key: 'ad', label: '높은 가격' },
   { key: 'aa', label: '낮은 가격' },
   { key: 'da', label: '최신' },
 ];

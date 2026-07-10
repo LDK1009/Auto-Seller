@@ -278,19 +278,6 @@ export default function DomeggookSearchView() {
               </Button>
             </Stack>
 
-            {/* 정렬 칩 */}
-            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
-              {DOMEGGOOK_SORTS.map((entry) => (
-                <Chip
-                  key={entry.key}
-                  label={entry.label}
-                  color={sort === entry.key ? 'primary' : 'default'}
-                  variant={sort === entry.key ? 'filled' : 'outlined'}
-                  onClick={() => setSort(entry.key)}
-                />
-              ))}
-            </Stack>
-
             {/* 가격 범위 슬라이더 (검색 후 실측 상·하한) */}
             {hasSearched && priceBounds && (
               <Stack spacing={0.5} sx={{ px: 1 }}>
@@ -337,9 +324,24 @@ export default function DomeggookSearchView() {
         {/* 결과 */}
         {hasSearched && !isLoading && items.length > 0 && (
           <Stack spacing={1.5}>
-            <Typography variant="subtitle2">
-              {isBrowseAll(currentKeywordRef.current) ? 'BEST TOP 100' : `총 ${totalItems.toLocaleString()}개 상품`}
-            </Typography>
+            {/* 결과 헤더 — 좌 타이틀 · 우 정렬 칩 */}
+            <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+              <Typography variant="subtitle2">
+                {isBrowseAll(currentKeywordRef.current) ? 'BEST TOP 100' : `총 ${totalItems.toLocaleString()}개 상품`}
+              </Typography>
+              <Stack direction="row" spacing={0.75}>
+                {DOMEGGOOK_SORTS.map((entry) => (
+                  <Chip
+                    key={entry.key}
+                    size="small"
+                    label={entry.label}
+                    color={sort === entry.key ? 'primary' : 'default'}
+                    variant={sort === entry.key ? 'filled' : 'outlined'}
+                    onClick={() => setSort(entry.key)}
+                  />
+                ))}
+              </Stack>
+            </Stack>
             <CardGrid>
               {items.map((item) => (
                 <ProductCardItem key={`${item.no}-${page}`} item={item} onPick={handlePick} />
