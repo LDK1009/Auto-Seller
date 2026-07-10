@@ -391,7 +391,17 @@ export default function KeywordStatsView() {
         {/* ① 핵심 지표 카드 */}
         {hasResult && (
           <Stack spacing={1}>
-            <Typography variant="subtitle2">‘{currentKeyword}’ 분석 결과</Typography>
+            <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="subtitle2">‘{currentKeyword}’ 분석 결과</Typography>
+              {/* 소싱 브리지: 틈새 발견 → 도매꾹 상품 발굴 (클릭 1번) */}
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => router.push(`/domeggook-search?kw=${encodeURIComponent(currentKeyword)}`)}
+              >
+                도매꾹에서 찾기
+              </Button>
+            </Stack>
             <StatSummaryCards stat={stat} />
           </Stack>
         )}

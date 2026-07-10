@@ -14,6 +14,7 @@ import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
 import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
 import QueryStatsOutlinedIcon from '@mui/icons-material/QueryStatsOutlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
+import ManageSearchOutlinedIcon from '@mui/icons-material/ManageSearchOutlined';
 
 export type ToolGroupKey = 'sourcing' | 'image' | 'ops';
 
@@ -49,6 +50,13 @@ export const TOOLS: ToolInfo[] = [
     icon: <QueryStatsOutlinedIcon color="primary" fontSize="large" />,
     title: '키워드 분석',
     description: '월간 검색수 ÷ 등록 상품 수로 틈새 키워드 판정',
+    group: 'sourcing',
+  },
+  {
+    href: '/domeggook-search',
+    icon: <ManageSearchOutlinedIcon color="primary" fontSize="large" />,
+    title: '도매꾹 검색',
+    description: '링크 없이 검색으로 소싱 — 인기순·가격·낱개 필터로 후보 발굴',
     group: 'sourcing',
   },
   {

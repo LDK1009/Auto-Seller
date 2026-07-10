@@ -194,7 +194,7 @@ export default function DomeggookImportView() {
               fullWidth
               size="small"
               label="도매꾹 상품 링크 또는 상품번호"
-              placeholder="https://domeggook.domeggook.com/s/12345678"
+              placeholder="https://domeggook.com/12345678"
               value={rawInput}
               onChange={(event) => setRawInput(event.target.value)}
               onKeyDown={(event) => {
@@ -211,6 +211,13 @@ export default function DomeggookImportView() {
               조회
             </Button>
           </Stack>
+          {/* 링크가 없는 방문자 → 도매꾹 검색 (사이트 안 소싱) */}
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+            링크가 없다면?{' '}
+            <Link href="/domeggook-search" style={{ color: 'inherit', fontWeight: 600 }}>
+              도매꾹 검색으로 찾기 →
+            </Link>
+          </Typography>
         </Paper>
 
         {/* 오류 */}
