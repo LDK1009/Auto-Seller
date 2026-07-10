@@ -208,7 +208,7 @@ const SidebarBox = styled('aside', transientOptions)<{ $isCollapsed: boolean }>(
   width: $isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH,
   flexShrink: 0,
   borderRight: `1px solid ${theme.palette.divider}`,
-  backgroundColor: '#FCFCFC', // 페이지 배경(#FAFAFA)보다 반 단계 옅게 — 되돌리기: theme.palette.background.default
+  backgroundColor: theme.palette.background.default,
   transition: 'width 0.2s ease',
   [theme.breakpoints.down('md')]: {
     display: 'none',

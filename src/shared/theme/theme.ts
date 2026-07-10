@@ -44,7 +44,7 @@ function createAppTheme() {
       },
       // Toss 서피스 체계: 은은한 회색 페이지 위에 흰 카드 (기존의 역전)
       background: {
-        default: '#FCFCFC', // 페이지 배경 (시험: 반 단계 옅게 — 원복 #FAFAFA)
+        default: '#FCFCFC', // 페이지 배경 (07-10 확정: 기존 #FAFAFA에서 반 단계 옅게)
         paper: '#FFFFFF', // 카드·모달
       },
       // Toss 텍스트 3위계
