@@ -158,8 +158,11 @@ export default function DomeggookSearchView() {
     }
   };
 
-  ////////// 더보기 (append)
+  ////////// 더보기 (append) — 스크롤로 버튼이 보이면 자동 실행
+  const isLoadingMoreRef = useRef(false);
   const loadMore = async () => {
+    if (isLoadingMoreRef.current) return; // 옵저버 중복 발화 가드
+    isLoadingMoreRef.current = true;
     setIsLoadingMore(true);
     try {
       const response = await fetchDomeggookSearch(buildParams(page + 1));
@@ -169,9 +172,26 @@ export default function DomeggookSearchView() {
       console.error(error);
       enqueueSnackbar(error instanceof Error ? error.message : '추가 로드에 실패했습니다.', { variant: 'error' });
     } finally {
+      isLoadingMoreRef.current = false;
       setIsLoadingMore(false);
     }
   };
+
+  ////////// 더보기 버튼 가시 감지 → 자동 더보기 (무한 스크롤)
+  const loadMoreAnchorRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    const anchor = loadMoreAnchorRef.current;
+    if (!anchor) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadMore();
+      },
+      { rootMargin: '200px' }, // 버튼 도달 200px 전 선로드
+    );
+    observer.observe(anchor);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length, page, totalPages]);
 
   ////////// 검색 트리거 — URL만 변경 (실행은 searchParams 이펙트)
   const navigateToKeyword = (rawKeyword: string) => {
@@ -326,6 +346,7 @@ export default function DomeggookSearchView() {
             </CardGrid>
             {canLoadMore && (
               <Button
+                ref={loadMoreAnchorRef}
                 variant="outlined"
                 onClick={loadMore}
                 disabled={isLoadingMore}
