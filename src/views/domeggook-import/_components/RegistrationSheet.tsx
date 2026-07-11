@@ -2,6 +2,7 @@
 
 //////////////////////////////////////// 등록 정보 시트 (등록 준비 패키지) ////////////////////////////////////////
 // 스마트스토어 등록 폼에 그대로 붙여넣을 정보를 자동 조합한다 — API 없이 등록 노동의 마지막 구간을 복붙으로.
+// 섹션 순서 = 스마트스토어 등록 화면 순서 (①카테고리 → ⑭상품코드) — 위에서 아래로 그대로 옮기면 끝.
 // - 판매가: 도매꾹가 × 구매단위(MOQ) 원가로 역산 (shared/utils/marginCalculation 재사용)
 // - MOQ ≥ 2: 묶음(1+1 등) 구성 판매 안내 — 고객 1주문 = 도매꾹 MOQ 구매이므로 원가에 반영
 // - A/S 정보: 셀러 고정값 (localStorage — useSellerFixedInfo)
@@ -40,7 +41,7 @@ const CHECK_CHIP_COLORS: Record<NameCheckLevel, 'success' | 'warning' | 'error'>
   fail: 'error',
 };
 
-// 구매/리뷰 혜택 권장 프리셋 (초보 표준 세팅 — 등록 UI ⑧구간의 결정 부담 제거)
+// 구매/리뷰 혜택 권장 프리셋 (초보 표준 세팅 — 등록 UI 혜택 구간의 결정 부담 제거)
 const BENEFIT_PRESET_LINES = [
   '텍스트 리뷰 적립: 50원',
   '포토/동영상 리뷰 적립: 150원',
@@ -67,7 +68,7 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [categoryCandidates, setCategoryCandidates] = useState<CategoryCandidate[] | null>(null); // null = 미조회
   const [isLoadingCategory, setIsLoadingCategory] = useState(false);
-  const [marketDetail, setMarketDetail] = useState<KeywordDetail | null>(null); // 시장 분석 (⑬)
+  const [marketDetail, setMarketDetail] = useState<KeywordDetail | null>(null); // 시장 분석
   const [isLoadingMarket, setIsLoadingMarket] = useState(false);
 
   const nameChecks = validateProductName(productName);
@@ -154,7 +155,7 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
     }
   };
 
-  ////////// 시장 분석 (⑬ — 대표 태그 키워드의 가격대·브랜드·시즌을 시트에 이식)
+  ////////// 시장 분석 (대표 태그 키워드의 가격대·브랜드·시즌을 시트에 이식)
   const handleLoadMarket = async () => {
     const seedKeyword = tagCandidates[0];
     if (!seedKeyword) return;
@@ -206,26 +207,27 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
     enqueueSnackbar(`${label}을(를) 복사했습니다.`, { variant: 'success' });
   };
 
+  // 전체 복사도 시트(=스마트스토어 폼) 순서 그대로
   const copyAll = async () => {
     const lines = [
+      item.categoryPath && `도매꾹 카테고리(참고): ${item.categoryPath}`,
       `상품명: ${productName}`,
       recommendedPrice !== null &&
         `판매가: ${recommendedPrice}${bundleUnits > 1 ? ` (${bundleUnits}개 묶음 기준)` : ''}`,
       listPrice !== null && `정가(할인 표시용): ${listPrice} (−${discountRate}% → ${recommendedPrice})`,
-      `판매자 상품코드: DG-${item.no}`,
-      tagCandidates.length > 0 && `태그 후보: ${tagCandidates.join(',')}`,
-      `배송비: ${shippingFee}${item.delivery.feeType ? ` (${item.delivery.feeType})` : ''}`,
-      item.returnInfo.fee !== null && `반품비: ${item.returnInfo.fee} / 교환비: ${exchangeFee}`,
       bundleStock !== null && `재고: ${bundleStock}${bundleUnits > 1 ? ` (묶음 기준, 낱개 ${item.inventory})` : ''}`,
+      optionsTsv && `옵션 (옵션명/가산가/재고${bundleUnits > 1 ? ' — 묶음 기준' : ''}):\n${optionsTsv}`,
       taxLabel && `과세 구분: ${taxLabel}`,
       item.origin && `원산지: ${item.origin}`,
       item.manufacturer && `제조사: ${item.manufacturer}`,
       item.model && `모델명: ${item.model}`,
       infoDutyText && `상품정보제공고시:\n${infoDutyText}`,
-      item.categoryPath && `도매꾹 카테고리(참고): ${item.categoryPath}`,
-      optionsTsv && `옵션 (옵션명/가산가/재고${bundleUnits > 1 ? ' — 묶음 기준' : ''}):\n${optionsTsv}`,
+      `배송비: ${shippingFee}${item.delivery.feeType ? ` (${item.delivery.feeType})` : ''}`,
+      item.returnInfo.fee !== null && `반품비: ${item.returnInfo.fee} / 교환비: ${exchangeFee}`,
       fixedInfo.afterServicePhone && `A/S 전화번호: ${fixedInfo.afterServicePhone}`,
       fixedInfo.afterServiceGuide && `A/S 안내: ${fixedInfo.afterServiceGuide}`,
+      tagCandidates.length > 0 && `태그 후보: ${tagCandidates.join(',')}`,
+      `판매자 상품코드: DG-${item.no}`,
     ]
       .filter(Boolean)
       .join('\n');
@@ -241,7 +243,7 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
         </Button>
       </Stack>
       <Typography variant="body2" color="text.secondary">
-        스마트스토어 등록 화면에 항목별로 붙여넣으세요. 남은 건 카테고리 선택과 등록 버튼뿐입니다.
+        스마트스토어 등록 화면과 같은 순서입니다 — 두 화면을 나란히 두고 위에서 아래로 붙여넣으세요.
       </Typography>
 
       {/* 인증·인허가 지뢰 경고 */}
@@ -260,8 +262,55 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
         </Alert>
       )}
 
-      {/* 상품명 + 검사기 */}
+      {/* ① 카테고리 */}
       <Stack spacing={1}>
+        <Typography variant="subtitle2">① 카테고리</Typography>
+        <SheetRow
+          label="도매꾹 카테고리 (참고)"
+          value={item.categoryPath ?? '—'}
+          caption="스마트스토어 카테고리는 등록 화면에서 가장 가까운 항목을 선택하세요"
+          onCopy={item.categoryPath ? () => copyText('카테고리', item.categoryPath as string) : undefined}
+        />
+        {/* 스스 카테고리 후보 — 네이버쇼핑 상위 상품들의 카테고리 최빈값 */}
+        <Stack spacing={1} sx={{ px: 1.5, py: 0.5 }}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+            <Typography variant="body2" color="text.secondary" sx={{ width: 150, flexShrink: 0 }}>
+              스스 카테고리 후보
+            </Typography>
+            <Button size="small" onClick={handleLoadCategorySuggest} disabled={isLoadingCategory}>
+              {isLoadingCategory ? '조회 중…' : categoryCandidates === null ? '후보 확인' : '다시 확인'}
+            </Button>
+          </Stack>
+          {categoryCandidates !== null && categoryCandidates.length > 0 && (
+            <Stack spacing={0.5} sx={{ pl: '162px' }}>
+              {categoryCandidates.map((candidate, index) => (
+                <Stack key={candidate.path} direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                  <Typography variant="body2" sx={{ fontWeight: index === 0 ? 700 : 500 }}>
+                    {candidate.path}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    (상위 {candidate.sampleSize}개 중 {candidate.count}개)
+                  </Typography>
+                  <CopyButton
+                    aria-label="카테고리 후보 복사"
+                    onClick={() => copyText('스스 카테고리', candidate.path)}
+                  >
+                    <ContentCopyIcon fontSize="small" />
+                  </CopyButton>
+                </Stack>
+              ))}
+              <Typography variant="caption" color="text.secondary">
+                같은 키워드 상위 상품들이 실제로 등록된 카테고리입니다 — 1순위 후보를 등록 화면에서
+                검색해 선택하세요.
+              </Typography>
+            </Stack>
+          )}
+        </Stack>
+      </Stack>
+
+      {/* ② 상품명 + 검사기 */}
+      <Stack spacing={1}>
+        <Typography variant="subtitle2">② 상품명</Typography>
         <FieldRow>
           <TextField
             fullWidth
@@ -288,50 +337,11 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
         </Stack>
       </Stack>
 
-      {/* 태그 후보 — 공급사 키워드 + 상품명 추출 */}
-      {tagCandidates.length > 0 && (
-        <Stack spacing={1}>
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="subtitle2">태그 후보 {tagCandidates.length}개</Typography>
-            <Stack direction="row" spacing={1}>
-              <Button size="small" onClick={handleLoadTagStats} disabled={isLoadingStats}>
-                {isLoadingStats ? '조회 중…' : '검색량 확인'}
-              </Button>
-              <Button
-                size="small"
-                startIcon={<ContentCopyIcon />}
-                onClick={() => copyText('태그', tagCandidates.join(','))}
-              >
-                태그 복사
-              </Button>
-            </Stack>
-          </Stack>
-          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
-            {tagCandidates.map((tag) => {
-              const stat = tagStats?.get(tag.replace(/\s+/g, ''));
-              const label = stat
-                ? `#${tag} · ${stat.isLowVolume ? '<10' : (stat.monthlySearches ?? '—').toLocaleString()}회${
-                    stat.ratio !== null ? ` · 경쟁 ${stat.ratio}` : ''
-                  }`
-                : `#${tag}`;
-              const color =
-                stat && stat.ratio !== null ? (stat.ratio < 1 ? 'success' : stat.ratio <= 5 ? 'warning' : 'error') : 'default';
-              return <Chip key={tag} size="small" variant="outlined" color={color} label={label} />;
-            })}
-          </Stack>
-          <Typography variant="caption" color="text.secondary">
-            공급사 등록 키워드 + 상품명에서 추출했습니다. [검색량 확인]을 누르면 월간 검색수와
-            경쟁강도(상품수÷검색수 — 낮을수록 틈새)가 붙습니다. 제한 태그 여부는 등록 화면에서 최종
-            확인됩니다.
-          </Typography>
-        </Stack>
-      )}
-
-      {/* 판매가 — 목표 마진 역산 */}
+      {/* ③ 판매가 — 목표 마진 역산 */}
       <PriceBox>
         <Stack spacing={1.5}>
           <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'center' }} useFlexGap>
-            <Typography variant="subtitle2">추천 판매가</Typography>
+            <Typography variant="subtitle2">③ 판매가 — 추천가</Typography>
             {TARGET_MARGIN_PRESETS.map((rate) => (
               <Chip
                 key={rate}
@@ -395,7 +405,7 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
               {reverseResult.achievable === false ? reverseResult.reason : '가격 정보를 불러오지 못했습니다.'}
             </Alert>
           )}
-          {/* ⑬ 시장 가격 비교 — 대표 태그 키워드 기준 */}
+          {/* 시장 가격 비교 — 대표 태그 키워드 기준 */}
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
             <Button size="small" onClick={handleLoadMarket} disabled={isLoadingMarket || tagCandidates.length === 0}>
               {isLoadingMarket ? '분석 중…' : marketDetail === null ? '시장 가격 비교' : '다시 분석'}
@@ -440,115 +450,36 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
         </Stack>
       </PriceBox>
 
-      <Divider />
-
-      {/* 자동 채움 필드들 */}
+      {/* ④ 재고수량 */}
       <Stack spacing={1}>
-        <SheetRow
-          label="배송비"
-          value={shippingFee > 0 ? KRW(shippingFee) : item.delivery.feeType ?? '—'}
-          caption={[item.delivery.feeType, item.delivery.pay, item.delivery.jejuExtra !== null && `제주 +${KRW(item.delivery.jejuExtra)}`]
-            .filter(Boolean)
-            .join(' · ')}
-          onCopy={() => copyText('배송비', String(shippingFee))}
-        />
-        <SheetRow
-          label="반품 / 교환비"
-          value={
-            item.returnInfo.fee !== null ? `${KRW(item.returnInfo.fee)} / ${exchangeFee !== null ? KRW(exchangeFee) : '—'}` : '—'
-          }
-          onCopy={item.returnInfo.fee !== null ? () => copyText('반품비', String(item.returnInfo.fee)) : undefined}
-        />
+        <Typography variant="subtitle2">④ 재고수량</Typography>
         <SheetRow
           label="재고 수량"
           value={bundleStock !== null ? `${bundleStock.toLocaleString()}개` : '—'}
           caption={bundleUnits > 1 && item.inventory !== null ? `묶음 기준 (낱개 ${item.inventory.toLocaleString()}개)` : undefined}
           onCopy={bundleStock !== null ? () => copyText('재고 수량', String(bundleStock)) : undefined}
         />
-        <SheetRow label="과세 구분" value={taxLabel ?? '—'} onCopy={taxLabel ? () => copyText('과세 구분', taxLabel) : undefined} />
-        <SheetRow label="원산지" value={item.origin ?? '—'} onCopy={item.origin ? () => copyText('원산지', item.origin as string) : undefined} />
-        <SheetRow
-          label="제조사 / 모델명"
-          value={[item.manufacturer, item.model].filter(Boolean).join(' / ') || '—'}
-          onCopy={
-            item.manufacturer || item.model
-              ? () => copyText('제조사/모델명', [item.manufacturer, item.model].filter(Boolean).join(' / '))
-              : undefined
-          }
-        />
-        <SheetRow
-          label="상품정보제공고시"
-          value={item.infoDuty.type ?? '—'}
-          caption={item.infoDuty.items.map((entry) => `${entry.name}: ${entry.desc}`).join(' · ') || undefined}
-          onCopy={infoDutyText ? () => copyText('상품정보제공고시', infoDutyText) : undefined}
-        />
-        <SheetRow
-          label="도매꾹 카테고리 (참고)"
-          value={item.categoryPath ?? '—'}
-          caption="스마트스토어 카테고리는 등록 화면에서 가장 가까운 항목을 선택하세요"
-          onCopy={item.categoryPath ? () => copyText('카테고리', item.categoryPath as string) : undefined}
-        />
-
-        {/* 스스 카테고리 후보 — 네이버쇼핑 상위 상품들의 카테고리 최빈값 */}
-        <Stack spacing={1} sx={{ px: 1.5, py: 0.5 }}>
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            <Typography variant="body2" color="text.secondary" sx={{ width: 150, flexShrink: 0 }}>
-              스스 카테고리 후보
-            </Typography>
-            <Button size="small" onClick={handleLoadCategorySuggest} disabled={isLoadingCategory}>
-              {isLoadingCategory ? '조회 중…' : categoryCandidates === null ? '후보 확인' : '다시 확인'}
-            </Button>
-          </Stack>
-          {categoryCandidates !== null && categoryCandidates.length > 0 && (
-            <Stack spacing={0.5} sx={{ pl: '162px' }}>
-              {categoryCandidates.map((candidate, index) => (
-                <Stack key={candidate.path} direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                  <Typography variant="body2" sx={{ fontWeight: index === 0 ? 700 : 500 }}>
-                    {candidate.path}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    (상위 {candidate.sampleSize}개 중 {candidate.count}개)
-                  </Typography>
-                  <CopyButton
-                    aria-label="카테고리 후보 복사"
-                    onClick={() => copyText('스스 카테고리', candidate.path)}
-                  >
-                    <ContentCopyIcon fontSize="small" />
-                  </CopyButton>
-                </Stack>
-              ))}
-              <Typography variant="caption" color="text.secondary">
-                같은 키워드 상위 상품들이 실제로 등록된 카테고리입니다 — 1순위 후보를 등록 화면에서
-                검색해 선택하세요.
-              </Typography>
-            </Stack>
-          )}
-        </Stack>
-        <SheetRow
-          label="판매자 상품코드 (권장)"
-          value={`DG-${item.no}`}
-          caption="도매꾹 상품번호 — 주문이 들어오면 이 코드로 도매꾹에서 바로 찾아 발주할 수 있습니다"
-          onCopy={() => copyText('판매자 상품코드', `DG-${item.no}`)}
-        />
       </Stack>
 
-      {/* 옵션 조합 — 스스 옵션 폼에 옮겨 치던 노가다 대체 */}
-      {bundledOptions.length > 0 && (
-        <>
-          <Divider />
-          <Stack spacing={1}>
-            <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography variant="subtitle2">
-                옵션 {bundledOptions.length}개{bundleUnits > 1 && ' (가산가·재고 = 묶음 기준)'}
-              </Typography>
-              <Button
-                size="small"
-                startIcon={<ContentCopyIcon />}
-                onClick={() => copyText('옵션 표', optionsTsv)}
-              >
-                옵션 표 복사
-              </Button>
-            </Stack>
+      {/* ⑤ 옵션 — 스스 옵션 폼에 옮겨 치던 노가다 대체 */}
+      <Stack spacing={1}>
+        <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="subtitle2">
+            ⑤ 옵션{bundledOptions.length > 0 && ` ${bundledOptions.length}개`}
+            {bundledOptions.length > 0 && bundleUnits > 1 && ' (가산가·재고 = 묶음 기준)'}
+          </Typography>
+          {bundledOptions.length > 0 && (
+            <Button
+              size="small"
+              startIcon={<ContentCopyIcon />}
+              onClick={() => copyText('옵션 표', optionsTsv)}
+            >
+              옵션 표 복사
+            </Button>
+          )}
+        </Stack>
+        {bundledOptions.length > 0 ? (
+          <>
             <OptionHeader>
               <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>옵션명</Typography>
               <Typography variant="caption" color="text.secondary" sx={{ width: 90, textAlign: 'right' }}>가산가</Typography>
@@ -572,40 +503,80 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
             <Typography variant="caption" color="text.secondary">
               복사하면 탭 구분 텍스트로 들어가 엑셀·일괄등록 양식에 그대로 붙습니다.
             </Typography>
-          </Stack>
-        </>
-      )}
+          </>
+        ) : (
+          <Typography variant="caption" color="text.secondary" sx={{ px: 1.5 }}>
+            옵션 없는 단일 상품입니다 — 등록 화면에서 옵션 &quot;설정 안 함&quot;을 선택하세요.
+          </Typography>
+        )}
+      </Stack>
 
-      {/* 구매/리뷰 혜택 권장 프리셋 */}
-      <Stack spacing={1}>
-        <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="subtitle2">구매/리뷰 혜택 — 초보 권장 세팅</Typography>
-          <Button
-            size="small"
-            startIcon={<ContentCopyIcon />}
-            onClick={() => copyText('혜택 세팅', BENEFIT_PRESET_LINES.join('\n'))}
-          >
-            복사
-          </Button>
-        </Stack>
-        <PresetBox>
-          {BENEFIT_PRESET_LINES.map((line) => (
-            <Typography key={line} variant="body2">
-              · {line}
-            </Typography>
-          ))}
-        </PresetBox>
-        <Typography variant="caption" color="text.secondary">
-          리뷰 적립은 초기 리뷰 확보 비용 중 가장 싼 투자입니다. 리뷰가 쌓이기 전까지는 다른 혜택은 켜지
-          않는 것을 권장합니다.
+      {/* ⑥ 상품이미지 · 상세설명 — 위 이미지 단계에서 처리 */}
+      <Stack spacing={0.5}>
+        <Typography variant="subtitle2">⑥ 상품이미지 · 상세설명</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ px: 1.5 }}>
+          위 이미지 선택 단계에서 내려받은 파일을 업로드하세요 — 대표이미지 1장 + 추가이미지, 상세설명은
+          상세 이미지들을 에디터에 순서대로 넣으면 됩니다.
         </Typography>
       </Stack>
 
       <Divider />
 
-      {/* A/S 고정값 — 1회 입력 후 브라우저에 저장 */}
+      {/* ⑦ 상품 주요정보 */}
+      <Stack spacing={1}>
+        <Typography variant="subtitle2">⑦ 상품 주요정보</Typography>
+        <SheetRow
+          label="제조사 / 모델명"
+          value={[item.manufacturer, item.model].filter(Boolean).join(' / ') || '—'}
+          onCopy={
+            item.manufacturer || item.model
+              ? () => copyText('제조사/모델명', [item.manufacturer, item.model].filter(Boolean).join(' / '))
+              : undefined
+          }
+        />
+        <SheetRow label="원산지" value={item.origin ?? '—'} onCopy={item.origin ? () => copyText('원산지', item.origin as string) : undefined} />
+        <SheetRow label="과세 구분" value={taxLabel ?? '—'} onCopy={taxLabel ? () => copyText('과세 구분', taxLabel) : undefined} />
+      </Stack>
+
+      {/* ⑧ 상품정보제공고시 */}
+      <Stack spacing={1}>
+        <Typography variant="subtitle2">⑧ 상품정보제공고시</Typography>
+        <SheetRow
+          label="상품정보제공고시"
+          value={item.infoDuty.type ?? '—'}
+          caption={item.infoDuty.items.map((entry) => `${entry.name}: ${entry.desc}`).join(' · ') || undefined}
+          onCopy={infoDutyText ? () => copyText('상품정보제공고시', infoDutyText) : undefined}
+        />
+      </Stack>
+
+      {/* ⑨ 배송 */}
+      <Stack spacing={1}>
+        <Typography variant="subtitle2">⑨ 배송</Typography>
+        <SheetRow
+          label="배송비"
+          value={shippingFee > 0 ? KRW(shippingFee) : item.delivery.feeType ?? '—'}
+          caption={[item.delivery.feeType, item.delivery.pay, item.delivery.jejuExtra !== null && `제주 +${KRW(item.delivery.jejuExtra)}`]
+            .filter(Boolean)
+            .join(' · ')}
+          onCopy={() => copyText('배송비', String(shippingFee))}
+        />
+      </Stack>
+
+      {/* ⑩ 반품/교환 */}
+      <Stack spacing={1}>
+        <Typography variant="subtitle2">⑩ 반품/교환</Typography>
+        <SheetRow
+          label="반품 / 교환비"
+          value={
+            item.returnInfo.fee !== null ? `${KRW(item.returnInfo.fee)} / ${exchangeFee !== null ? KRW(exchangeFee) : '—'}` : '—'
+          }
+          onCopy={item.returnInfo.fee !== null ? () => copyText('반품비', String(item.returnInfo.fee)) : undefined}
+        />
+      </Stack>
+
+      {/* ⑪ A/S — 셀러 고정값, 1회 입력 후 브라우저에 저장 */}
       <Stack spacing={1.5}>
-        <Typography variant="subtitle2">A/S 정보 (한 번 입력하면 이 브라우저에 저장됩니다)</Typography>
+        <Typography variant="subtitle2">⑪ A/S 정보 (한 번 입력하면 이 브라우저에 저장됩니다)</Typography>
         <FieldRow>
           <TextField
             fullWidth
@@ -641,6 +612,83 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
             <ContentCopyIcon fontSize="small" />
           </CopyButton>
         </FieldRow>
+      </Stack>
+
+      <Divider />
+
+      {/* ⑫ 구매/리뷰 혜택 권장 프리셋 */}
+      <Stack spacing={1}>
+        <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="subtitle2">⑫ 구매/리뷰 혜택 — 초보 권장 세팅</Typography>
+          <Button
+            size="small"
+            startIcon={<ContentCopyIcon />}
+            onClick={() => copyText('혜택 세팅', BENEFIT_PRESET_LINES.join('\n'))}
+          >
+            복사
+          </Button>
+        </Stack>
+        <PresetBox>
+          {BENEFIT_PRESET_LINES.map((line) => (
+            <Typography key={line} variant="body2">
+              · {line}
+            </Typography>
+          ))}
+        </PresetBox>
+        <Typography variant="caption" color="text.secondary">
+          리뷰 적립은 초기 리뷰 확보 비용 중 가장 싼 투자입니다. 리뷰가 쌓이기 전까지는 다른 혜택은 켜지
+          않는 것을 권장합니다.
+        </Typography>
+      </Stack>
+
+      {/* ⑬ 검색설정 — 태그 후보 (공급사 키워드 + 상품명 추출) */}
+      {tagCandidates.length > 0 && (
+        <Stack spacing={1}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="subtitle2">⑬ 검색설정 — 태그 후보 {tagCandidates.length}개</Typography>
+            <Stack direction="row" spacing={1}>
+              <Button size="small" onClick={handleLoadTagStats} disabled={isLoadingStats}>
+                {isLoadingStats ? '조회 중…' : '검색량 확인'}
+              </Button>
+              <Button
+                size="small"
+                startIcon={<ContentCopyIcon />}
+                onClick={() => copyText('태그', tagCandidates.join(','))}
+              >
+                태그 복사
+              </Button>
+            </Stack>
+          </Stack>
+          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+            {tagCandidates.map((tag) => {
+              const stat = tagStats?.get(tag.replace(/\s+/g, ''));
+              const label = stat
+                ? `#${tag} · ${stat.isLowVolume ? '<10' : (stat.monthlySearches ?? '—').toLocaleString()}회${
+                    stat.ratio !== null ? ` · 경쟁 ${stat.ratio}` : ''
+                  }`
+                : `#${tag}`;
+              const color =
+                stat && stat.ratio !== null ? (stat.ratio < 1 ? 'success' : stat.ratio <= 5 ? 'warning' : 'error') : 'default';
+              return <Chip key={tag} size="small" variant="outlined" color={color} label={label} />;
+            })}
+          </Stack>
+          <Typography variant="caption" color="text.secondary">
+            공급사 등록 키워드 + 상품명에서 추출했습니다. [검색량 확인]을 누르면 월간 검색수와
+            경쟁강도(상품수÷검색수 — 낮을수록 틈새)가 붙습니다. 제한 태그 여부는 등록 화면에서 최종
+            확인됩니다.
+          </Typography>
+        </Stack>
+      )}
+
+      {/* ⑭ 판매자 상품코드 */}
+      <Stack spacing={1}>
+        <Typography variant="subtitle2">⑭ 판매자 상품코드</Typography>
+        <SheetRow
+          label="판매자 상품코드 (권장)"
+          value={`DG-${item.no}`}
+          caption="도매꾹 상품번호 — 주문이 들어오면 이 코드로 도매꾹에서 바로 찾아 발주할 수 있습니다"
+          onCopy={() => copyText('판매자 상품코드', `DG-${item.no}`)}
+        />
       </Stack>
     </Stack>
   );
