@@ -12,6 +12,7 @@ import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
+import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import Link from '@mui/material/Link';
@@ -233,35 +234,95 @@ export default function DomeggookImportView() {
               다른 상품 찾기
             </Button>
 
-            {/* 상품 요약 카드 — 썸네일 + 핵심 숫자 크게 */}
+            {/* 상품 요약 카드 — 좌(4) 상품 이미지 / 우(6) 상품명·가격·조건 */}
             <Paper variant="outlined" sx={{ p: 3 }}>
               <Stack spacing={2}>
-                <Stack direction="row" spacing={2}>
-                  {item.images[0] && <SummaryThumb src={item.images[0].proxyUrl} alt="" />}
-                  <Stack spacing={0.75} sx={{ flex: 1, minWidth: 0 }}>
+                <SummarySplit>
+                  {/* 좌 4: 상품 이미지 */}
+                  <SummaryImageBox>
+                    {item.images[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={item.images[0].proxyUrl} alt={item.title} />
+                    ) : (
+                      <Typography variant="caption" color="text.secondary">
+                        이미지 없음
+                      </Typography>
+                    )}
+                  </SummaryImageBox>
+
+                  {/* 우 6: 상품명 → [가격·최소구매] → [이미지·사용 허용 여부] */}
+                  <Stack spacing={2} sx={{ flex: 6, minWidth: 0 }}>
                     <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.35 }}>
                       {item.title}
                     </Typography>
-                    <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline', flexWrap: 'wrap' }} useFlexGap>
-                      {item.domePrice !== null && (
+
+                    <Stack direction="row" spacing={4} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                      <Stack spacing={0.25}>
+                        <Typography variant="caption" color="text.secondary">
+                          도매꾹가
+                        </Typography>
                         <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                          {item.domePrice.toLocaleString()}
+                          {item.domePrice !== null ? (
+                            <>
+                              {item.domePrice.toLocaleString()}
+                              <Typography component="span" variant="body2" color="text.secondary">
+                                원
+                              </Typography>
+                            </>
+                          ) : (
+                            '—'
+                          )}
+                        </Typography>
+                      </Stack>
+                      <Stack spacing={0.25}>
+                        <Typography variant="caption" color="text.secondary">
+                          최소구매
+                        </Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                          {Math.max(item.moq, 1)}
                           <Typography component="span" variant="body2" color="text.secondary">
-                            원
+                            개
                           </Typography>
                         </Typography>
-                      )}
-                      <Typography variant="body2" color="text.secondary">
-                        최소구매 {Math.max(item.moq, 1)}개 · 이미지 {item.images.length}장 ·{' '}
-                        <Link href={item.itemUrl} target="_blank" rel="noopener noreferrer">
-                          도매꾹에서 보기
-                        </Link>
-                      </Typography>
+                      </Stack>
                     </Stack>
-                  </Stack>
-                </Stack>
 
-                {/* 사용 조건 고지 (비차단 — usable=false만 아래 섹션 차단) */}
+                    <Stack direction="row" spacing={4} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                      <Stack spacing={0.25}>
+                        <Typography variant="caption" color="text.secondary">
+                          이미지
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                          {item.images.length}장
+                        </Typography>
+                      </Stack>
+                      <Stack spacing={0.25}>
+                        <Typography variant="caption" color="text.secondary">
+                          공급사 이미지 사용
+                        </Typography>
+                        <Chip
+                          size="small"
+                          color={item.license.usable ? 'success' : 'error'}
+                          variant="outlined"
+                          label={item.license.usable ? '허용' : '사용 불가'}
+                          sx={{ alignSelf: 'flex-start' }}
+                        />
+                      </Stack>
+                    </Stack>
+
+                    <Link
+                      href={item.itemUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      variant="body2"
+                      sx={{ alignSelf: 'flex-start' }}
+                    >
+                      도매꾹에서 보기 →
+                    </Link>
+                  </Stack>
+                </SummarySplit>
+
+                {/* 사용 조건 문구 고지 (비차단 — usable=false만 아래 섹션 차단) */}
                 <LicenseGate license={item.license} itemUrl={item.itemUrl} />
               </Stack>
             </Paper>
@@ -337,11 +398,29 @@ const ActionRow = styled.div(({ theme }) => ({
   flexWrap: 'wrap',
 }));
 
-const SummaryThumb = styled.img(({ theme }) => ({
-  width: 96,
-  height: 96,
-  flexShrink: 0,
-  objectFit: 'cover',
+const SummarySplit = styled.div(({ theme }) => ({
+  display: 'flex',
+  gap: theme.spacing(3),
+  [theme.breakpoints.down('sm')]: {
+    flexDirection: 'column',
+  },
+}));
+
+const SummaryImageBox = styled.div(({ theme }) => ({
+  flex: 4,
+  minWidth: 0,
+  alignSelf: 'flex-start',
+  aspectRatio: '1 / 1',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  overflow: 'hidden',
   borderRadius: theme.shape.borderRadius,
   border: `1px solid ${theme.palette.divider}`,
+  backgroundColor: theme.palette.background.default,
+  '& img': {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  },
 }));
