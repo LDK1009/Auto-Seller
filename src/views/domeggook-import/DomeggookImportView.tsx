@@ -271,6 +271,7 @@ export default function DomeggookImportView() {
             {/* 상품 요약 카드 — 좌(4) 상품 이미지 / 우(6) 상품명·가격·조건 */}
             <Paper variant="outlined" sx={{ p: 3 }}>
               <Stack spacing={2}>
+                <Typography variant="h6">상품 정보</Typography>
                 <SummarySplit>
                   {/* 좌 4: 상품 이미지 (클릭 = 자세히 보기) */}
                   <SummaryImageBox
