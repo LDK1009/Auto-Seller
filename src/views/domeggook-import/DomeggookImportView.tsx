@@ -13,6 +13,7 @@ import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import Chip from '@mui/material/Chip';
+import Dialog from '@mui/material/Dialog';
 import CircularProgress from '@mui/material/CircularProgress';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
@@ -23,6 +24,7 @@ import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
 import { useImageHandoffStore } from '@/shared/store/imageHandoffStore';
 import { trackEvent } from '@/shared/utils/analytics';
+import { transientOptions } from '@/shared/utils/emotionTransientProps';
 import { downloadDomeggookImages } from '@/shared/services/domeggookItemService';
 import { useDomeggookItem } from './_hooks/useDomeggookItem';
 import { classifyDomeggookInput, parseDomeggookProductNo } from './_utils/parseDomeggookUrl';
@@ -59,6 +61,9 @@ export default function DomeggookImportView() {
   // 순수 UI 상태
   const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
   const [downloadProgress, setDownloadProgress] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null); // 이미지 자세히 보기 모달
+
+  const detailImages = item ? item.images.filter((image) => image.kind === 'detail') : [];
 
   ////////// 조회 (성공 시 기본 선택 = 대표이미지만)
   const handleLookup = async (input: string) => {
@@ -236,8 +241,11 @@ export default function DomeggookImportView() {
             <Paper variant="outlined" sx={{ p: 3 }}>
               <Stack spacing={2}>
                 <SummarySplit>
-                  {/* 좌 4: 상품 이미지 */}
-                  <SummaryImageBox>
+                  {/* 좌 4: 상품 이미지 (클릭 = 자세히 보기) */}
+                  <SummaryImageBox
+                    onClick={() => item.images[0] && setPreviewUrl(item.images[0].proxyUrl)}
+                    $isClickable={Boolean(item.images[0])}
+                  >
                     {item.images[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={item.images[0].proxyUrl} alt={item.title} />
@@ -308,6 +316,22 @@ export default function DomeggookImportView() {
                       </Stack>
                     </Stack>
 
+                    {/* 상세이미지 스트립 — 클릭 = 자세히 보기 */}
+                    {detailImages.length > 0 && (
+                      <Stack spacing={0.5}>
+                        <Typography variant="caption" color="text.secondary">
+                          상세이미지 {detailImages.length}장
+                        </Typography>
+                        <DetailStrip>
+                          {detailImages.map((image) => (
+                            <DetailThumb key={image.url} type="button" onClick={() => setPreviewUrl(image.proxyUrl)}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={image.proxyUrl} alt="" loading="lazy" />
+                            </DetailThumb>
+                          ))}
+                        </DetailStrip>
+                      </Stack>
+                    )}
                   </Stack>
                 </SummarySplit>
 
@@ -375,6 +399,14 @@ export default function DomeggookImportView() {
           </>
         )}
       </Stack>
+
+      {/* 이미지 자세히 보기 모달 (대표·상세 공용) */}
+      <Dialog open={previewUrl !== null} onClose={() => setPreviewUrl(null)} maxWidth={false}>
+        {previewUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <PreviewImage src={previewUrl} alt="이미지 자세히 보기" onClick={() => setPreviewUrl(null)} />
+        )}
+      </Dialog>
     </PageLayout>
   );
 }
@@ -395,7 +427,7 @@ const SummarySplit = styled.div(({ theme }) => ({
   },
 }));
 
-const SummaryImageBox = styled.div(({ theme }) => ({
+const SummaryImageBox = styled('div', transientOptions)<{ $isClickable: boolean }>(({ theme, $isClickable }) => ({
   flex: 4,
   minWidth: 0,
   alignSelf: 'flex-start',
@@ -407,9 +439,53 @@ const SummaryImageBox = styled.div(({ theme }) => ({
   borderRadius: theme.shape.borderRadius,
   border: `1px solid ${theme.palette.divider}`,
   backgroundColor: theme.palette.background.default,
+  cursor: $isClickable ? 'zoom-in' : 'default',
   '& img': {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
   },
 }));
+
+const DetailStrip = styled.div(({ theme }) => ({
+  display: 'flex',
+  gap: theme.spacing(1),
+  overflowX: 'auto',
+  paddingBottom: theme.spacing(0.5),
+  scrollbarWidth: 'thin', // Firefox
+  '&::-webkit-scrollbar': {
+    height: 4,
+  },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: theme.palette.divider,
+    borderRadius: 2,
+  },
+}));
+
+const DetailThumb = styled.button(({ theme }) => ({
+  width: 64,
+  height: 64,
+  flexShrink: 0,
+  padding: 0,
+  overflow: 'hidden',
+  borderRadius: theme.shape.borderRadius,
+  border: `1px solid ${theme.palette.divider}`,
+  backgroundColor: theme.palette.background.default,
+  cursor: 'zoom-in',
+  '&:hover': {
+    borderColor: theme.palette.primary.main,
+  },
+  '& img': {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    display: 'block',
+  },
+}));
+
+const PreviewImage = styled.img({
+  display: 'block',
+  maxWidth: '90vw',
+  maxHeight: '85vh',
+  cursor: 'zoom-out',
+});
