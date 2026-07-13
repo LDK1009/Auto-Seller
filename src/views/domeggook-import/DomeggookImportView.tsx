@@ -19,6 +19,7 @@ import IconButton from '@mui/material/IconButton';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import CloseIcon from '@mui/icons-material/Close';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import AspectRatioIcon from '@mui/icons-material/AspectRatio';
 import VerticalSplitIcon from '@mui/icons-material/VerticalSplit';
@@ -67,6 +68,23 @@ export default function DomeggookImportView() {
   const [previewIndex, setPreviewIndex] = useState<number | null>(null); // 자세히 보기 (item.images 인덱스 — 0=대표)
 
   const detailImages = item ? item.images.filter((image) => image.kind === 'detail') : [];
+
+  ////////// 자세히 보기 열림 동안 페이지 스크롤 차단
+  // MUI 기본 scroll lock은 스크롤바 제거로 레이아웃이 밀려서(disableScrollLock 유지) 직접 잠금 —
+  // scrollbar-gutter: stable로 스크롤바 자리를 보존해 밀림 없이 잠근다
+  const isPreviewOpen = previewIndex !== null;
+  useEffect(() => {
+    if (!isPreviewOpen) return;
+    const root = document.documentElement;
+    root.style.scrollbarGutter = 'stable';
+    root.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      root.style.scrollbarGutter = '';
+      root.style.overflow = '';
+      document.body.style.overflow = '';
+    };
+  }, [isPreviewOpen]);
 
   ////////// 자세히 보기 슬라이드 이동 (0=대표, 이후 상세)
   const movePreview = (step: number) => {
@@ -436,6 +454,11 @@ export default function DomeggookImportView() {
               <img src={item.images[previewIndex].proxyUrl} alt={`이미지 ${previewIndex + 1}`} />
             </PreviewScroll>
 
+            {/* 닫기 */}
+            <PreviewCloseButton size="small" onClick={() => setPreviewIndex(null)} aria-label="닫기">
+              <CloseIcon sx={{ fontSize: 20 }} />
+            </PreviewCloseButton>
+
             {/* 좌우 슬라이드 */}
             <PreviewNavButton
               $side="left"
@@ -580,6 +603,18 @@ const PreviewNavButton = styled(IconButton, transientOptions)<{ $side: 'left' | 
     },
   }),
 );
+
+const PreviewCloseButton = styled(IconButton)(({ theme }) => ({
+  position: 'absolute',
+  top: theme.spacing(1),
+  right: theme.spacing(1),
+  backgroundColor: theme.palette.background.paper,
+  border: `1px solid ${theme.palette.divider}`,
+  boxShadow: theme.shadows[2],
+  '&:hover': {
+    backgroundColor: theme.palette.background.paper,
+  },
+}));
 
 const PreviewCounter = styled.div(({ theme }) => ({
   position: 'absolute',
