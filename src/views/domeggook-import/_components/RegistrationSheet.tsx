@@ -22,7 +22,7 @@ import Alert from '@mui/material/Alert';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useSnackbar } from 'notistack';
 import { FEE_PRESETS, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from '@/shared/constants/marketFees';
-import { calculateReversePrice, PRICE_ROUND_UNIT } from '@/shared/utils/marginCalculation';
+import { calculateMargin, calculateReversePrice, PRICE_ROUND_UNIT } from '@/shared/utils/marginCalculation';
 import type { DomeggookItem } from '@/shared/types/domeggook';
 import { useSellerFixedInfo } from '../_hooks/useSellerFixedInfo';
 import { validateProductName, PROMO_WORDS, type NameCheckLevel } from '../_utils/validateProductName';
@@ -75,6 +75,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   const [isLoadingMarket, setIsLoadingMarket] = useState(false);
 
   const nameChecks = validateProductName(productName);
+  const issueChecks = nameChecks.filter((check) => check.level !== 'pass');
+  const passedCheckCount = nameChecks.length - issueChecks.length;
   const complianceRisks = detectComplianceRisk(item.title, item.categoryPath);
 
   ////////// 태그 후보: 공급사 키워드(1순위) + 상품명 토큰 — 홍보어·비정상 토큰 제외, 10개
@@ -101,8 +103,26 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     otherCost: 0,
   });
 
-  const recommendedPrice = reverseResult.achievable ? reverseResult.recommendedPrice : null;
-  const profitAtPrice = reverseResult.achievable ? reverseResult.marginAtPrice.profit : null;
+  // 공급사 최소 재판매가 하한 가드 — 역산 추천가가 하한 미만이면 하한으로 올림 (규정 위반 방지)
+  const baseRecommended = reverseResult.achievable ? reverseResult.recommendedPrice : null;
+  const isFlooredByResale =
+    baseRecommended !== null && item.resaleMinimum !== null && baseRecommended < item.resaleMinimum;
+  const recommendedPrice = isFlooredByResale ? item.resaleMinimum : baseRecommended;
+
+  // 최종 표시가 기준 순이익·실마진 (하한 올림 반영 — 역산 결과와 다를 수 있음)
+  const marginAtFinal =
+    recommendedPrice !== null
+      ? calculateMargin({
+          sellingPrice: recommendedPrice,
+          costPrice,
+          feeRate: SMARTSTORE_FEE_RATE,
+          shippingCharge: shippingFee,
+          shippingCost: shippingFee,
+          otherCost: 0,
+        })
+      : null;
+  const profitAtPrice = marginAtFinal?.profit ?? null;
+  const marginRateAtPrice = marginAtFinal?.marginRate ?? null;
 
   // 할인가 분해: 최종 결제가(추천가)는 그대로 두고, 표시용 정가를 역산 (정가 × (1−할인율) ≥ 최종가 보장)
   const listPrice =
@@ -125,6 +145,14 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   ]
     .filter(Boolean)
     .join('\n');
+  // 고시 항목 표시 — 전 항목 값이 동일하면 한 줄 요약 ("전 9개 항목: 상세정보 별도표기"), 다르면 줄바꿈 목록
+  const infoDutyDescSet = new Set(item.infoDuty.items.map((entry) => entry.desc));
+  const infoDutyCaption =
+    item.infoDuty.items.length === 0
+      ? undefined
+      : infoDutyDescSet.size === 1
+        ? `전 ${item.infoDuty.items.length}개 항목: ${[...infoDutyDescSet][0]}`
+        : item.infoDuty.items.map((entry) => `${entry.name}: ${entry.desc}`).join('\n');
 
   ////////// 옵션 조합 (묶음 판매 시 가산가·재고도 묶음 단위로 환산)
   const bundledOptions = item.options.map((option) => ({
@@ -273,21 +301,20 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         <SheetRow
           label="도매꾹 카테고리 (참고)"
           value={item.categoryPath ?? '—'}
-          caption="스마트스토어 카테고리는 등록 화면에서 가장 가까운 항목을 선택하세요"
           onCopy={item.categoryPath ? () => copyText('카테고리', item.categoryPath as string) : undefined}
         />
-        {/* 스스 카테고리 후보 — 네이버쇼핑 상위 상품들의 카테고리 최빈값 */}
-        <Stack spacing={1} sx={{ px: 1.5, py: 0.5 }}>
+        {/* 스마트스토어 카테고리 후보 — 네이버쇼핑 상위 상품들의 카테고리 최빈값 */}
+        <Stack spacing={1} sx={{ px: 1.5 }}>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            <Typography variant="body2" color="text.secondary" sx={{ width: 150, flexShrink: 0 }}>
-              스스 카테고리 후보
+            <Typography variant="body2" color="text.secondary">
+              스마트스토어 카테고리 후보
             </Typography>
             <Button size="small" onClick={handleLoadCategorySuggest} disabled={isLoadingCategory}>
               {isLoadingCategory ? '조회 중…' : categoryCandidates === null ? '후보 확인' : '다시 확인'}
             </Button>
           </Stack>
           {categoryCandidates !== null && categoryCandidates.length > 0 && (
-            <Stack spacing={0.5} sx={{ pl: '162px' }}>
+            <Stack spacing={0.5}>
               {categoryCandidates.map((candidate, index) => (
                 <Stack key={candidate.path} direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                   <Typography variant="body2" sx={{ fontWeight: index === 0 ? 700 : 500 }}>
@@ -298,15 +325,14 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                   </Typography>
                   <CopyButton
                     aria-label="카테고리 후보 복사"
-                    onClick={() => copyText('스스 카테고리', candidate.path)}
+                    onClick={() => copyText('카테고리', candidate.path)}
                   >
                     <ContentCopyIcon fontSize="small" />
                   </CopyButton>
                 </Stack>
               ))}
               <Typography variant="caption" color="text.secondary">
-                같은 키워드 상위 상품들이 실제로 등록된 카테고리입니다 — 1순위 후보를 등록 화면에서
-                검색해 선택하세요.
+                1순위 후보를 등록 화면에서 검색해 선택하세요.
               </Typography>
             </Stack>
           )}
@@ -322,22 +348,35 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             label="상품명 (도매꾹 원본 — 수정해서 쓰세요)"
             value={productName}
             onChange={(event) => setProductName(event.target.value)}
+            slotProps={{
+              input: {
+                endAdornment: <InputAdornment position="end">{productName.length}/100</InputAdornment>,
+              },
+            }}
           />
           <CopyButton aria-label="상품명 복사" onClick={() => copyText('상품명', productName)}>
             <ContentCopyIcon fontSize="small" />
           </CopyButton>
         </FieldRow>
-        {/* 검사 결과 — 통과 항목은 칩으로 압축, 경고·실패만 줄로 노출 */}
+        {/* 검사 결과 — 통과는 1칩으로 압축, 경고·실패만 개별 노출 (노이즈 최소화) */}
         <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
-          {nameChecks.map((check) => (
+          {issueChecks.map((check) => (
             <Chip
               key={check.label}
               size="small"
-              variant={check.level === 'pass' ? 'outlined' : 'filled'}
+              variant="filled"
               color={CHECK_CHIP_COLORS[check.level]}
-              label={check.level === 'pass' ? check.label : `${check.label}: ${check.message}`}
+              label={`${check.label}: ${check.message}`}
             />
           ))}
+          {passedCheckCount > 0 && (
+            <Chip
+              size="small"
+              variant="outlined"
+              color="success"
+              label={issueChecks.length === 0 ? `검사 ${passedCheckCount}개 모두 통과` : `${passedCheckCount}개 통과`}
+            />
+          )}
         </Stack>
       </SectionBlock>
 
@@ -366,10 +405,10 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 700 }}>
                 {KRW(recommendedPrice)}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                원가 {KRW(costPrice)}
-                {bundleUnits > 1 && ` (${KRW(unitPrice)}×${bundleUnits})`} · 수수료 {SMARTSTORE_FEE_RATE}% ·
+              {/* 순이익 = 셀러의 최종 관심사 — 캡션이 아닌 본문 강조 */}
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
                 개당 순이익 {profitAtPrice !== null ? KRW(profitAtPrice) : '—'}
+                {marginRateAtPrice !== null && ` (실마진 ${Math.round(marginRateAtPrice)}%)`}
               </Typography>
               <CopyButton
                 aria-label="판매가 복사"
@@ -378,6 +417,16 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 <ContentCopyIcon fontSize="small" />
               </CopyButton>
             </Stack>
+            <Typography variant="caption" color="text.secondary">
+              원가 {KRW(costPrice)}
+              {bundleUnits > 1 && ` (${KRW(unitPrice)}×${bundleUnits})`} · 수수료 {SMARTSTORE_FEE_RATE}%
+            </Typography>
+            {isFlooredByResale && item.resaleMinimum !== null && (
+              <Alert severity="info">
+                공급사 최소 재판매가 <b>{KRW(item.resaleMinimum)}</b> 규정에 맞춰 추천가를 올렸습니다 —
+                목표 마진보다 이익이 커집니다.
+              </Alert>
+            )}
 
             {/* 할인율 표시 분해 — 최종 결제가는 유지, 정가만 역산 */}
             <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'center' }} useFlexGap>
@@ -547,12 +596,12 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         <SheetRow label="과세 구분" value={taxLabel ?? '—'} onCopy={taxLabel ? () => copyText('과세 구분', taxLabel) : undefined} />
       </SectionBlock>
 
-      {/* 9. 상품정보제공고시 */}
+      {/* 9. 상품정보제공고시 — 전 항목 값이 같으면 한 줄로 압축, 다르면 줄바꿈 목록 */}
       <SectionBlock number={9} title="상품정보제공고시">
         <SheetRow
-          label="상품정보제공고시"
+          label="고시 유형"
           value={item.infoDuty.type ?? '—'}
-          caption={item.infoDuty.items.map((entry) => `${entry.name}: ${entry.desc}`).join(' · ') || undefined}
+          caption={infoDutyCaption}
           onCopy={infoDutyText ? () => copyText('상품정보제공고시', infoDutyText) : undefined}
         />
       </SectionBlock>
@@ -574,8 +623,11 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         <SheetRow
           label="반품 / 교환비"
           value={
-            item.returnInfo.fee !== null ? `${KRW(item.returnInfo.fee)} / ${exchangeFee !== null ? KRW(exchangeFee) : '—'}` : '—'
+            item.returnInfo.fee !== null
+              ? `반품 ${KRW(item.returnInfo.fee)} · 교환 ${exchangeFee !== null ? KRW(exchangeFee) : '—'}`
+              : '—'
           }
+          caption={item.returnInfo.exchangeDouble ? '교환비 = 반품비 × 2 (왕복)' : undefined}
           onCopy={item.returnInfo.fee !== null ? () => copyText('반품비', String(item.returnInfo.fee)) : undefined}
         />
       </SectionBlock>
@@ -681,9 +733,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             })}
           </Stack>
           <Typography variant="caption" color="text.secondary">
-            공급사 등록 키워드 + 상품명에서 추출했습니다. [검색량 확인]을 누르면 월간 검색수와
-            경쟁강도(상품수÷검색수 — 낮을수록 틈새)가 붙습니다. 페이지 타이틀·메타 디스크립션은 기본값
-            유지를 권장합니다.
+            공급사 키워드 + 상품명에서 추출 — 경쟁강도(상품수÷검색수)는 낮을수록 틈새입니다. 페이지
+            타이틀·메타 디스크립션은 기본값 유지를 권장합니다.
           </Typography>
         </SectionBlock>
       )}
@@ -749,7 +800,7 @@ function SheetRow({ label, value, caption, onCopy }: SheetRowProps) {
           {value}
         </Typography>
         {caption && (
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
             {caption}
           </Typography>
         )}

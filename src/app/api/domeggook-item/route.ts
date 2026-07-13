@@ -119,6 +119,7 @@ export async function GET(request: Request) {
 
       domePrice: toNumberOrNull(root.price?.dome),
       supplyPrice: toNumberOrNull(root.price?.supply),
+      resaleMinimum: toNumberOrNull(root.price?.resale?.minimum),
       moq: toNumberOrNull(root.qty?.domeMoq) ?? 1,
       inventory: toNumberOrNull(root.qty?.inventory),
       taxType: toStringOrNull(root.basis?.tax),

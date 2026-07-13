@@ -454,8 +454,8 @@ export default function DomeggookImportView() {
                           </Button>
                         </ActionRow>
                         <Typography variant="caption" color="text.secondary">
-                          위 ⑥에서 선택한 상세 이미지를 세로로 이어붙인 통이미지로 내려받아 에디터에
-                          업로드하세요.
+                          위 상품이미지 섹션에서 선택한 상세 이미지를 세로로 이어붙인 통이미지로 내려받아
+                          에디터에 업로드하세요.
                         </Typography>
                       </>
                     )
