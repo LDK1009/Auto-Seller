@@ -58,13 +58,11 @@ export default function DomeggookImportView() {
   const { status, item, errorMessage, lookup, reset } = useDomeggookItem();
 
   // 순수 UI 상태
-  const [licenseConfirmed, setLicenseConfirmed] = useState(false);
   const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
   const [downloadProgress, setDownloadProgress] = useState<string | null>(null);
 
   ////////// 조회 (성공 시 기본 선택 = 대표이미지만)
   const handleLookup = async (input: string) => {
-    setLicenseConfirmed(false);
     setSelectedUrls(new Set());
     const fetched = await lookup(input);
     trackEvent('domeggook_lookup', { result: fetched ? 'success' : 'fail' });
@@ -176,8 +174,8 @@ export default function DomeggookImportView() {
         <HelpPanel storageKey="domeggook-import">
           <Stack spacing={0.75}>
             <Typography variant="body2">① 도매꾹 링크를 붙여넣거나, 검색으로 상품을 고르세요</Typography>
-            <Typography variant="body2">② 공급사의 이미지 사용 조건을 확인하고 체크합니다</Typography>
-            <Typography variant="body2">③ 필요한 이미지를 골라 누끼·규격 변환으로 보내세요</Typography>
+            <Typography variant="body2">② 필요한 이미지를 골라 누끼·규격 변환으로 보내세요</Typography>
+            <Typography variant="body2">③ 등록 정보 시트를 스마트스토어에 그대로 붙여넣으세요</Typography>
             <Typography variant="caption" color="text.secondary">
               상품 이미지는 공급사 소유입니다. 사용 조건은 상품마다 다르니 반드시 확인하세요.
             </Typography>
@@ -244,16 +242,11 @@ export default function DomeggookImportView() {
 
               <Divider />
 
-              {/* 사용 조건 게이트 */}
-              <LicenseGate
-                license={item.license}
-                itemUrl={item.itemUrl}
-                confirmed={licenseConfirmed}
-                onConfirmedChange={setLicenseConfirmed}
-              />
+              {/* 사용 조건 고지 (비차단 — usable=false만 아래 섹션 차단) */}
+              <LicenseGate license={item.license} itemUrl={item.itemUrl} />
 
-              {/* 이미지 선택 — 게이트 확인 후 노출 */}
-              {licenseConfirmed && (
+              {/* 이미지 선택 — 공급사가 이미지 사용을 허용한 상품만 */}
+              {item.license.usable && (
                 <>
                   <Divider />
                   {item.images.length === 0 ? (
