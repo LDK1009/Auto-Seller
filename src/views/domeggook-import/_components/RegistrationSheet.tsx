@@ -517,7 +517,13 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         <SheetRow
           label="재고 수량"
           value={bundleStock !== null ? `${bundleStock.toLocaleString()}개` : '—'}
-          caption={bundleUnits > 1 && item.inventory !== null ? `묶음 기준 (낱개 ${item.inventory.toLocaleString()}개)` : undefined}
+          caption={
+            bundleStock === 0
+              ? '재고가 없습니다 — 공급사 재입고 확인 후 등록하세요'
+              : bundleUnits > 1 && item.inventory !== null
+                ? `묶음 기준 (낱개 ${item.inventory.toLocaleString()}개)`
+                : undefined
+          }
           onCopy={bundleStock !== null ? () => copyText('재고 수량', String(bundleStock), 4) : undefined}
         />
       </SectionBlock>
@@ -648,6 +654,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             fullWidth
             size="small"
             label="A/S 전화번호"
+            placeholder="010-0000-0000 (내 연락처 — 위탁판매는 셀러가 CS 창구입니다)"
             value={fixedInfo.afterServicePhone}
             onChange={(event) => updateFixedInfo({ afterServicePhone: event.target.value })}
           />
@@ -663,6 +670,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             fullWidth
             size="small"
             label="A/S 안내 문구"
+            placeholder="예) 상품 문의는 스토어 톡톡 또는 위 번호로 연락 주세요"
             value={fixedInfo.afterServiceGuide}
             onChange={(event) => updateFixedInfo({ afterServiceGuide: event.target.value })}
             slotProps={{
