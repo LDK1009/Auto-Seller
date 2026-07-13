@@ -323,6 +323,23 @@ export default function DomeggookImportView() {
                           </Typography>
                         </Typography>
                       </Stack>
+                      <Stack spacing={0.25}>
+                        <Typography variant="caption" color="text.secondary">
+                          배송비
+                        </Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                          {item.delivery.baseFee !== null && item.delivery.baseFee > 0 ? (
+                            <>
+                              {item.delivery.baseFee.toLocaleString()}
+                              <Typography component="span" variant="body2" color="text.secondary">
+                                원{item.delivery.feeType ? ` · ${item.delivery.feeType}` : ''}
+                              </Typography>
+                            </>
+                          ) : (
+                            item.delivery.feeType ?? '—'
+                          )}
+                        </Typography>
+                      </Stack>
                     </Stack>
 
                     <Stack direction="row" spacing={4} useFlexGap sx={{ flexWrap: 'wrap' }}>
