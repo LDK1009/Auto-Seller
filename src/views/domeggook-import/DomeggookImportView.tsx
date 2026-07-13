@@ -15,7 +15,10 @@ import Alert from '@mui/material/Alert';
 import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
 import CircularProgress from '@mui/material/CircularProgress';
+import IconButton from '@mui/material/IconButton';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import AspectRatioIcon from '@mui/icons-material/AspectRatio';
 import VerticalSplitIcon from '@mui/icons-material/VerticalSplit';
@@ -61,9 +64,19 @@ export default function DomeggookImportView() {
   // 순수 UI 상태
   const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
   const [downloadProgress, setDownloadProgress] = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null); // 이미지 자세히 보기 모달
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null); // 자세히 보기 (item.images 인덱스 — 0=대표)
 
   const detailImages = item ? item.images.filter((image) => image.kind === 'detail') : [];
+
+  ////////// 자세히 보기 슬라이드 이동 (0=대표, 이후 상세)
+  const movePreview = (step: number) => {
+    if (!item) return;
+    setPreviewIndex((current) => {
+      if (current === null) return current;
+      const next = current + step;
+      return next >= 0 && next < item.images.length ? next : current;
+    });
+  };
 
   ////////// 조회 (성공 시 기본 선택 = 대표이미지만)
   const handleLookup = async (input: string) => {
@@ -243,7 +256,7 @@ export default function DomeggookImportView() {
                 <SummarySplit>
                   {/* 좌 4: 상품 이미지 (클릭 = 자세히 보기) */}
                   <SummaryImageBox
-                    onClick={() => item.images[0] && setPreviewUrl(item.images[0].proxyUrl)}
+                    onClick={() => item.images[0] && setPreviewIndex(0)}
                     $isClickable={Boolean(item.images[0])}
                   >
                     {item.images[0] ? (
@@ -324,7 +337,11 @@ export default function DomeggookImportView() {
                         </Typography>
                         <DetailStrip>
                           {detailImages.map((image) => (
-                            <DetailThumb key={image.url} type="button" onClick={() => setPreviewUrl(image.proxyUrl)}>
+                            <DetailThumb
+                              key={image.url}
+                              type="button"
+                              onClick={() => setPreviewIndex(item.images.findIndex((entry) => entry.url === image.url))}
+                            >
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={image.proxyUrl} alt="" loading="lazy" />
                             </DetailThumb>
@@ -400,12 +417,49 @@ export default function DomeggookImportView() {
         )}
       </Stack>
 
-      {/* 이미지 자세히 보기 모달 (대표·상세 공용) */}
+      {/* 이미지 자세히 보기 모달 — 1번 대표, 이후 상세 슬라이드. 긴 상세이미지는 세로 스크롤 */}
       {/* disableScrollLock — 스크롤바 제거로 인한 레이아웃 밀림(섹션 깨짐) 방지 */}
-      <Dialog open={previewUrl !== null} onClose={() => setPreviewUrl(null)} maxWidth={false} disableScrollLock>
-        {previewUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <PreviewImage src={previewUrl} alt="이미지 자세히 보기" onClick={() => setPreviewUrl(null)} />
+      <Dialog
+        open={previewIndex !== null}
+        onClose={() => setPreviewIndex(null)}
+        maxWidth={false}
+        disableScrollLock
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowLeft') movePreview(-1);
+          if (event.key === 'ArrowRight') movePreview(1);
+        }}
+      >
+        {previewIndex !== null && item && item.images[previewIndex] && (
+          <PreviewShell>
+            <PreviewScroll>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={item.images[previewIndex].proxyUrl} alt={`이미지 ${previewIndex + 1}`} />
+            </PreviewScroll>
+
+            {/* 좌우 슬라이드 */}
+            <PreviewNavButton
+              $side="left"
+              onClick={() => movePreview(-1)}
+              disabled={previewIndex === 0}
+              size="large"
+            >
+              <ChevronLeftIcon />
+            </PreviewNavButton>
+            <PreviewNavButton
+              $side="right"
+              onClick={() => movePreview(1)}
+              disabled={previewIndex === item.images.length - 1}
+              size="large"
+            >
+              <ChevronRightIcon />
+            </PreviewNavButton>
+
+            {/* 위치 표시 */}
+            <PreviewCounter>
+              {previewIndex + 1} / {item.images.length}
+              {previewIndex === 0 ? ' · 대표' : ' · 상세'}
+            </PreviewCounter>
+          </PreviewShell>
         )}
       </Dialog>
     </PageLayout>
@@ -484,9 +538,58 @@ const DetailThumb = styled.button(({ theme }) => ({
   },
 }));
 
-const PreviewImage = styled.img({
-  display: 'block',
-  maxWidth: '90vw',
-  maxHeight: '85vh',
-  cursor: 'zoom-out',
+const PreviewShell = styled.div({
+  position: 'relative',
 });
+
+// 긴 상세이미지 대응 — 최대 높이 고정 + 내부 세로 스크롤 (원본 폭 유지)
+const PreviewScroll = styled.div(({ theme }) => ({
+  width: 'min(90vw, 860px)',
+  maxHeight: '85vh',
+  overflowY: 'auto',
+  scrollbarWidth: 'thin', // Firefox
+  '&::-webkit-scrollbar': {
+    width: 6,
+  },
+  '&::-webkit-scrollbar-thumb': {
+    backgroundColor: theme.palette.divider,
+    borderRadius: 3,
+  },
+  '& img': {
+    display: 'block',
+    width: '100%',
+    height: 'auto',
+  },
+}));
+
+const PreviewNavButton = styled(IconButton, transientOptions)<{ $side: 'left' | 'right' }>(
+  ({ theme, $side }) => ({
+    position: 'absolute',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    [$side]: theme.spacing(1),
+    backgroundColor: theme.palette.background.paper,
+    border: `1px solid ${theme.palette.divider}`,
+    boxShadow: theme.shadows[2],
+    '&:hover': {
+      backgroundColor: theme.palette.background.paper,
+    },
+    '&.Mui-disabled': {
+      opacity: 0.35,
+      backgroundColor: theme.palette.background.paper,
+    },
+  }),
+);
+
+const PreviewCounter = styled.div(({ theme }) => ({
+  position: 'absolute',
+  bottom: theme.spacing(1.5),
+  left: '50%',
+  transform: 'translateX(-50%)',
+  padding: theme.spacing(0.5, 1.5),
+  borderRadius: 999,
+  backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  color: theme.palette.common.white,
+  fontSize: 12,
+  fontWeight: 600,
+}));
