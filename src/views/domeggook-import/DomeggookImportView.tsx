@@ -537,12 +537,11 @@ const SummarySplit = styled.div(({ theme }) => ({
   },
 }));
 
+// 높이 고정 없음 — 좌우 flex stretch로 우측 콘텐츠 높이를 그대로 따라감 (모바일 세로 배치에서만 1:1)
 const SummaryImageBox = styled('div', transientOptions)<{ $isClickable: boolean }>(({ theme, $isClickable }) => ({
   position: 'relative',
   flex: 4,
   minWidth: 0,
-  alignSelf: 'flex-start',
-  aspectRatio: '1 / 1',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -551,7 +550,12 @@ const SummaryImageBox = styled('div', transientOptions)<{ $isClickable: boolean 
   border: `1px solid ${theme.palette.divider}`,
   backgroundColor: theme.palette.background.default,
   cursor: $isClickable ? 'zoom-in' : 'default',
+  [theme.breakpoints.down('sm')]: {
+    aspectRatio: '1 / 1',
+  },
   '& img': {
+    position: 'absolute',
+    inset: 0,
     width: '100%',
     height: '100%',
     objectFit: 'cover',
