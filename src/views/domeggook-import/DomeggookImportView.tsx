@@ -29,6 +29,7 @@ import { downloadDomeggookImages } from '@/shared/services/domeggookItemService'
 import { useDomeggookItem } from './_hooks/useDomeggookItem';
 import { mergeImagesVertically } from './_utils/mergeImagesVertically';
 import { buildZipWithNames, downloadBlob } from '@/shared/utils/zip';
+import DomeggookSearchPanel from '@/shared/components/DomeggookSearchPanel';
 import LicenseGate from './_components/LicenseGate';
 import ImageSelectGrid from './_components/ImageSelectGrid';
 import RegistrationSheet from './_components/RegistrationSheet';
@@ -211,17 +212,24 @@ export default function DomeggookImportView() {
               조회
             </Button>
           </Stack>
-          {/* 링크가 없는 방문자 → 도매꾹 검색 (사이트 안 소싱) */}
           <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            링크가 없다면?{' '}
-            <Link href="/domeggook-search" style={{ color: 'inherit', fontWeight: 600 }}>
-              도매꾹 검색으로 찾기 →
-            </Link>
+            링크가 없어도 됩니다 — 아래에서 검색해 상품을 고르면 바로 등록 준비가 시작됩니다.
           </Typography>
         </Paper>
 
         {/* 오류 */}
         {status === 'error' && errorMessage && <Alert severity="error">{errorMessage}</Alert>}
+
+        {/* 상품 미조회 상태 — 도매꾹 검색 임베드 (검색 → 선택 → 등록 시트) */}
+        {(status === 'idle' || status === 'error') && (
+          <DomeggookSearchPanel
+            onPick={(no) => {
+              setRawInput(String(no));
+              handleLookup(String(no));
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
+        )}
 
         {/* 조회 결과 */}
         {status === 'loaded' && item && (
