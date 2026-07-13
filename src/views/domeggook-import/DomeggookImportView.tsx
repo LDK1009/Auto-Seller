@@ -221,92 +221,108 @@ export default function DomeggookImportView() {
           />
         )}
 
-        {/* 조회 결과 */}
+        {/* 조회 결과 — 요약 / 이미지 / 시트 3카드 (정보 위계 분리) */}
         {status === 'loaded' && item && (
-          <Paper variant="outlined" sx={{ p: 3 }}>
-            <Stack spacing={2.5}>
-              {/* 검색으로 복귀 */}
-              <Button
-                size="small"
-                startIcon={<ArrowBackIcon />}
-                onClick={() => router.push('?')}
-                sx={{ alignSelf: 'flex-start', color: 'text.secondary' }}
-              >
-                다른 상품 찾기
-              </Button>
-              {/* 상품 요약 */}
-              <Stack spacing={0.5}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                  {item.title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {item.domePrice !== null && `도매꾹가 ${item.domePrice.toLocaleString()}원 · `}
-                  {item.moq > 1 && `최소구매 ${item.moq}개 · `}
-                  이미지 {item.images.length}장 ·{' '}
-                  <Link href={item.itemUrl} target="_blank" rel="noopener noreferrer">
-                    상품 페이지 열기
-                  </Link>
-                </Typography>
-              </Stack>
+          <>
+            <Button
+              size="small"
+              startIcon={<ArrowBackIcon />}
+              onClick={() => router.push('?')}
+              sx={{ alignSelf: 'flex-start', color: 'text.secondary', mb: -1.5 }}
+            >
+              다른 상품 찾기
+            </Button>
 
-              <Divider />
-
-              {/* 사용 조건 고지 (비차단 — usable=false만 아래 섹션 차단) */}
-              <LicenseGate license={item.license} itemUrl={item.itemUrl} />
-
-              {/* 이미지 선택 — 공급사가 이미지 사용을 허용한 상품만 */}
-              {item.license.usable && (
-                <>
-                  <Divider />
-                  {item.images.length === 0 ? (
-                    <Alert severity="info">이 상품에서 가져올 수 있는 이미지를 찾지 못했습니다.</Alert>
-                  ) : (
-                    <>
-                      <ImageSelectGrid
-                        images={item.images}
-                        selectedUrls={selectedUrls}
-                        onToggle={toggleUrl}
-                        onSelectAll={() => setSelectedUrls(new Set(item.images.map((image) => image.url)))}
-                        onClearAll={() => setSelectedUrls(new Set())}
-                      />
-
-                      {/* 핸드오프 버튼 */}
-                      <ActionRow>
-                        {HANDOFF_TARGETS.map((target) => (
-                          <Button
-                            key={target.key}
-                            variant="contained"
-                            startIcon={target.icon}
-                            disabled={selectedUrls.size === 0 || isBusy}
-                            onClick={() => handleSendTo(target.path, target.autoStart)}
-                          >
-                            {target.label}
-                          </Button>
-                        ))}
-                        <Button
-                          variant="outlined"
-                          startIcon={<VerticalSplitIcon />}
-                          disabled={selectedDetailCount === 0 || isBusy}
-                          onClick={handleMergeDetail}
-                        >
-                          상세 통이미지 받기{selectedDetailCount > 0 && ` (${selectedDetailCount}장)`}
-                        </Button>
-                        {downloadProgress && (
-                          <Typography variant="body2" color="text.secondary">
-                            {downloadProgress}
+            {/* 상품 요약 카드 — 썸네일 + 핵심 숫자 크게 */}
+            <Paper variant="outlined" sx={{ p: 3 }}>
+              <Stack spacing={2}>
+                <Stack direction="row" spacing={2}>
+                  {item.images[0] && <SummaryThumb src={item.images[0].proxyUrl} alt="" />}
+                  <Stack spacing={0.75} sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.35 }}>
+                      {item.title}
+                    </Typography>
+                    <Stack direction="row" spacing={2} sx={{ alignItems: 'baseline', flexWrap: 'wrap' }} useFlexGap>
+                      {item.domePrice !== null && (
+                        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                          {item.domePrice.toLocaleString()}
+                          <Typography component="span" variant="body2" color="text.secondary">
+                            원
                           </Typography>
-                        )}
-                      </ActionRow>
-                    </>
-                  )}
+                        </Typography>
+                      )}
+                      <Typography variant="body2" color="text.secondary">
+                        최소구매 {Math.max(item.moq, 1)}개 · 이미지 {item.images.length}장 ·{' '}
+                        <Link href={item.itemUrl} target="_blank" rel="noopener noreferrer">
+                          도매꾹에서 보기
+                        </Link>
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                </Stack>
 
-                  {/* 등록 정보 시트 (등록 준비 패키지) */}
-                  <Divider />
+                {/* 사용 조건 고지 (비차단 — usable=false만 아래 섹션 차단) */}
+                <LicenseGate license={item.license} itemUrl={item.itemUrl} />
+              </Stack>
+            </Paper>
+
+            {item.license.usable && (
+              <>
+                {/* 이미지 준비 카드 */}
+                <Paper variant="outlined" sx={{ p: 3 }}>
+                  <Stack spacing={2}>
+                    <Typography variant="h6">이미지 준비</Typography>
+                    {item.images.length === 0 ? (
+                      <Alert severity="info">이 상품에서 가져올 수 있는 이미지를 찾지 못했습니다.</Alert>
+                    ) : (
+                      <>
+                        <ImageSelectGrid
+                          images={item.images}
+                          selectedUrls={selectedUrls}
+                          onToggle={toggleUrl}
+                          onSelectAll={() => setSelectedUrls(new Set(item.images.map((image) => image.url)))}
+                          onClearAll={() => setSelectedUrls(new Set())}
+                        />
+
+                        {/* 핸드오프 버튼 */}
+                        <ActionRow>
+                          {HANDOFF_TARGETS.map((target) => (
+                            <Button
+                              key={target.key}
+                              variant="contained"
+                              startIcon={target.icon}
+                              disabled={selectedUrls.size === 0 || isBusy}
+                              onClick={() => handleSendTo(target.path, target.autoStart)}
+                            >
+                              {target.label}
+                            </Button>
+                          ))}
+                          <Button
+                            variant="outlined"
+                            startIcon={<VerticalSplitIcon />}
+                            disabled={selectedDetailCount === 0 || isBusy}
+                            onClick={handleMergeDetail}
+                          >
+                            상세 통이미지 받기{selectedDetailCount > 0 && ` (${selectedDetailCount}장)`}
+                          </Button>
+                          {downloadProgress && (
+                            <Typography variant="body2" color="text.secondary">
+                              {downloadProgress}
+                            </Typography>
+                          )}
+                        </ActionRow>
+                      </>
+                    )}
+                  </Stack>
+                </Paper>
+
+                {/* 등록 정보 시트 카드 */}
+                <Paper variant="outlined" sx={{ p: 3 }}>
                   <RegistrationSheet item={item} />
-                </>
-              )}
-            </Stack>
-          </Paper>
+                </Paper>
+              </>
+            )}
+          </>
         )}
       </Stack>
     </PageLayout>
@@ -319,4 +335,13 @@ const ActionRow = styled.div(({ theme }) => ({
   alignItems: 'center',
   gap: theme.spacing(1.5),
   flexWrap: 'wrap',
+}));
+
+const SummaryThumb = styled.img(({ theme }) => ({
+  width: 96,
+  height: 96,
+  flexShrink: 0,
+  objectFit: 'cover',
+  borderRadius: theme.shape.borderRadius,
+  border: `1px solid ${theme.palette.divider}`,
 }));

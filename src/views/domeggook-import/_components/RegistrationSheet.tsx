@@ -235,16 +235,18 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
   };
 
   return (
-    <Stack spacing={2.5}>
-      <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography variant="h6">등록 정보 시트</Typography>
-        <Button variant="outlined" size="small" startIcon={<ContentCopyIcon />} onClick={copyAll}>
-          전체 복사
-        </Button>
+    <Stack spacing={3.5}>
+      <Stack spacing={0.75}>
+        <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="h6">등록 정보 시트</Typography>
+          <Button variant="outlined" size="small" startIcon={<ContentCopyIcon />} onClick={copyAll}>
+            전체 복사
+          </Button>
+        </Stack>
+        <Typography variant="body2" color="text.secondary">
+          스마트스토어 등록 화면과 같은 순서입니다 — 두 화면을 나란히 두고 위에서 아래로 붙여넣으세요.
+        </Typography>
       </Stack>
-      <Typography variant="body2" color="text.secondary">
-        스마트스토어 등록 화면과 같은 순서입니다 — 두 화면을 나란히 두고 위에서 아래로 붙여넣으세요.
-      </Typography>
 
       {/* 인증·인허가 지뢰 경고 */}
       {complianceRisks.map((risk) => (
