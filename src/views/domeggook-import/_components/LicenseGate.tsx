@@ -55,12 +55,6 @@ export default function LicenseGate({ license, itemUrl }: LicenseGateProps) {
     );
   }
 
-  ////////// 일반 케이스 — 캡션 한 줄 고지
-  return (
-    <Typography variant="caption" color="text.secondary">
-      {license.msg
-        ? `공급사 이미지 사용 조건: ${license.msg}`
-        : '공급사가 별도 이미지 사용 조건을 밝히지 않았습니다 — 원본 그대로 사용하는 것이 안전합니다.'}
-    </Typography>
-  );
+  ////////// 일반 케이스 — 표시 없음 (요약 카드의 [허용] 칩이 상태 전달, 2026-07-13 이탈 감소)
+  return null;
 }

@@ -14,9 +14,10 @@ import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
-import Divider from '@mui/material/Divider';
-import Link from '@mui/material/Link';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import AspectRatioIcon from '@mui/icons-material/AspectRatio';
 import VerticalSplitIcon from '@mui/icons-material/VerticalSplit';
@@ -235,7 +236,17 @@ export default function DomeggookImportView() {
             </Button>
 
             {/* 상품 요약 카드 — 좌(4) 상품 이미지 / 우(6) 상품명·가격·조건 */}
-            <Paper variant="outlined" sx={{ p: 3 }}>
+            <Paper variant="outlined" sx={{ p: 3, position: 'relative' }}>
+              {/* 우측 상단 도매꾹 바로가기 (텍스트 링크 대신 아이콘 — 이탈 최소화) */}
+              <Tooltip title="도매꾹에서 보기">
+                <IconButton
+                  size="small"
+                  onClick={() => window.open(item.itemUrl, '_blank', 'noopener')}
+                  sx={{ position: 'absolute', top: 12, right: 12, color: 'text.secondary' }}
+                >
+                  <OpenInNewIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </Tooltip>
               <Stack spacing={2}>
                 <SummarySplit>
                   {/* 좌 4: 상품 이미지 */}
@@ -310,15 +321,6 @@ export default function DomeggookImportView() {
                       </Stack>
                     </Stack>
 
-                    <Link
-                      href={item.itemUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      variant="body2"
-                      sx={{ alignSelf: 'flex-start' }}
-                    >
-                      도매꾹에서 보기 →
-                    </Link>
                   </Stack>
                 </SummarySplit>
 
