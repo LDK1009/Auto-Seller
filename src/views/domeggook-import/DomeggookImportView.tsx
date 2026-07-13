@@ -401,7 +401,8 @@ export default function DomeggookImportView() {
       </Stack>
 
       {/* 이미지 자세히 보기 모달 (대표·상세 공용) */}
-      <Dialog open={previewUrl !== null} onClose={() => setPreviewUrl(null)} maxWidth={false}>
+      {/* disableScrollLock — 스크롤바 제거로 인한 레이아웃 밀림(섹션 깨짐) 방지 */}
+      <Dialog open={previewUrl !== null} onClose={() => setPreviewUrl(null)} maxWidth={false} disableScrollLock>
         {previewUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <PreviewImage src={previewUrl} alt="이미지 자세히 보기" onClick={() => setPreviewUrl(null)} />
