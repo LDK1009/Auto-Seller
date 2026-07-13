@@ -20,10 +20,12 @@ import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Alert from '@mui/material/Alert';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import CheckIcon from '@mui/icons-material/Check';
 import { useSnackbar } from 'notistack';
 import { FEE_PRESETS, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from '@/shared/constants/marketFees';
 import { calculateMargin, calculateReversePrice, PRICE_ROUND_UNIT } from '@/shared/utils/marginCalculation';
 import type { DomeggookItem } from '@/shared/types/domeggook';
+import { transientOptions } from '@/shared/utils/emotionTransientProps';
 import { useSellerFixedInfo } from '../_hooks/useSellerFixedInfo';
 import { validateProductName, PROMO_WORDS, type NameCheckLevel } from '../_utils/validateProductName';
 import { detectComplianceRisk } from '../_utils/detectComplianceRisk';
@@ -231,11 +233,15 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     }
   };
 
-  ////////// 복사
-  const copyText = async (label: string, value: string) => {
+  ////////// 복사 — section 번호를 주면 해당 섹션 뱃지가 체크로 바뀜 (진행 추적)
+  const [copiedSections, setCopiedSections] = useState<Set<number>>(new Set());
+  const copyText = async (label: string, value: string, section?: number) => {
     if (!value) return;
     await navigator.clipboard.writeText(value);
     enqueueSnackbar(`${label}을(를) 복사했습니다.`, { variant: 'success' });
+    if (section !== undefined) {
+      setCopiedSections((previous) => new Set(previous).add(section));
+    }
   };
 
   // 전체 복사도 시트(=스마트스토어 폼) 순서 그대로
@@ -263,6 +269,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       .filter(Boolean)
       .join('\n');
     await copyText('등록 정보 시트 전체', lines);
+    setCopiedSections(new Set(Array.from({ length: 15 }, (_, index) => index + 1)));
   };
 
   return (
@@ -297,11 +304,11 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       )}
 
       {/* 1. 카테고리 */}
-      <SectionBlock number={1} title="카테고리">
+      <SectionBlock number={1} done={copiedSections.has(1)} title="카테고리">
         <SheetRow
           label="도매꾹 카테고리 (참고)"
           value={item.categoryPath ?? '—'}
-          onCopy={item.categoryPath ? () => copyText('카테고리', item.categoryPath as string) : undefined}
+          onCopy={item.categoryPath ? () => copyText('카테고리', item.categoryPath as string, 1) : undefined}
         />
         {/* 스마트스토어 카테고리 후보 — 네이버쇼핑 상위 상품들의 카테고리 최빈값 */}
         <Stack spacing={1} sx={{ px: 1.5 }}>
@@ -325,7 +332,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                   </Typography>
                   <CopyButton
                     aria-label="카테고리 후보 복사"
-                    onClick={() => copyText('카테고리', candidate.path)}
+                    onClick={() => copyText('카테고리', candidate.path, 1)}
                   >
                     <ContentCopyIcon fontSize="small" />
                   </CopyButton>
@@ -340,7 +347,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       </SectionBlock>
 
       {/* 2. 상품명 */}
-      <SectionBlock number={2} title="상품명">
+      <SectionBlock number={2} done={copiedSections.has(2)} title="상품명">
         <FieldRow>
           <TextField
             fullWidth
@@ -354,7 +361,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               },
             }}
           />
-          <CopyButton aria-label="상품명 복사" onClick={() => copyText('상품명', productName)}>
+          <CopyButton aria-label="상품명 복사" onClick={() => copyText('상품명', productName, 2)}>
             <ContentCopyIcon fontSize="small" />
           </CopyButton>
         </FieldRow>
@@ -383,6 +390,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       {/* 3. 판매가 */}
       <SectionBlock
         number={3}
+        done={copiedSections.has(3)}
         title="판매가"
         action={
           <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
@@ -412,7 +420,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               </Typography>
               <CopyButton
                 aria-label="판매가 복사"
-                onClick={() => copyText('판매가', String(recommendedPrice))}
+                onClick={() => copyText('판매가', String(recommendedPrice), 3)}
               >
                 <ContentCopyIcon fontSize="small" />
               </CopyButton>
@@ -448,7 +456,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                   <Typography variant="body2">
                     정가 <b>{KRW(listPrice)}</b> − {discountRate}% 할인 → 최종 {KRW(recommendedPrice)}
                   </Typography>
-                  <CopyButton aria-label="정가 복사" onClick={() => copyText('정가', String(listPrice))}>
+                  <CopyButton aria-label="정가 복사" onClick={() => copyText('정가', String(listPrice), 3)}>
                     <ContentCopyIcon fontSize="small" />
                   </CopyButton>
                 </>
@@ -505,25 +513,26 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       </SectionBlock>
 
       {/* 4. 재고수량 */}
-      <SectionBlock number={4} title="재고수량">
+      <SectionBlock number={4} done={copiedSections.has(4)} title="재고수량">
         <SheetRow
           label="재고 수량"
           value={bundleStock !== null ? `${bundleStock.toLocaleString()}개` : '—'}
           caption={bundleUnits > 1 && item.inventory !== null ? `묶음 기준 (낱개 ${item.inventory.toLocaleString()}개)` : undefined}
-          onCopy={bundleStock !== null ? () => copyText('재고 수량', String(bundleStock)) : undefined}
+          onCopy={bundleStock !== null ? () => copyText('재고 수량', String(bundleStock), 4) : undefined}
         />
       </SectionBlock>
 
       {/* 5. 옵션 */}
       <SectionBlock
         number={5}
+        done={copiedSections.has(5)}
         title={`옵션${bundledOptions.length > 0 ? ` ${bundledOptions.length}개` : ''}${bundledOptions.length > 0 && bundleUnits > 1 ? ' (묶음 기준)' : ''}`}
         action={
           bundledOptions.length > 0 ? (
             <Button
               size="small"
               startIcon={<ContentCopyIcon />}
-              onClick={() => copyText('옵션 표', optionsTsv)}
+              onClick={() => copyText('옵션 표', optionsTsv, 5)}
             >
               옵션 표 복사
             </Button>
@@ -564,7 +573,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       </SectionBlock>
 
       {/* 6. 상품이미지/동영상 — 이미지 선택 + 누끼/규격 핸드오프 (뷰에서 주입) */}
-      <SectionBlock number={6} title="상품이미지 / 동영상">
+      <SectionBlock number={6} done={copiedSections.has(6)} title="상품이미지 / 동영상">
         {imageSection ?? (
           <Typography variant="body2" color="text.secondary">
             대표이미지 1장 + 추가이미지 최대 9장을 업로드하세요.
@@ -573,7 +582,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       </SectionBlock>
 
       {/* 7. 상세설명 — 상세 통이미지 (뷰에서 주입) */}
-      <SectionBlock number={7} title="상세설명 (상세이미지)">
+      <SectionBlock number={7} done={copiedSections.has(7)} title="상세설명 (상세이미지)">
         {detailSection ?? (
           <Typography variant="body2" color="text.secondary">
             상세 이미지를 에디터에 순서대로 업로드하세요.
@@ -582,44 +591,44 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       </SectionBlock>
 
       {/* 8. 상품 주요정보 */}
-      <SectionBlock number={8} title="상품 주요정보">
+      <SectionBlock number={8} done={copiedSections.has(8)} title="상품 주요정보">
         <SheetRow
           label="제조사 / 모델명"
           value={[item.manufacturer, item.model].filter(Boolean).join(' / ') || '—'}
           onCopy={
             item.manufacturer || item.model
-              ? () => copyText('제조사/모델명', [item.manufacturer, item.model].filter(Boolean).join(' / '))
+              ? () => copyText('제조사/모델명', [item.manufacturer, item.model].filter(Boolean).join(' / '), 8)
               : undefined
           }
         />
-        <SheetRow label="원산지" value={item.origin ?? '—'} onCopy={item.origin ? () => copyText('원산지', item.origin as string) : undefined} />
-        <SheetRow label="과세 구분" value={taxLabel ?? '—'} onCopy={taxLabel ? () => copyText('과세 구분', taxLabel) : undefined} />
+        <SheetRow label="원산지" value={item.origin ?? '—'} onCopy={item.origin ? () => copyText('원산지', item.origin as string, 8) : undefined} />
+        <SheetRow label="과세 구분" value={taxLabel ?? '—'} onCopy={taxLabel ? () => copyText('과세 구분', taxLabel, 8) : undefined} />
       </SectionBlock>
 
       {/* 9. 상품정보제공고시 — 전 항목 값이 같으면 한 줄로 압축, 다르면 줄바꿈 목록 */}
-      <SectionBlock number={9} title="상품정보제공고시">
+      <SectionBlock number={9} done={copiedSections.has(9)} title="상품정보제공고시">
         <SheetRow
           label="고시 유형"
           value={item.infoDuty.type ?? '—'}
           caption={infoDutyCaption}
-          onCopy={infoDutyText ? () => copyText('상품정보제공고시', infoDutyText) : undefined}
+          onCopy={infoDutyText ? () => copyText('상품정보제공고시', infoDutyText, 9) : undefined}
         />
       </SectionBlock>
 
       {/* 10. 배송 */}
-      <SectionBlock number={10} title="배송">
+      <SectionBlock number={10} done={copiedSections.has(10)} title="배송">
         <SheetRow
           label="배송비"
           value={shippingFee > 0 ? KRW(shippingFee) : item.delivery.feeType ?? '—'}
           caption={[item.delivery.feeType, item.delivery.pay, item.delivery.jejuExtra !== null && `제주 +${KRW(item.delivery.jejuExtra)}`]
             .filter(Boolean)
             .join(' · ')}
-          onCopy={() => copyText('배송비', String(shippingFee))}
+          onCopy={() => copyText('배송비', String(shippingFee), 10)}
         />
       </SectionBlock>
 
       {/* 11. 반품/교환 */}
-      <SectionBlock number={11} title="반품/교환">
+      <SectionBlock number={11} done={copiedSections.has(11)} title="반품/교환">
         <SheetRow
           label="반품 / 교환비"
           value={
@@ -628,12 +637,12 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               : '—'
           }
           caption={item.returnInfo.exchangeDouble ? '교환비 = 반품비 × 2 (왕복)' : undefined}
-          onCopy={item.returnInfo.fee !== null ? () => copyText('반품비', String(item.returnInfo.fee)) : undefined}
+          onCopy={item.returnInfo.fee !== null ? () => copyText('반품비', String(item.returnInfo.fee), 11) : undefined}
         />
       </SectionBlock>
 
       {/* 12. A/S */}
-      <SectionBlock number={12} title="A/S 정보" caption="한 번 입력하면 이 브라우저에 저장됩니다">
+      <SectionBlock number={12} done={copiedSections.has(12)} title="A/S 정보" caption="한 번 입력하면 이 브라우저에 저장됩니다">
         <FieldRow>
           <TextField
             fullWidth
@@ -644,7 +653,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           />
           <CopyButton
             aria-label="A/S 전화번호 복사"
-            onClick={() => copyText('A/S 전화번호', fixedInfo.afterServicePhone)}
+            onClick={() => copyText('A/S 전화번호', fixedInfo.afterServicePhone, 12)}
           >
             <ContentCopyIcon fontSize="small" />
           </CopyButton>
@@ -664,7 +673,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           />
           <CopyButton
             aria-label="A/S 안내 복사"
-            onClick={() => copyText('A/S 안내', fixedInfo.afterServiceGuide)}
+            onClick={() => copyText('A/S 안내', fixedInfo.afterServiceGuide, 12)}
           >
             <ContentCopyIcon fontSize="small" />
           </CopyButton>
@@ -674,13 +683,14 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       {/* 13. 구매/리뷰 혜택 */}
       <SectionBlock
         number={13}
+        done={copiedSections.has(13)}
         title="구매/리뷰 혜택"
         caption="초보 권장 세팅"
         action={
           <Button
             size="small"
             startIcon={<ContentCopyIcon />}
-            onClick={() => copyText('혜택 세팅', BENEFIT_PRESET_LINES.join('\n'))}
+            onClick={() => copyText('혜택 세팅', BENEFIT_PRESET_LINES.join('\n'), 13)}
           >
             복사
           </Button>
@@ -703,6 +713,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       {tagCandidates.length > 0 && (
         <SectionBlock
           number={14}
+          done={copiedSections.has(14)}
           title={`검색설정 — 태그 후보 ${tagCandidates.length}개`}
           action={
             <Stack direction="row" spacing={1}>
@@ -712,7 +723,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               <Button
                 size="small"
                 startIcon={<ContentCopyIcon />}
-                onClick={() => copyText('태그', tagCandidates.join(','))}
+                onClick={() => copyText('태그', tagCandidates.join(','), 14)}
               >
                 태그 복사
               </Button>
@@ -740,12 +751,12 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       )}
 
       {/* 15. 판매자 코드 */}
-      <SectionBlock number={15} title="판매자 코드">
+      <SectionBlock number={15} done={copiedSections.has(15)} title="판매자 코드">
         <SheetRow
           label="판매자 상품코드 (권장)"
           value={`DG-${item.no}`}
           caption="도매꾹 상품번호 — 주문이 들어오면 이 코드로 도매꾹에서 바로 찾아 발주할 수 있습니다"
-          onCopy={() => copyText('판매자 상품코드', `DG-${item.no}`)}
+          onCopy={() => copyText('판매자 상품코드', `DG-${item.no}`, 15)}
         />
       </SectionBlock>
     </Stack>
@@ -758,14 +769,15 @@ type SectionBlockProps = {
   title: string;
   caption?: string;
   action?: ReactNode;
+  done?: boolean; // 복사 완료 — 뱃지가 체크로 바뀜 (진행 추적)
   children: ReactNode;
 };
 
-function SectionBlock({ number, title, caption, action, children }: SectionBlockProps) {
+function SectionBlock({ number, title, caption, action, done = false, children }: SectionBlockProps) {
   return (
     <SectionBox>
       <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-        <NumberBadge>{number}</NumberBadge>
+        <NumberBadge $isDone={done}>{done ? <CheckIcon sx={{ fontSize: 14 }} /> : number}</NumberBadge>
         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
           {title}
         </Typography>
@@ -825,7 +837,7 @@ const SectionBox = styled.div(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
 }));
 
-const NumberBadge = styled.span(({ theme }) => ({
+const NumberBadge = styled('span', transientOptions)<{ $isDone?: boolean }>(({ theme, $isDone }) => ({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -833,8 +845,8 @@ const NumberBadge = styled.span(({ theme }) => ({
   height: 24,
   flexShrink: 0,
   borderRadius: '50%',
-  backgroundColor: alpha(theme.palette.primary.main, 0.1),
-  color: theme.palette.primary.main,
+  backgroundColor: $isDone ? alpha(theme.palette.success.main, 0.12) : alpha(theme.palette.primary.main, 0.1),
+  color: $isDone ? theme.palette.success.main : theme.palette.primary.main,
   fontSize: 12,
   fontWeight: 700,
 }));
