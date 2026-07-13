@@ -33,3 +33,14 @@ export function parseDomeggookProductNo(rawInput: string): string | null {
 
   return null;
 }
+
+////////// 스마트 인풋 분류 — 링크/상품번호는 즉시 조회, 그 외는 검색어
+// 순수 숫자는 7자리 이상만 상품번호로 간주 (짧은 숫자 "1004" 같은 검색어 오인 방지)
+export type DomeggookInputKind = 'lookup' | 'keyword' | 'empty';
+
+export function classifyDomeggookInput(rawInput: string): DomeggookInputKind {
+  const input = rawInput.trim();
+  if (input.length === 0) return 'empty';
+  if (/^\d+$/.test(input)) return /^\d{7,12}$/.test(input) ? 'lookup' : 'keyword';
+  return parseDomeggookProductNo(input) !== null ? 'lookup' : 'keyword';
+}

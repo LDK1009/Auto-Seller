@@ -55,9 +55,16 @@ const formatPriceInput = (raw: string) => {
 type DomeggookSearchPanelProps = {
   onPick: (no: number) => void; // 카드 클릭 — 사용처가 등록 준비로 연결
   syncKeywordToUrl?: boolean; // true = URL ?kw= 단일 소스 (검색 페이지 전용)
+  hideSearchInput?: boolean; // true = 검색어 인풋 숨김 (원링크 스마트 인풋이 대신 입력)
+  externalSearch?: { keyword: string; token: number }; // 외부 검색 트리거 — token 증가 시 keyword로 재검색
 };
 
-export default function DomeggookSearchPanel({ onPick, syncKeywordToUrl = false }: DomeggookSearchPanelProps) {
+export default function DomeggookSearchPanel({
+  onPick,
+  syncKeywordToUrl = false,
+  hideSearchInput = false,
+  externalSearch,
+}: DomeggookSearchPanelProps) {
   const { enqueueSnackbar } = useSnackbar();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -261,6 +268,16 @@ export default function DomeggookSearchPanel({ onPick, syncKeywordToUrl = false 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  ////////// 외부 검색 트리거 (원링크 스마트 인풋) — token 증가 시에만 발화
+  const lastExternalTokenRef = useRef(0);
+  useEffect(() => {
+    if (!externalSearch || externalSearch.token === lastExternalTokenRef.current) return;
+    lastExternalTokenRef.current = externalSearch.token;
+    setInputValue(externalSearch.keyword);
+    runSearch(externalSearch.keyword);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalSearch]);
+
   ////////// 정렬·필터 변경 시 재조회 (검색한 적 있을 때만)
   useEffect(() => {
     if (hasSearched) runSearch(currentKeywordRef.current);
@@ -295,26 +312,30 @@ export default function DomeggookSearchPanel({ onPick, syncKeywordToUrl = false 
                 setSubCategory(nextSub);
               }}
             />
-            <TextField
-              fullWidth
-              size="medium"
-              label="검색어"
-              placeholder="캠핑랜턴"
-              value={inputValue}
-              onChange={(event) => setInputValue(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') navigateToKeyword(inputValue);
-              }}
-            />
-            <Button
-              variant="contained"
-              onClick={() => navigateToKeyword(inputValue)}
-              disabled={isLoading}
-              startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : <SearchIcon />}
-              sx={{ flexShrink: 0, px: 3 }}
-            >
-              검색
-            </Button>
+            {!hideSearchInput && (
+              <>
+                <TextField
+                  fullWidth
+                  size="medium"
+                  label="검색어"
+                  placeholder="캠핑랜턴"
+                  value={inputValue}
+                  onChange={(event) => setInputValue(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') navigateToKeyword(inputValue);
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  onClick={() => navigateToKeyword(inputValue)}
+                  disabled={isLoading}
+                  startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : <SearchIcon />}
+                  sx={{ flexShrink: 0, px: 3 }}
+                >
+                  검색
+                </Button>
+              </>
+            )}
           </Stack>
 
           {/* 가격 범위 슬라이더 (검색 후 실측 상·하한) + 연필로 직접 입력 */}

@@ -27,6 +27,7 @@ import { useImageHandoffStore } from '@/shared/store/imageHandoffStore';
 import { trackEvent } from '@/shared/utils/analytics';
 import { downloadDomeggookImages } from '@/shared/services/domeggookItemService';
 import { useDomeggookItem } from './_hooks/useDomeggookItem';
+import { classifyDomeggookInput } from './_utils/parseDomeggookUrl';
 import { mergeImagesVertically } from './_utils/mergeImagesVertically';
 import { buildZipWithNames, downloadBlob } from '@/shared/utils/zip';
 import DomeggookSearchPanel from '@/shared/components/DomeggookSearchPanel';
@@ -62,6 +63,16 @@ export default function DomeggookImportView() {
   const [licenseConfirmed, setLicenseConfirmed] = useState(false);
   const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
   const [downloadProgress, setDownloadProgress] = useState<string | null>(null);
+  // 스마트 인풋 → 검색 패널 트리거 (token 증가 = 재검색)
+  const [externalSearch, setExternalSearch] = useState({ keyword: '', token: 0 });
+
+  ////////// 스마트 인풋 제출 — 링크/상품번호는 조회, 그 외는 검색
+  const inputKind = classifyDomeggookInput(rawInput);
+  const submitSmartInput = () => {
+    if (inputKind === 'empty') return;
+    if (inputKind === 'lookup') handleLookup(rawInput);
+    else setExternalSearch((previous) => ({ keyword: rawInput.trim(), token: previous.token + 1 }));
+  };
 
   ////////// 조회 (성공 시 기본 선택 = 대표이미지만)
   const handleLookup = async (input: string) => {
@@ -177,7 +188,7 @@ export default function DomeggookImportView() {
       help={
         <HelpPanel storageKey="domeggook-import">
           <Stack spacing={0.75}>
-            <Typography variant="body2">① 도매꾹 상품 링크(또는 상품번호)를 붙여넣고 조회하세요</Typography>
+            <Typography variant="body2">① 도매꾹 링크를 붙여넣거나, 검색으로 상품을 고르세요</Typography>
             <Typography variant="body2">② 공급사의 이미지 사용 조건을 확인하고 체크합니다</Typography>
             <Typography variant="body2">③ 필요한 이미지를 골라 누끼·규격 변환으로 보내세요</Typography>
             <Typography variant="caption" color="text.secondary">
@@ -188,32 +199,32 @@ export default function DomeggookImportView() {
       }
     >
       <Stack spacing={3}>
-        {/* 링크 입력 */}
+        {/* 스마트 인풋 — 링크·상품번호는 즉시 조회, 검색어는 아래 그리드 검색 */}
         <Paper variant="outlined" sx={{ p: 3 }}>
           <Stack direction="row" spacing={1.5}>
             <TextField
               fullWidth
               size="small"
-              label="도매꾹 상품 링크 또는 상품번호"
-              placeholder="https://domeggook.com/12345678"
+              label="도매꾹 링크·상품번호 또는 검색어"
+              placeholder="https://domeggook.com/12345678 또는 캠핑랜턴"
               value={rawInput}
               onChange={(event) => setRawInput(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === 'Enter' && !isBusy) handleLookup(rawInput);
+                if (event.key === 'Enter' && !isBusy) submitSmartInput();
               }}
             />
             <Button
               variant="contained"
-              onClick={() => handleLookup(rawInput)}
-              disabled={isBusy || rawInput.trim().length === 0}
+              onClick={submitSmartInput}
+              disabled={isBusy || inputKind === 'empty'}
               startIcon={status === 'loading' ? <CircularProgress size={16} color="inherit" /> : <SearchIcon />}
-              sx={{ flexShrink: 0 }}
+              sx={{ flexShrink: 0, minWidth: 76 }}
             >
-              조회
+              {inputKind === 'lookup' ? '조회' : '검색'}
             </Button>
           </Stack>
           <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            링크가 없어도 됩니다 — 아래에서 검색해 상품을 고르면 바로 등록 준비가 시작됩니다.
+            링크·상품번호는 바로 등록 준비를 시작하고, 검색어는 아래에서 상품을 찾아드립니다.
           </Typography>
         </Paper>
 
@@ -223,6 +234,8 @@ export default function DomeggookImportView() {
         {/* 상품 미조회 상태 — 도매꾹 검색 임베드 (검색 → 선택 → 등록 시트) */}
         {(status === 'idle' || status === 'error') && (
           <DomeggookSearchPanel
+            hideSearchInput
+            externalSearch={externalSearch}
             onPick={(no) => {
               setRawInput(String(no));
               handleLookup(String(no));
