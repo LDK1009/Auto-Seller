@@ -26,7 +26,7 @@ import { useImageHandoffStore } from '@/shared/store/imageHandoffStore';
 import { trackEvent } from '@/shared/utils/analytics';
 import { downloadDomeggookImages } from '@/shared/services/domeggookItemService';
 import { useDomeggookItem } from './_hooks/useDomeggookItem';
-import { classifyDomeggookInput } from './_utils/parseDomeggookUrl';
+import { classifyDomeggookInput, parseDomeggookProductNo } from './_utils/parseDomeggookUrl';
 import { mergeImagesVertically } from './_utils/mergeImagesVertically';
 import { buildZipWithNames, downloadBlob } from '@/shared/utils/zip';
 import DomeggookSearchPanel from '@/shared/components/DomeggookSearchPanel';
@@ -72,17 +72,29 @@ export default function DomeggookImportView() {
     }
   };
 
-  ////////// 메인 히어로에서 링크 들고 진입 시 자동 조회 (?input=)
+  ////////// URL ?input= 단일 소스 — 상품 선택 = URL 변경 (공유·뒤로가기·새로고침 유지)
   const searchParams = useSearchParams();
-  const hasAutoLookedUp = useRef(false);
+  const lastLookedUpRef = useRef<string | null>(null);
   useEffect(() => {
-    if (hasAutoLookedUp.current) return;
-    const initialInput = searchParams.get('input');
-    if (!initialInput) return;
-    hasAutoLookedUp.current = true;
-    handleLookup(initialInput);
+    const inputParam = searchParams.get('input');
+    if (inputParam) {
+      if (lastLookedUpRef.current === inputParam) return; // 동일 상품 재조회 방지
+      lastLookedUpRef.current = inputParam;
+      handleLookup(inputParam);
+    } else if (lastLookedUpRef.current !== null) {
+      // 뒤로가기 등으로 파라미터 제거 → 검색 화면 복귀
+      lastLookedUpRef.current = null;
+      reset();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  ////////// 상품 선택 트리거 — URL만 변경 (실행은 searchParams 이펙트)
+  const navigateToProduct = (no: string) => {
+    if ((searchParams.get('input') ?? '') === no) return;
+    router.push(`?input=${no}`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   ////////// 이미지 선택 조작
   const toggleUrl = (url: string) => {
@@ -202,13 +214,10 @@ export default function DomeggookImportView() {
             inputPlaceholder="https://domeggook.com/12345678 또는 캠핑랜턴"
             classifyInput={classifyDomeggookInput}
             onLookup={(raw) => {
-              handleLookup(raw);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              const productNo = parseDomeggookProductNo(raw);
+              if (productNo) navigateToProduct(productNo);
             }}
-            onPick={(no) => {
-              handleLookup(String(no));
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
+            onPick={(no) => navigateToProduct(String(no))}
           />
         )}
 
@@ -220,7 +229,7 @@ export default function DomeggookImportView() {
               <Button
                 size="small"
                 startIcon={<ArrowBackIcon />}
-                onClick={() => reset()}
+                onClick={() => router.push('?')}
                 sx={{ alignSelf: 'flex-start', color: 'text.secondary' }}
               >
                 다른 상품 찾기

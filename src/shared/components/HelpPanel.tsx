@@ -1,7 +1,7 @@
 'use client';
 
 //////////////////////////////////////// 도움말 패널 (공통) ////////////////////////////////////////
-// 컨텐츠 상단에 놓는 접이식 사용 안내. 첫 방문 시 펼침, 이후엔 사용자의 접힘/펼침 상태를
+// 컨텐츠 상단에 놓는 접이식 사용 안내. 기본 접힘, 사용자가 펼치면 그 상태를
 // localStorage에 기억한다 (storageKey 단위).
 
 import { useEffect, useState, type ReactNode } from 'react';
@@ -25,7 +25,7 @@ export default function HelpPanel({ storageKey, title = '사용 방법', childre
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_PREFIX + storageKey);
-    setIsOpen(saved === null ? true : saved === 'open'); // 저장값 없으면 첫 방문 → 펼침
+    setIsOpen(saved === 'open'); // 기본 접힘 — 사용자가 펼쳤던 페이지만 펼침 유지
   }, [storageKey]);
 
   const handleToggle = () => {

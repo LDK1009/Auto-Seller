@@ -308,7 +308,7 @@ export default function MainView() {
 }
 
 //////////////////// 히어로 액션 블록 (히어로·하단 CTA 공용 — 3단 위계) ////////////////////
-// 1순위: 링크 입력(원링크) / 2순위: 도구 둘러보기(구경 방문자) / 3순위: 키워드 분석(소싱 미결정자)
+// 1순위: 링크 입력(원링크) / 2순위: 워크스페이스(구경 방문자) / 3순위: 키워드 분석(소싱 미결정자)
 function HeroActions() {
   return (
     <Stack spacing={1.5} sx={{ width: '100%', maxWidth: 640, alignItems: 'center' }}>
@@ -326,7 +326,7 @@ function HeroActions() {
           '&:hover': { backgroundColor: 'background.paper' },
         }}
       >
-        가입 없이 도구 둘러보기
+        가입 없이 워크스페이스 시작
       </Button>
       {/* 소싱 미결정자 탈출구 (SERVICE 1장 수용 원칙) — 클릭률이 높아지면 여정 서사 개편 근거 */}
       <Typography variant="body2" color="text.secondary">
