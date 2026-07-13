@@ -16,7 +16,9 @@ import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
 import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
@@ -273,7 +275,7 @@ export default function DomeggookImportView() {
               <Stack spacing={2}>
                 <Typography variant="h6">상품 정보</Typography>
                 <SummarySplit>
-                  {/* 좌 4: 상품 이미지 (클릭 = 자세히 보기) */}
+                  {/* 좌 4: 상품 이미지 (클릭 = 자세히 보기, 우측 상단 = 도매꾹 바로가기) */}
                   <SummaryImageBox
                     onClick={() => item.images[0] && setPreviewIndex(0)}
                     $isClickable={Boolean(item.images[0])}
@@ -286,6 +288,17 @@ export default function DomeggookImportView() {
                         이미지 없음
                       </Typography>
                     )}
+                    <Tooltip title="도매꾹에서 보기">
+                      <ImageCornerButton
+                        size="small"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          window.open(item.itemUrl, '_blank', 'noopener');
+                        }}
+                      >
+                        <OpenInNewIcon sx={{ fontSize: 16 }} />
+                      </ImageCornerButton>
+                    </Tooltip>
                   </SummaryImageBox>
 
                   {/* 우 6: 상품명 → [가격·최소구매] → [이미지·사용 허용 여부] */}
@@ -332,7 +345,7 @@ export default function DomeggookImportView() {
                             <>
                               {item.delivery.baseFee.toLocaleString()}
                               <Typography component="span" variant="body2" color="text.secondary">
-                                원{item.delivery.feeType ? ` · ${item.delivery.feeType}` : ''}
+                                원
                               </Typography>
                             </>
                           ) : (
@@ -342,27 +355,14 @@ export default function DomeggookImportView() {
                       </Stack>
                     </Stack>
 
-                    <Stack direction="row" spacing={4} useFlexGap sx={{ flexWrap: 'wrap' }}>
-                      <Stack spacing={0.25}>
-                        <Typography variant="caption" color="text.secondary">
-                          이미지
-                        </Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                          {item.images.length}장
-                        </Typography>
-                      </Stack>
-                      <Stack spacing={0.25}>
-                        <Typography variant="caption" color="text.secondary">
-                          공급사 이미지 사용
-                        </Typography>
-                        <Chip
-                          size="small"
-                          color={item.license.usable ? 'success' : 'error'}
-                          variant="outlined"
-                          label={item.license.usable ? '허용' : '사용 불가'}
-                          sx={{ alignSelf: 'flex-start' }}
-                        />
-                      </Stack>
+                    {/* 속성 뱃지 행 */}
+                    <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                      <Chip
+                        size="small"
+                        color={item.license.usable ? 'success' : 'error'}
+                        variant="outlined"
+                        label={item.license.usable ? '이미지 사용 가능' : '이미지 사용 불가'}
+                      />
                     </Stack>
 
                     {/* 상세이미지 스트립 — 클릭 = 자세히 보기 */}
@@ -538,6 +538,7 @@ const SummarySplit = styled.div(({ theme }) => ({
 }));
 
 const SummaryImageBox = styled('div', transientOptions)<{ $isClickable: boolean }>(({ theme, $isClickable }) => ({
+  position: 'relative',
   flex: 4,
   minWidth: 0,
   alignSelf: 'flex-start',
@@ -554,6 +555,17 @@ const SummaryImageBox = styled('div', transientOptions)<{ $isClickable: boolean 
     width: '100%',
     height: '100%',
     objectFit: 'cover',
+  },
+}));
+
+const ImageCornerButton = styled(IconButton)(({ theme }) => ({
+  position: 'absolute',
+  top: theme.spacing(0.75),
+  right: theme.spacing(0.75),
+  backgroundColor: theme.palette.background.paper,
+  border: `1px solid ${theme.palette.divider}`,
+  '&:hover': {
+    backgroundColor: theme.palette.background.paper,
   },
 }));
 
