@@ -53,11 +53,13 @@ const BENEFIT_PRESET_LINES = [
 
 type RegistrationSheetProps = {
   item: DomeggookItem;
+  imageSection?: ReactNode; // ⑥ 상품이미지 — 이미지 선택·누끼/규격 핸드오프 (뷰가 상태 보유)
+  detailSection?: ReactNode; // ⑦ 상세설명 — 상세 통이미지 받기
 };
 
 const KRW = (value: number) => `${Math.round(value).toLocaleString()}원`;
 
-export default function RegistrationSheet({ item }: RegistrationSheetProps) {
+export default function RegistrationSheet({ item, imageSection, detailSection }: RegistrationSheetProps) {
   const { enqueueSnackbar } = useSnackbar();
   const { fixedInfo, updateFixedInfo } = useSellerFixedInfo();
 
@@ -512,18 +514,22 @@ export default function RegistrationSheet({ item }: RegistrationSheetProps) {
         )}
       </SectionBlock>
 
-      {/* 6. 상품이미지/동영상 */}
+      {/* 6. 상품이미지/동영상 — 이미지 선택 + 누끼/규격 핸드오프 (뷰에서 주입) */}
       <SectionBlock number={6} title="상품이미지 / 동영상">
-        <Typography variant="body2" color="text.secondary">
-          위 이미지 준비에서 내려받은 파일을 업로드하세요 — 대표이미지 1장 + 추가이미지 최대 9장.
-        </Typography>
+        {imageSection ?? (
+          <Typography variant="body2" color="text.secondary">
+            대표이미지 1장 + 추가이미지 최대 9장을 업로드하세요.
+          </Typography>
+        )}
       </SectionBlock>
 
-      {/* 7. 상세설명 */}
+      {/* 7. 상세설명 — 상세 통이미지 (뷰에서 주입) */}
       <SectionBlock number={7} title="상세설명 (상세이미지)">
-        <Typography variant="body2" color="text.secondary">
-          위 이미지 준비의 [상세 통이미지 받기]로 만든 이미지를 에디터에 순서대로 업로드하세요.
-        </Typography>
+        {detailSection ?? (
+          <Typography variant="body2" color="text.secondary">
+            상세 이미지를 에디터에 순서대로 업로드하세요.
+          </Typography>
+        )}
       </SectionBlock>
 
       {/* 8. 상품 주요정보 */}

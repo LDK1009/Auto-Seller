@@ -376,12 +376,12 @@ export default function DomeggookImportView() {
             </Paper>
 
             {item.license.usable && (
-              <>
-                {/* 이미지 준비 카드 */}
-                <Paper variant="outlined" sx={{ p: 3 }}>
-                  <Stack spacing={2}>
-                    <Typography variant="h6">이미지 준비</Typography>
-                    {item.images.length === 0 ? (
+              /* 등록 정보 시트 — 이미지 작업도 스마트스토어 순서상 ⑥·⑦ 섹션으로 주입 */
+              <Paper variant="outlined" sx={{ p: 3 }}>
+                <RegistrationSheet
+                  item={item}
+                  imageSection={
+                    item.images.length === 0 ? (
                       <Alert severity="info">이 상품에서 가져올 수 있는 이미지를 찾지 못했습니다.</Alert>
                     ) : (
                       <>
@@ -392,8 +392,7 @@ export default function DomeggookImportView() {
                           onSelectAll={() => setSelectedUrls(new Set(item.images.map((image) => image.url)))}
                           onClearAll={() => setSelectedUrls(new Set())}
                         />
-
-                        {/* 핸드오프 버튼 */}
+                        {/* 누끼·규격 변환 핸드오프 */}
                         <ActionRow>
                           {HANDOFF_TARGETS.map((target) => (
                             <Button
@@ -406,6 +405,27 @@ export default function DomeggookImportView() {
                               {target.label}
                             </Button>
                           ))}
+                          {downloadProgress && (
+                            <Typography variant="body2" color="text.secondary">
+                              {downloadProgress}
+                            </Typography>
+                          )}
+                        </ActionRow>
+                        <Typography variant="caption" color="text.secondary">
+                          대표이미지 1장 + 추가이미지 최대 9장 — 선택한 이미지를 누끼·규격 변환으로 보내
+                          완성본을 업로드하세요.
+                        </Typography>
+                      </>
+                    )
+                  }
+                  detailSection={
+                    detailImages.length === 0 ? (
+                      <Typography variant="body2" color="text.secondary">
+                        이 상품은 상세 이미지가 없습니다 — 에디터에 직접 내용을 작성하세요.
+                      </Typography>
+                    ) : (
+                      <>
+                        <ActionRow>
                           <Button
                             variant="outlined"
                             startIcon={<VerticalSplitIcon />}
@@ -414,22 +434,16 @@ export default function DomeggookImportView() {
                           >
                             상세 통이미지 받기{selectedDetailCount > 0 && ` (${selectedDetailCount}장)`}
                           </Button>
-                          {downloadProgress && (
-                            <Typography variant="body2" color="text.secondary">
-                              {downloadProgress}
-                            </Typography>
-                          )}
                         </ActionRow>
+                        <Typography variant="caption" color="text.secondary">
+                          위 ⑥에서 선택한 상세 이미지를 세로로 이어붙인 통이미지로 내려받아 에디터에
+                          업로드하세요.
+                        </Typography>
                       </>
-                    )}
-                  </Stack>
-                </Paper>
-
-                {/* 등록 정보 시트 카드 */}
-                <Paper variant="outlined" sx={{ p: 3 }}>
-                  <RegistrationSheet item={item} />
-                </Paper>
-              </>
+                    )
+                  }
+                />
+              </Paper>
             )}
           </>
         )}
