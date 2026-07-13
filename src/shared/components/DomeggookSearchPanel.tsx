@@ -55,15 +55,20 @@ const formatPriceInput = (raw: string) => {
 type DomeggookSearchPanelProps = {
   onPick: (no: number) => void; // 카드 클릭 — 사용처가 등록 준비로 연결
   syncKeywordToUrl?: boolean; // true = URL ?kw= 단일 소스 (검색 페이지 전용)
-  hideSearchInput?: boolean; // true = 검색어 인풋 숨김 (원링크 스마트 인풋이 대신 입력)
-  externalSearch?: { keyword: string; token: number }; // 외부 검색 트리거 — token 증가 시 keyword로 재검색
+  // 스마트 인풋 모드 (원링크): 링크·상품번호 판별 시 검색 대신 onLookup 실행, 버튼 라벨 조회↔검색 전환
+  classifyInput?: (raw: string) => 'lookup' | 'keyword' | 'empty';
+  onLookup?: (raw: string) => void;
+  inputLabel?: string;
+  inputPlaceholder?: string;
 };
 
 export default function DomeggookSearchPanel({
   onPick,
   syncKeywordToUrl = false,
-  hideSearchInput = false,
-  externalSearch,
+  classifyInput,
+  onLookup,
+  inputLabel = '검색어',
+  inputPlaceholder = '캠핑랜턴',
 }: DomeggookSearchPanelProps) {
   const { enqueueSnackbar } = useSnackbar();
   const router = useRouter();
@@ -239,8 +244,14 @@ export default function DomeggookSearchPanel({
   }, [items.length, page, totalPages]);
 
   ////////// 검색 트리거 — 동기화 모드는 URL만 변경(실행은 searchParams 이펙트), 임베드는 즉시 실행
+  // 스마트 인풋: 링크·상품번호로 판별되면 검색 대신 onLookup(등록 준비)로 넘김
+  const inputKind = classifyInput ? classifyInput(inputValue) : inputValue.trim() ? 'keyword' : 'empty';
   const navigateToKeyword = (rawKeyword: string) => {
     const keyword = rawKeyword.trim();
+    if (classifyInput && onLookup && classifyInput(keyword) === 'lookup') {
+      onLookup(keyword);
+      return;
+    }
     if (!syncKeywordToUrl) {
       runSearch(keyword);
       return;
@@ -267,16 +278,6 @@ export default function DomeggookSearchPanel({
     runSearch(keyword); // 빈 키워드 = 전체 인기순 (서버 ev=all)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
-
-  ////////// 외부 검색 트리거 (원링크 스마트 인풋) — token 증가 시에만 발화
-  const lastExternalTokenRef = useRef(0);
-  useEffect(() => {
-    if (!externalSearch || externalSearch.token === lastExternalTokenRef.current) return;
-    lastExternalTokenRef.current = externalSearch.token;
-    setInputValue(externalSearch.keyword);
-    runSearch(externalSearch.keyword);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [externalSearch]);
 
   ////////// 정렬·필터 변경 시 재조회 (검색한 적 있을 때만)
   useEffect(() => {
@@ -312,30 +313,26 @@ export default function DomeggookSearchPanel({
                 setSubCategory(nextSub);
               }}
             />
-            {!hideSearchInput && (
-              <>
-                <TextField
-                  fullWidth
-                  size="medium"
-                  label="검색어"
-                  placeholder="캠핑랜턴"
-                  value={inputValue}
-                  onChange={(event) => setInputValue(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') navigateToKeyword(inputValue);
-                  }}
-                />
-                <Button
-                  variant="contained"
-                  onClick={() => navigateToKeyword(inputValue)}
-                  disabled={isLoading}
-                  startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : <SearchIcon />}
-                  sx={{ flexShrink: 0, px: 3 }}
-                >
-                  검색
-                </Button>
-              </>
-            )}
+            <TextField
+              fullWidth
+              size="medium"
+              label={inputLabel}
+              placeholder={inputPlaceholder}
+              value={inputValue}
+              onChange={(event) => setInputValue(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') navigateToKeyword(inputValue);
+              }}
+            />
+            <Button
+              variant="contained"
+              onClick={() => navigateToKeyword(inputValue)}
+              disabled={isLoading}
+              startIcon={isLoading ? <CircularProgress size={16} color="inherit" /> : <SearchIcon />}
+              sx={{ flexShrink: 0, px: 3 }}
+            >
+              {inputKind === 'lookup' ? '조회' : '검색'}
+            </Button>
           </Stack>
 
           {/* 가격 범위 슬라이더 (검색 후 실측 상·하한) + 연필로 직접 입력 */}

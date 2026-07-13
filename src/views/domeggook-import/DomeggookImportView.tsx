@@ -10,13 +10,12 @@ import styled from '@emotion/styled';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
-import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import Link from '@mui/material/Link';
-import SearchIcon from '@mui/icons-material/Search';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import AspectRatioIcon from '@mui/icons-material/AspectRatio';
 import VerticalSplitIcon from '@mui/icons-material/VerticalSplit';
@@ -56,23 +55,12 @@ const HANDOFF_TARGETS = [
 export default function DomeggookImportView() {
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
-  const { status, item, errorMessage, lookup } = useDomeggookItem();
+  const { status, item, errorMessage, lookup, reset } = useDomeggookItem();
 
   // 순수 UI 상태
-  const [rawInput, setRawInput] = useState('');
   const [licenseConfirmed, setLicenseConfirmed] = useState(false);
   const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
   const [downloadProgress, setDownloadProgress] = useState<string | null>(null);
-  // 스마트 인풋 → 검색 패널 트리거 (token 증가 = 재검색)
-  const [externalSearch, setExternalSearch] = useState({ keyword: '', token: 0 });
-
-  ////////// 스마트 인풋 제출 — 링크/상품번호는 조회, 그 외는 검색
-  const inputKind = classifyDomeggookInput(rawInput);
-  const submitSmartInput = () => {
-    if (inputKind === 'empty') return;
-    if (inputKind === 'lookup') handleLookup(rawInput);
-    else setExternalSearch((previous) => ({ keyword: rawInput.trim(), token: previous.token + 1 }));
-  };
 
   ////////// 조회 (성공 시 기본 선택 = 대표이미지만)
   const handleLookup = async (input: string) => {
@@ -94,7 +82,6 @@ export default function DomeggookImportView() {
     const initialInput = searchParams.get('input');
     if (!initialInput) return;
     hasAutoLookedUp.current = true;
-    setRawInput(initialInput);
     handleLookup(initialInput);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -199,45 +186,28 @@ export default function DomeggookImportView() {
       }
     >
       <Stack spacing={3}>
-        {/* 스마트 인풋 — 링크·상품번호는 즉시 조회, 검색어는 아래 그리드 검색 */}
-        <Paper variant="outlined" sx={{ p: 3 }}>
-          <Stack direction="row" spacing={1.5}>
-            <TextField
-              fullWidth
-              size="small"
-              label="도매꾹 링크·상품번호 또는 검색어"
-              placeholder="https://domeggook.com/12345678 또는 캠핑랜턴"
-              value={rawInput}
-              onChange={(event) => setRawInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' && !isBusy) submitSmartInput();
-              }}
-            />
-            <Button
-              variant="contained"
-              onClick={submitSmartInput}
-              disabled={isBusy || inputKind === 'empty'}
-              startIcon={status === 'loading' ? <CircularProgress size={16} color="inherit" /> : <SearchIcon />}
-              sx={{ flexShrink: 0, minWidth: 76 }}
-            >
-              {inputKind === 'lookup' ? '조회' : '검색'}
-            </Button>
+        {/* 조회 중 */}
+        {status === 'loading' && (
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', p: 2 }}>
+            <CircularProgress size={18} />
+            <Typography variant="body2" color="text.secondary">상품 정보를 불러오는 중…</Typography>
           </Stack>
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            링크·상품번호는 바로 등록 준비를 시작하고, 검색어는 아래에서 상품을 찾아드립니다.
-          </Typography>
-        </Paper>
+        )}
 
         {/* 오류 */}
         {status === 'error' && errorMessage && <Alert severity="error">{errorMessage}</Alert>}
 
-        {/* 상품 미조회 상태 — 도매꾹 검색 임베드 (검색 → 선택 → 등록 시트) */}
+        {/* 상품 미조회 상태 — 검색 섹션(분류|스마트 인풋|버튼) + 그리드 (검색 → 선택 → 등록 시트) */}
         {(status === 'idle' || status === 'error') && (
           <DomeggookSearchPanel
-            hideSearchInput
-            externalSearch={externalSearch}
+            inputLabel="도매꾹 링크·상품번호 또는 검색어"
+            inputPlaceholder="https://domeggook.com/12345678 또는 캠핑랜턴"
+            classifyInput={classifyDomeggookInput}
+            onLookup={(raw) => {
+              handleLookup(raw);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
             onPick={(no) => {
-              setRawInput(String(no));
               handleLookup(String(no));
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
@@ -248,6 +218,15 @@ export default function DomeggookImportView() {
         {status === 'loaded' && item && (
           <Paper variant="outlined" sx={{ p: 3 }}>
             <Stack spacing={2.5}>
+              {/* 검색으로 복귀 */}
+              <Button
+                size="small"
+                startIcon={<ArrowBackIcon />}
+                onClick={() => reset()}
+                sx={{ alignSelf: 'flex-start', color: 'text.secondary' }}
+              >
+                다른 상품 찾기
+              </Button>
               {/* 상품 요약 */}
               <Stack spacing={0.5}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
