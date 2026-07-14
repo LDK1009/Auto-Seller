@@ -109,8 +109,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     .filter((tag) => !PROMO_WORDS.some((word) => tag.toLowerCase().includes(word.toLowerCase())))
     .slice(0, 10);
 
-  // 추천 상품명 — 태그 후보 조합 (검색량 조회 후엔 검색량 내림차순 반영)
-  const suggestedName = buildSuggestedProductName(tagCandidates, tagStats);
+  // 추천 상품명 — 교차 검증된 공급사 키워드 + 상품명 토큰 조합 (검색량 조회 후엔 검색량순)
+  const suggestedName = buildSuggestedProductName(item.title, item.keywords, nameTokens, tagStats);
 
   ////////// 원가·판매가 계산 (MOQ 반영)
   const bundleUnits = Math.max(item.moq, 1); // 고객 1주문당 도매꾹에서 사야 하는 수량
@@ -423,14 +423,12 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             ))}
           </Stack>
         )}
-        {/* 추천 상품명 — 태그 후보 조합 (검색량 확인 후엔 검색량순) */}
+        {/* 추천 상품명 — 교차 검증·동의어 정리된 조합 (검색량 확인 후엔 검색량순) */}
         {suggestedName && suggestedName !== productName && (
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-            <Typography variant="caption" color="text.secondary">
-              추천
-            </Typography>
+            <Chip size="small" variant="outlined" color="primary" label="추천" />
             <Typography variant="body2">{suggestedName}</Typography>
-            <Button size="small" onClick={() => setProductName(suggestedName)}>
+            <Button size="small" variant="outlined" onClick={() => setProductName(suggestedName)}>
               적용
             </Button>
           </Stack>

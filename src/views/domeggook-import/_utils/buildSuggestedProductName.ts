@@ -1,29 +1,54 @@
 //////////////////////////////////////// 추천 상품명 조합 ////////////////////////////////////////
-// 태그 후보(공급사 키워드 + 상품명 토큰, 홍보어 제거됨)를 우선순위대로 이어붙여 권장 길이 안에서 조합.
-// 검색량 데이터가 있으면 월간 검색수 내림차순 — 많이 찾는 키워드가 앞으로 (검색 노출 관행).
+// 규칙 기반 조합 (AI 미사용):
+// 1) 공급사 키워드 교차 검증 — 원 상품명에 등장하는 키워드만 채택 (무관 키워드로 거짓 상품명 방지)
+// 2) 동의어 정리 — 부분 포함 관계 토큰은 대표 1개만 (검색량 조회 시 검색량, 미조회 시 더 구체적인 쪽)
+// 3) 정렬 — 검색량 내림차순 (미조회 시 공급사 키워드 → 상품명 순서 유지), 숫자 속성(150cm 등)은 뒤로
+// 4) 권장 길이(35자) 안에서 순서대로 연결, 초과 토큰은 건너뜀
 
 import type { KeywordStat } from '@/shared/types/keywordStats';
-import { NAME_RECOMMENDED_LENGTH } from './validateProductName';
+import { NAME_RECOMMENDED_LENGTH, PROMO_WORDS } from './validateProductName';
 
 export function buildSuggestedProductName(
-  tagCandidates: string[],
+  originalTitle: string,
+  supplierKeywords: string[],
+  nameTokens: string[],
   tagStats: Map<string, KeywordStat> | null,
 ): string | null {
-  if (tagCandidates.length === 0) return null;
+  const normalizedTitle = originalTitle.replace(/\s+/g, '').toLowerCase();
+  const searchesOf = (token: string) => tagStats?.get(token.replace(/\s+/g, ''))?.monthlySearches ?? 0;
 
-  // 검색량 있으면 내림차순 정렬, 없으면 원 순서(공급사 키워드 우선) 유지
-  const ordered = tagStats
-    ? [...tagCandidates].sort((a, b) => {
-        const searchesA = tagStats.get(a.replace(/\s+/g, ''))?.monthlySearches ?? 0;
-        const searchesB = tagStats.get(b.replace(/\s+/g, ''))?.monthlySearches ?? 0;
-        return searchesB - searchesA;
-      })
-    : tagCandidates;
+  ////////// 1) 공급사 키워드 교차 검증 — 원 상품명에 실제로 등장하는 것만
+  const validKeywords = supplierKeywords.filter((keyword) =>
+    normalizedTitle.includes(keyword.replace(/\s+/g, '').toLowerCase()),
+  );
 
-  // 권장 길이 안에서 순서대로 연결 (중복 토큰은 이미 제거된 상태)
+  // 합침 + 중복 제거 + 홍보어 제거
+  const pool = Array.from(new Set([...validKeywords, ...nameTokens])).filter(
+    (token) => !PROMO_WORDS.some((word) => token.toLowerCase().includes(word.toLowerCase())),
+  );
+
+  ////////// 2) 동의어 정리 — 포함 관계 그룹당 대표 1개 (검색량 > 길이(구체성) > 앞 순서)
+  const representativeScore = (token: string) => (tagStats ? searchesOf(token) : token.length);
+  const deduped = pool.filter((token, index) => {
+    return !pool.some((other, otherIndex) => {
+      if (other === token) return false;
+      const related = other.includes(token) || token.includes(other);
+      if (!related) return false;
+      const scoreOther = representativeScore(other);
+      const scoreToken = representativeScore(token);
+      return scoreOther > scoreToken || (scoreOther === scoreToken && otherIndex < index);
+    });
+  });
+
+  ////////// 3) 정렬 — 검색량순 (미조회 시 원 순서), 숫자 속성 토큰은 뒤로
+  const ordered = tagStats ? [...deduped].sort((a, b) => searchesOf(b) - searchesOf(a)) : deduped;
+  const textTokens = ordered.filter((token) => !/\d/.test(token));
+  const numericTokens = ordered.filter((token) => /\d/.test(token));
+
+  ////////// 4) 권장 길이 안에서 조합
   const parts: string[] = [];
   let length = 0;
-  for (const token of ordered) {
+  for (const token of [...textTokens, ...numericTokens]) {
     const nextLength = length === 0 ? token.length : length + 1 + token.length;
     if (nextLength > NAME_RECOMMENDED_LENGTH) continue;
     parts.push(token);
