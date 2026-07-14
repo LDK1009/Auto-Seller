@@ -24,6 +24,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
 import QueryStatsOutlinedIcon from '@mui/icons-material/QueryStatsOutlined';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import TrendingUpOutlinedIcon from '@mui/icons-material/TrendingUpOutlined';
 import TrendingDownOutlinedIcon from '@mui/icons-material/TrendingDownOutlined';
 import EventOutlinedIcon from '@mui/icons-material/EventOutlined';
@@ -34,6 +35,7 @@ import { FEE_PRESETS, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from '@/shared/con
 import { calculateMargin, calculateReversePrice, PRICE_ROUND_UNIT } from '@/shared/utils/marginCalculation';
 import type { DomeggookItem } from '@/shared/types/domeggook';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
+import { downloadBlob } from '@/shared/utils/zip';
 import { useSellerFixedInfo } from '../_hooks/useSellerFixedInfo';
 import { validateProductName, PROMO_WORDS, type NameCheckLevel } from '../_utils/validateProductName';
 import { detectComplianceRisk } from '../_utils/detectComplianceRisk';
@@ -228,7 +230,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   const displaySellingPrice = listPrice ?? recommendedPrice;
 
   ////////// 파생 값
-  const bundleStock = item.inventory !== null ? Math.floor(item.inventory / bundleUnits) : null;
+  // 재고·옵션은 낱개 기준 고정 (2026-07-14 — 판매가 계산만 판매 기준을 따름)
+  const bundleStock = item.inventory;
   const exchangeFee =
     item.returnInfo.fee !== null
       ? item.returnInfo.exchangeDouble
@@ -252,15 +255,24 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         : item.infoDuty.items.map((entry) => `${entry.name}: ${entry.desc}`).join('\n');
 
   ////////// 옵션 조합 (묶음 판매 시 가산가·재고도 묶음 단위로 환산)
-  const bundledOptions = item.options.map((option) => ({
-    name: option.name,
-    priceAdd: option.priceAdd * bundleUnits,
-    stock: Math.floor(option.stock / bundleUnits),
-  }));
+  const bundledOptions = item.options;
   // 스스 옵션 폼/엑셀에 붙일 TSV (옵션명 ⇥ 가산가 ⇥ 재고)
   const optionsTsv = bundledOptions
     .map((option) => `${option.name}\t${option.priceAdd}\t${option.stock}`)
     .join('\n');
+
+  ////////// 옵션 엑셀 다운로드 — 일괄등록 양식 (BOM 포함 CSV — 엑셀에서 한글 정상)
+  const downloadOptionsCsv = () => {
+    if (bundledOptions.length === 0) return;
+    const rows = [
+      ['옵션값', '옵션가', '재고수량'],
+      ...bundledOptions.map((option) => [option.name, String(option.priceAdd), String(option.stock)]),
+    ];
+    const csv =
+      '\uFEFF' + rows.map((row) => row.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(',')).join('\r\n');
+    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `옵션_일괄등록_${item.no}.csv`);
+    setCopiedSections((previous) => new Set(previous).add(5));
+  };
 
   ////////// 검색량·연관 키워드 조회 — 시드 = 공급사 키워드 상위 5개 (keywordstool 1콜 한도에 맞춤)
   const handleLoadTagStats = async () => {
@@ -374,8 +386,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       displaySellingPrice !== null &&
         `판매가: ${displaySellingPrice}${bundleUnits > 1 ? ` (${bundleUnits}개 묶음 기준)` : ''}`,
       listPrice !== null && `할인 ${discountRate}% → 최종 결제가 ${recommendedPrice}`,
-      bundleStock !== null && `재고: ${bundleStock}${bundleUnits > 1 ? ` (묶음 기준, 낱개 ${item.inventory})` : ''}`,
-      optionsTsv && `옵션 (옵션명/가산가/재고${bundleUnits > 1 ? ' — 묶음 기준' : ''}):\n${optionsTsv}`,
+      bundleStock !== null && `재고: ${bundleStock}`,
+      optionsTsv && `옵션 (옵션명/가산가/재고):\n${optionsTsv}`,
       item.manufacturer && `제조사: ${item.manufacturer}`,
       item.model && `모델명: ${item.model}`,
       item.origin && `원산지: ${item.origin}`,
@@ -422,12 +434,12 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           <Alert severity={item.moq > 2 ? 'warning' : 'info'}>
             이 상품의 도매꾹 최소 구매수량은 <b>{item.moq}개</b>입니다. 고객 1주문마다 {item.moq}개를
             구매해야 하므로 <b>{item.moq === 2 ? '1+1' : `${item.moq}개 묶음`} 구성 판매</b>를 권장합니다.
-            아래 판매가·재고는 묶음 기준으로 계산했습니다.
+            아래 판매가는 묶음 기준으로 계산했습니다 (재고·옵션은 낱개 기준).
           </Alert>
         ) : (
           <Alert severity="info">
             낱개 사입 기준으로 계산 중입니다. 도매꾹 최소 구매수량이 <b>{item.moq}개</b>이므로 미리
-            사입해 두고 1개씩 판매하는 방식입니다 — 아래 판매가·재고는 낱개 기준입니다.
+            사입해 두고 1개씩 판매하는 방식입니다 — 아래 판매가는 낱개 기준입니다.
           </Alert>
         ))}
 
@@ -907,13 +919,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       <SectionBlock number={4} done={copiedSections.has(4)} title="재고수량">
         <SheetRow
           value={bundleStock !== null ? `${bundleStock.toLocaleString()}개` : '—'}
-          caption={
-            bundleStock === 0
-              ? '재고가 없습니다 — 공급사 재입고 확인 후 등록하세요'
-              : bundleUnits > 1 && item.inventory !== null
-                ? `묶음 기준 (낱개 ${item.inventory.toLocaleString()}개)`
-                : undefined
-          }
+          caption={bundleStock === 0 ? '재고가 없습니다 — 공급사 재입고 확인 후 등록하세요' : undefined}
           onCopy={bundleStock !== null ? () => copyText('재고 수량', String(bundleStock), 4) : undefined}
         />
       </SectionBlock>
@@ -922,16 +928,21 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       <SectionBlock
         number={5}
         done={copiedSections.has(5)}
-        title={`옵션${bundledOptions.length > 0 ? ` ${bundledOptions.length}개` : ''}${bundledOptions.length > 0 && bundleUnits > 1 ? ' (묶음 기준)' : ''}`}
+        title="옵션"
         action={
           bundledOptions.length > 0 ? (
-            <Button
-              size="small"
-              startIcon={<ContentCopyIcon />}
-              onClick={() => copyText('옵션 표', optionsTsv, 5)}
-            >
-              옵션 표 복사
-            </Button>
+            <Stack direction="row" spacing={0.5}>
+              <Button
+                size="small"
+                startIcon={<ContentCopyIcon />}
+                onClick={() => copyText('옵션 표', optionsTsv, 5)}
+              >
+                옵션 표 복사
+              </Button>
+              <Button size="small" startIcon={<FileDownloadOutlinedIcon />} onClick={downloadOptionsCsv}>
+                엑셀 다운로드
+              </Button>
+            </Stack>
           ) : undefined
         }
       >
