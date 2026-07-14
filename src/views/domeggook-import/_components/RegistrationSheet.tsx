@@ -396,6 +396,16 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           </Tooltip>
         }
       >
+        {/* 추천 상품명 — 교차 검증·동의어 정리된 조합 (검색량 확인 후엔 검색량순) */}
+        {suggestedName && suggestedName !== productName && (
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+            <Chip size="small" variant="outlined" color="primary" label="추천" />
+            <Typography variant="body2">{suggestedName}</Typography>
+            <Button size="small" onClick={() => setProductName(suggestedName)}>
+              적용
+            </Button>
+          </Stack>
+        )}
         <FieldRow>
           <TextField
             fullWidth
@@ -421,16 +431,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 <Chip size="small" variant="filled" color={CHECK_CHIP_COLORS[check.level]} label={check.label} />
               </Tooltip>
             ))}
-          </Stack>
-        )}
-        {/* 추천 상품명 — 교차 검증·동의어 정리된 조합 (검색량 확인 후엔 검색량순) */}
-        {suggestedName && suggestedName !== productName && (
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-            <Chip size="small" variant="outlined" color="primary" label="추천" />
-            <Typography variant="body2">{suggestedName}</Typography>
-            <Button size="small" variant="outlined" onClick={() => setProductName(suggestedName)}>
-              적용
-            </Button>
           </Stack>
         )}
       </SectionBlock>
