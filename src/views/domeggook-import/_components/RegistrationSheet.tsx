@@ -406,9 +406,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             전체 복사
           </Button>
         </Stack>
-        <Typography variant="body2" color="text.secondary">
-          스마트스토어 등록 화면과 같은 순서입니다 — 두 화면을 나란히 두고 위에서 아래로 붙여넣으세요.
-        </Typography>
       </Stack>
 
       {/* 인증·인허가 지뢰 경고 */}
@@ -417,21 +414,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           <b>{risk.type} 대상일 수 있습니다</b> (감지: {risk.matched.join(', ')}) — {risk.guide}
         </Alert>
       ))}
-
-      {/* MOQ 안내 — 판매 기준 전환 시에도 알럿을 유지해 레이아웃 시프트(스크롤 점프) 방지 */}
-      {item.moq >= 2 &&
-        (pricingMode === 'bundle' ? (
-          <Alert severity={item.moq > 2 ? 'warning' : 'info'}>
-            이 상품의 도매꾹 최소 구매수량은 <b>{item.moq}개</b>입니다. 고객 1주문마다 {item.moq}개를
-            구매해야 하므로 <b>{item.moq === 2 ? '1+1' : `${item.moq}개 묶음`} 구성 판매</b>를 권장합니다.
-            아래 판매가는 묶음 기준으로 계산했습니다 (재고·옵션은 낱개 기준).
-          </Alert>
-        ) : (
-          <Alert severity="info">
-            낱개 사입 기준으로 계산 중입니다. 도매꾹 최소 구매수량이 <b>{item.moq}개</b>이므로 미리
-            사입해 두고 1개씩 판매하는 방식입니다 — 아래 판매가는 낱개 기준입니다.
-          </Alert>
-        ))}
 
       {/* 1. 카테고리 — 추천 카테고리 자동 조회 (네이버쇼핑 상위 상품 최빈값) */}
       <SectionBlock number={1} title="카테고리">

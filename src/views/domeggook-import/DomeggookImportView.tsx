@@ -315,6 +315,14 @@ export default function DomeggookImportView() {
               다른 상품 찾기
             </Button>
 
+            {/* MOQ 안내 — 묶음 판매 필요 여부는 가장 먼저 알아야 할 정보라 최상단 배치 */}
+            {item.moq >= 2 && (
+              <Alert severity={item.moq > 2 ? 'warning' : 'info'}>
+                이 상품의 도매꾹 최소 구매수량은 <b>{item.moq}개</b>입니다. 고객 1주문마다 {item.moq}개를
+                구매해야 하므로 <b>{item.moq === 2 ? '1+1' : `${item.moq}개 묶음`} 구성 판매</b>를 권장합니다.
+              </Alert>
+            )}
+
             {/* 상품 요약 카드 — 좌(4) 상품 이미지 / 우(6) 상품명·가격·조건 */}
             <Paper variant="outlined" sx={{ p: 3 }}>
               <Stack spacing={2}>
