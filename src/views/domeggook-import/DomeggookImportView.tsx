@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import styled from '@emotion/styled';
+import { alpha } from '@mui/material/styles';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
@@ -424,14 +425,20 @@ export default function DomeggookImportView() {
                               </PickThumb>
                             ) : (
                               thumbImage && (
-                                <Button
-                                  variant="outlined"
-                                  size="small"
+                                <RestoreMainTile
+                                  type="button"
                                   onClick={() => setMainImage(pickedFromOriginal(thumbImage))}
-                                  sx={{ alignSelf: 'center' }}
                                 >
-                                  도매꾹 대표이미지 사용하기
-                                </Button>
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={thumbImage.proxyUrl} alt="" loading="lazy" />
+                                  <Typography variant="caption" sx={{ lineHeight: 1.3, fontWeight: 600 }}>
+                                    도매꾹
+                                    <br />
+                                    대표이미지
+                                    <br />
+                                    사용하기
+                                  </Typography>
+                                </RestoreMainTile>
                               )
                             )}
                             <CropAddTile
@@ -790,6 +797,40 @@ const PickThumb = styled('div', transientOptions)<{ $isSelected?: boolean }>(({ 
     height: '100%',
     objectFit: 'cover',
     display: 'block',
+  },
+}));
+
+// 도매꾹 대표이미지 복원 타일 — 썸네일 배경 + 연한 프라이머리 점선 테두리
+const RestoreMainTile = styled.button(({ theme }) => ({
+  position: 'relative',
+  width: 108,
+  height: 108,
+  flexShrink: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  overflow: 'hidden',
+  borderRadius: theme.shape.borderRadius,
+  border: `1px dashed ${alpha(theme.palette.primary.main, 0.5)}`,
+  backgroundColor: 'transparent',
+  color: theme.palette.primary.main,
+  cursor: 'pointer',
+  textAlign: 'center',
+  padding: 0,
+  '& img': {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    opacity: 0.3,
+  },
+  '& .MuiTypography-root': {
+    position: 'relative', // 배경 이미지 위로
+  },
+  '&:hover': {
+    borderColor: theme.palette.primary.main,
+    '& img': { opacity: 0.45 },
   },
 }));
 
