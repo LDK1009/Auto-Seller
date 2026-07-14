@@ -233,8 +233,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         ? item.returnInfo.fee * 2
         : item.returnInfo.fee
       : null;
-  const taxLabel = item.taxType?.includes('면세') ? '면세' : item.taxType?.includes('과세') ? '과세' : item.taxType;
-
   ////////// KC 안전인증 표시 텍스트 (예: "안전확인 · 전기용품 · XU102308-20002B", 면제면 "면제" 표기)
   // ?? [] — 응답이 브라우저 HTTP 캐시(1h)에 구형으로 남아 신규 필드가 없을 수 있어 방어
   const safetyCerts = item.safetyCerts ?? [];
@@ -253,10 +251,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
 
   ////////// 옵션 조합 (묶음 판매 시 가산가·재고도 묶음 단위로 환산)
   const bundledOptions = item.options;
-  // 스스 옵션 폼/엑셀에 붙일 TSV (옵션명 ⇥ 가산가 ⇥ 재고)
-  const optionsTsv = bundledOptions
-    .map((option) => `${option.name}\t${option.priceAdd}\t${option.stock}`)
-    .join('\n');
 
   ////////// 옵션 엑셀 다운로드 — 스마트스토어 옵션 일괄등록 양식 (.xlsx)
   // 1행 = 컬럼 헤더 [옵션명 옵션값 사용여부] — 옵션명은 도매꾹이 그룹명을 안 줘 '옵션' 고정
@@ -372,41 +366,10 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     enqueueSnackbar(`${label}을(를) 복사했습니다.`, { variant: 'success' });
   };
 
-  // 전체 복사도 시트(=스마트스토어 폼) 순서 그대로
-  const copyAll = async () => {
-    const lines = [
-      categoryCandidates?.[0] && `카테고리: ${compactCategoryPath(categoryCandidates[0].path)}`,
-      `상품명: ${productName}`,
-      displaySellingPrice !== null &&
-        `판매가: ${displaySellingPrice}${bundleUnits > 1 ? ` (${bundleUnits}개 묶음 기준)` : ''}`,
-      listPrice !== null && `할인 ${discountRate}% → 최종 결제가 ${recommendedPrice}`,
-      bundleStock !== null && `재고: ${bundleStock}`,
-      optionsTsv && `옵션 (옵션명/가산가/재고):\n${optionsTsv}`,
-      item.manufacturer && `제조사: ${item.manufacturer}`,
-      item.model && `모델명: ${item.model}`,
-      item.origin && `원산지: ${item.origin}`,
-      taxLabel && `과세 구분: ${taxLabel}`,
-      `배송비: ${shippingFee}${item.delivery.feeType ? ` (${item.delivery.feeType})` : ''}`,
-      item.returnInfo.fee !== null && `반품비: ${item.returnInfo.fee} / 교환비: ${exchangeFee}`,
-      recommendedTags.length > 0 && `태그: ${recommendedTags.join(',')}`,
-      `판매자 상품코드: DG-${item.no}`,
-    ]
-      .filter(Boolean)
-      .join('\n');
-    await copyText('등록 정보 전체', lines);
-  };
-
   return (
     <Stack spacing={2}>
       {/* 헤더 */}
-      <Stack spacing={0.75}>
-        <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="h6">등록 정보</Typography>
-          <Button variant="outlined" size="small" startIcon={<ContentCopyIcon />} onClick={copyAll}>
-            전체 복사
-          </Button>
-        </Stack>
-      </Stack>
+      <Typography variant="h6">등록 정보</Typography>
 
       {/* 인증·인허가 지뢰 경고 */}
       {complianceRisks.map((risk) => (
