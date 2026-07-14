@@ -1015,13 +1015,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         )}
       </SectionBlock>
 
-      {/* 8. 상품 주요정보 — 스마트스토어 폼 필드와 1:1 (모델명·품번·제조사·KC인증·원산지·상품상태·맞춤제작·미성년자) */}
-      <SectionBlock
-        number={8}
-        done={copiedSections.has(8)}
-        title="상품 주요정보"
-        caption="브랜드·제조일자·유효일자는 도매꾹 미제공 — 필요 시 직접 입력하세요"
-      >
+      {/* 8. 상품 주요정보 — 스마트스토어 폼 필드와 1:1, 데이터 없으면 '—' (텍스트는 있을 때만) */}
+      <SectionBlock number={8} done={copiedSections.has(8)} title="상품 주요정보">
         <SheetRow
           label="모델명"
           value={item.model ?? '—'}
@@ -1033,26 +1028,24 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           caption={item.itemCustomCode ? '공급사 상품코드 기준' : undefined}
           onCopy={item.itemCustomCode ? () => copyText('품번', item.itemCustomCode as string, 8) : undefined}
         />
+        <SheetRow label="브랜드" value="—" />
         <SheetRow
           label="제조사"
           value={item.manufacturer ?? '—'}
           onCopy={item.manufacturer ? () => copyText('제조사', item.manufacturer as string, 8) : undefined}
         />
+        <SheetRow label="상품속성" value="—" />
         <SheetRow
           label="KC인증"
-          value={safetyCertText ?? '인증 정보 없음'}
-          caption={
-            safetyCertText
-              ? '공급사가 등록한 인증정보 — 등록 전 번호 유효성을 확인하세요'
-              : '카테고리에 따라 KC 인증 필요 여부를 확인하세요'
-          }
-          onCopy={
-            safetyCertNo ? () => copyText('KC 인증번호', safetyCertNo, 8) : undefined
-          }
+          value={safetyCertText ?? '—'}
+          caption={safetyCertText ? '공급사가 등록한 인증정보 — 등록 전 번호 유효성을 확인하세요' : undefined}
+          onCopy={safetyCertNo ? () => copyText('KC 인증번호', safetyCertNo, 8) : undefined}
         />
         <SheetRow label="원산지" value={item.origin ?? '—'} onCopy={item.origin ? () => copyText('원산지', item.origin as string, 8) : undefined} />
-        <SheetRow label="상품상태" value="신상품" caption="도매꾹 상품은 전부 신상품입니다" />
+        <SheetRow label="상품상태" value="신상품" />
         <SheetRow label="맞춤제작" value="해당 없음" />
+        <SheetRow label="제조일자" value="—" />
+        <SheetRow label="유효일자" value="—" />
         <SheetRow
           label="미성년자 구매"
           value={item.adult ? '불가 (성인용품)' : '가능'}
