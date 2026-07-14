@@ -1076,7 +1076,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         <SectionBlock
           number={11}
           done={copiedSections.has(11)}
-          title={`검색설정 — 태그 ${recommendedTags.length}개`}
+          title="검색설정"
           action={
             <Stack direction="row" spacing={1}>
               <Button size="small" onClick={handleLoadTagStats} disabled={isLoadingStats}>
@@ -1092,19 +1092,42 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             </Stack>
           }
         >
-          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+          <OptionHeader>
+            <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>태그</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ width: 90, textAlign: 'right' }}>월 검색량</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ width: 90, textAlign: 'right' }}>경쟁강도</Typography>
+          </OptionHeader>
+          <OptionList>
             {recommendedTags.map((tag) => {
               const stat = tagStats?.get(tag.replace(/\s+/g, ''));
-              const label = stat
-                ? `#${tag} · ${stat.isLowVolume ? '<10' : (stat.monthlySearches ?? '—').toLocaleString()}회${
-                    stat.ratio !== null ? ` · 경쟁 ${stat.ratio}` : ''
-                  }`
-                : `#${tag}`;
-              const color =
-                stat && stat.ratio !== null ? (stat.ratio < 1 ? 'success' : stat.ratio <= 5 ? 'warning' : 'error') : 'default';
-              return <Chip key={tag} size="small" variant="outlined" color={color} label={label} />;
+              const searchesLabel = stat
+                ? stat.isLowVolume
+                  ? '10 미만'
+                  : (stat.monthlySearches ?? 0).toLocaleString()
+                : '—';
+              const ratioColor =
+                stat && stat.ratio !== null
+                  ? stat.ratio < 1
+                    ? 'success.main'
+                    : stat.ratio <= 5
+                      ? 'warning.main'
+                      : 'error.main'
+                  : 'text.primary';
+              return (
+                <OptionRow key={tag}>
+                  <Typography variant="body2" sx={{ flex: 1, minWidth: 0, wordBreak: 'break-all' }}>
+                    #{tag}
+                  </Typography>
+                  <Typography variant="body2" sx={{ width: 90, textAlign: 'right' }}>
+                    {searchesLabel}
+                  </Typography>
+                  <Typography variant="body2" sx={{ width: 90, textAlign: 'right', color: ratioColor }}>
+                    {stat?.ratio ?? '—'}
+                  </Typography>
+                </OptionRow>
+              );
             })}
-          </Stack>
+          </OptionList>
           <Typography variant="caption" color="text.secondary">
             {tagStats
               ? '경쟁강도(상품수÷검색수)는 낮을수록 틈새입니다 · Page Title/Meta는 기본값 유지'
