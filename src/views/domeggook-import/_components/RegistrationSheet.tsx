@@ -31,7 +31,7 @@ import { transientOptions } from '@/shared/utils/emotionTransientProps';
 import { useSellerFixedInfo } from '../_hooks/useSellerFixedInfo';
 import { validateProductName, PROMO_WORDS, type NameCheckLevel } from '../_utils/validateProductName';
 import { detectComplianceRisk } from '../_utils/detectComplianceRisk';
-import { buildNameTokenPool, composeWithinLength } from '../_utils/buildSuggestedProductName';
+import { buildNameTokenPool, composeWithinLength, longestCommonSubstringLength } from '../_utils/buildSuggestedProductName';
 import { scoreProductName, type ProductNameGrade } from '../_utils/scoreProductName';
 import { fetchKeywordStats, fetchCategorySuggest, fetchKeywordDetail, type CategoryCandidate } from '@/shared/services/keywordStatsService';
 import type { KeywordDetail } from '@/shared/types/keywordDetail';
@@ -111,18 +111,24 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   // 추천 상품명 — 풀을 권장 길이 안에서 순서대로 조합
   const suggestedName = composeWithinLength(nameTokenPool);
 
-  ////////// 네이버 인기 키워드 — 공급사 키워드를 시드로 받은 검색광고 연관 키워드 (검색량 내림차순)
-  const naverKeywordInfo = new Map<string, string>(); // keyword → 출처 툴팁
-  for (const related of relatedKeywords.slice(0, 20)) {
-    naverKeywordInfo.set(related.keyword, `월 ${related.monthlySearches.toLocaleString()}회 검색`);
+  ////////// 추천 키워드 — 시드 풀 + 연관 키워드 통합, 검색량 내림차순
+  // 연관 키워드는 광고 연관이라 무관어(타이틀리스트·수영가방 등)가 섞임 —
+  // 대표 키워드(keywords[0])와 공통 부분 문자열 2자 이상인 것만 통과 (양산·우양산류만 잔류)
+  const representativeKeyword = item.keywords[0] ?? '';
+  const keywordSearches = new Map<string, number>(); // keyword → 월 검색량 (0 = 미확인)
+  for (const token of nameTokenPool) {
+    keywordSearches.set(token, tagStats?.get(token.replace(/\s+/g, ''))?.monthlySearches ?? 0);
   }
-  const naverKeywords = Array.from(naverKeywordInfo.keys())
-    .filter(
-      (keyword) =>
-        !nameTokenPool.some((token) => token === keyword) &&
-        !PROMO_WORDS.some((word) => keyword.toLowerCase().includes(word.toLowerCase())),
-    )
-    .slice(0, 12);
+  for (const related of relatedKeywords) {
+    if (keywordSearches.has(related.keyword)) continue;
+    if (representativeKeyword && longestCommonSubstringLength(representativeKeyword, related.keyword) < 2) continue;
+    if (PROMO_WORDS.some((word) => related.keyword.toLowerCase().includes(word.toLowerCase()))) continue;
+    keywordSearches.set(related.keyword, related.monthlySearches);
+  }
+  const recommendedKeywords = Array.from(keywordSearches.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 15)
+    .map(([keyword]) => keyword);
 
   ////////// 키워드 칩 토글 — 클릭으로 상품명에 넣고 빼기
   const productNameTokens = productName.split(/\s+/).filter(Boolean);
@@ -218,9 +224,9 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     .map((option) => `${option.name}\t${option.priceAdd}\t${option.stock}`)
     .join('\n');
 
-  ////////// 검색량·연관 키워드 조회 — 시드 = 공급사 키워드 (상품명 토큰 노이즈 배제)
+  ////////// 검색량·연관 키워드 조회 — 시드 = 공급사 키워드 상위 5개 (keywordstool 1콜 한도에 맞춤)
   const handleLoadTagStats = async () => {
-    const seeds = nameTokenPool.length > 0 ? nameTokenPool : tagCandidates;
+    const seeds = (nameTokenPool.length > 0 ? nameTokenPool : tagCandidates).slice(0, 5);
     if (seeds.length === 0) return;
     setIsLoadingStats(true);
     try {
@@ -398,17 +404,70 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         )}
       </SectionBlock>
 
-      {/* 2. 상품명 — 채점: 기본 검사 70 + 검색량 30 */}
-      <SectionBlock
-        number={2}
-        done={copiedSections.has(2)}
-        title="상품명"
-        action={
+      {/* 2. 상품명 — 추천 상품명 / 추천 키워드 / 인풋+채점 링 3행 구성 */}
+      <SectionBlock number={2} done={copiedSections.has(2)} title="상품명" contentSpacing={2.5}>
+        {/* 추천 상품명 — 시드 풀 조합 (검색량 확인 후엔 검색량순) */}
+        {suggestedName && suggestedName !== productName && (
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+            <Chip size="small" variant="outlined" color="primary" label="추천" />
+            {/* 칩(24px) 기준 높이 통일 — 요소 간 세로 뒤틀림 방지 */}
+            <Typography variant="body2" sx={{ lineHeight: '24px' }}>
+              {suggestedName}
+            </Typography>
+            <Button size="small" onClick={() => setProductName(suggestedName)} sx={{ minHeight: 24, py: 0 }}>
+              적용
+            </Button>
+          </Stack>
+        )}
+
+        {/* 추천 키워드 — 시드 풀 + 대표 연관 키워드 통합 (검색량 내림차순), 칩 클릭 = 넣고 빼기 */}
+        {recommendedKeywords.length > 0 && (
+          <Stack spacing={0.75}>
+            <Typography variant="caption" color="text.secondary">
+              추천 키워드
+            </Typography>
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+              {recommendedKeywords.map((keyword) => {
+                const isUsed = productNameTokens.includes(keyword);
+                const searches = keywordSearches.get(keyword) ?? 0;
+                return (
+                  <Tooltip key={keyword} title={searches > 0 ? `월 ${searches.toLocaleString()}회 검색` : ''}>
+                    <Chip
+                      size="small"
+                      label={keyword}
+                      color={isUsed ? 'primary' : 'default'}
+                      variant={isUsed ? 'filled' : 'outlined'}
+                      onClick={() => toggleNameToken(keyword)}
+                    />
+                  </Tooltip>
+                );
+              })}
+              <Button size="small" onClick={shuffleName}>
+                랜덤 조합
+              </Button>
+            </Stack>
+          </Stack>
+        )}
+
+        {/* 상품명 인풋 + 채점 링 */}
+        <FieldRow>
+          <TextField
+            fullWidth
+            size="medium"
+            label="상품명"
+            value={productName}
+            onChange={(event) => setProductName(event.target.value)}
+            slotProps={{
+              input: {
+                endAdornment: <InputAdornment position="end">{productName.length}/100</InputAdornment>,
+              },
+            }}
+          />
           <Tooltip
             title={
               nameScore.hasSearchPart
                 ? '규칙 검사(길이·홍보 문구·특수문자·중복 등) 70점 + 검색량 키워드(많이 검색되는 단어 포함·앞배치) 30점을 합쳐 100점 만점으로 환산한 점수입니다.'
-                : '지금은 규칙 검사(길이·홍보 문구·특수문자·중복 등)만 반영된 점수입니다. 아래 태그의 [검색량 확인]을 누르면 검색량 키워드 점수까지 합산됩니다.'
+                : '지금은 규칙 검사(길이·홍보 문구·특수문자·중복 등)만 반영된 점수입니다. 검색량 데이터가 도착하면 키워드 점수까지 합산됩니다.'
             }
           >
             <ScoreRing>
@@ -436,87 +495,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               </ScoreRingLabel>
             </ScoreRing>
           </Tooltip>
-        }
-      >
-        {/* 추천 상품명 — 교차 검증·동의어 정리된 조합 (검색량 확인 후엔 검색량순) */}
-        {suggestedName && suggestedName !== productName && (
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-            <Chip size="small" variant="outlined" color="primary" label="추천" />
-            {/* 칩(24px) 기준 높이 통일 — 요소 간 세로 뒤틀림 방지 */}
-            <Typography variant="body2" sx={{ lineHeight: '24px' }}>
-              {suggestedName}
-            </Typography>
-            <Button size="small" onClick={() => setProductName(suggestedName)} sx={{ minHeight: 24, py: 0 }}>
-              적용
-            </Button>
-          </Stack>
-        )}
-
-        {/* 키워드 직접 조합 — 칩 클릭으로 넣고 빼기, 랜덤 조합 */}
-        {nameTokenPool.length > 0 && (
-          <Stack spacing={0.5}>
-            <Typography variant="caption" color="text.secondary">
-              내 상품 키워드
-            </Typography>
-            <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-              {nameTokenPool.map((token) => {
-                const isUsed = productNameTokens.includes(token);
-                return (
-                  <Chip
-                    key={token}
-                    size="small"
-                    label={token}
-                    color={isUsed ? 'primary' : 'default'}
-                    variant={isUsed ? 'filled' : 'outlined'}
-                    onClick={() => toggleNameToken(token)}
-                  />
-                );
-              })}
-              <Button size="small" onClick={shuffleName}>
-                랜덤 조합
-              </Button>
-            </Stack>
-          </Stack>
-        )}
-
-        {/* 네이버 인기 키워드 — 경쟁 상품 제목 빈출(자동) + 연관 검색어([검색량 확인] 후) */}
-        {naverKeywords.length > 0 && (
-          <Stack spacing={0.5}>
-            <Typography variant="caption" color="text.secondary">
-              네이버 인기 키워드
-            </Typography>
-            <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-              {naverKeywords.map((keyword) => {
-                const isUsed = productNameTokens.includes(keyword);
-                return (
-                  <Tooltip key={keyword} title={naverKeywordInfo.get(keyword) ?? ''}>
-                    <Chip
-                      size="small"
-                      label={keyword}
-                      color={isUsed ? 'primary' : 'success'}
-                      variant={isUsed ? 'filled' : 'outlined'}
-                      onClick={() => toggleNameToken(keyword)}
-                    />
-                  </Tooltip>
-                );
-              })}
-            </Stack>
-          </Stack>
-        )}
-
-        <FieldRow>
-          <TextField
-            fullWidth
-            size="medium"
-            label="상품명"
-            value={productName}
-            onChange={(event) => setProductName(event.target.value)}
-            slotProps={{
-              input: {
-                endAdornment: <InputAdornment position="end">{productName.length}/100</InputAdornment>,
-              },
-            }}
-          />
           <CopyButton aria-label="상품명 복사" onClick={() => copyText('상품명', productName, 2)}>
             <ContentCopyIcon fontSize="small" />
           </CopyButton>
@@ -924,10 +902,11 @@ type SectionBlockProps = {
   caption?: string;
   action?: ReactNode;
   done?: boolean; // 복사 완료 — 뱃지가 체크로 바뀜 (진행 추적)
+  contentSpacing?: number; // 본문 행간 (기본 1.25 — 상품명처럼 밀도 높은 섹션은 넓게)
   children: ReactNode;
 };
 
-function SectionBlock({ number, title, caption, action, done = false, children }: SectionBlockProps) {
+function SectionBlock({ number, title, caption, action, done = false, contentSpacing = 1.25, children }: SectionBlockProps) {
   return (
     <SectionBox>
       <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
@@ -942,7 +921,7 @@ function SectionBlock({ number, title, caption, action, done = false, children }
         )}
         <Stack sx={{ ml: 'auto' }}>{action}</Stack>
       </Stack>
-      <Stack spacing={1.25}>{children}</Stack>
+      <Stack spacing={contentSpacing}>{children}</Stack>
     </SectionBox>
   );
 }
@@ -1023,7 +1002,7 @@ const NumberBadge = styled('span', transientOptions)<{ $isDone?: boolean }>(({ t
 
 const FieldRow = styled.div(({ theme }) => ({
   display: 'flex',
-  alignItems: 'flex-start',
+  alignItems: 'center',
   gap: theme.spacing(1),
 }));
 

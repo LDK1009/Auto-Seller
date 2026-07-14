@@ -9,8 +9,8 @@
 import type { KeywordStat } from '@/shared/types/keywordStats';
 import { NAME_RECOMMENDED_LENGTH, PROMO_WORDS } from './validateProductName';
 
-// 두 문자열의 최장 공통 부분 문자열 길이 (대표 키워드 연관성 판정용)
-function longestCommonSubstringLength(a: string, b: string): number {
+// 두 문자열의 최장 공통 부분 문자열 길이 (대표 키워드 연관성 판정용 — 연관 키워드 필터에서도 재사용)
+export function longestCommonSubstringLength(a: string, b: string): number {
   let best = 0;
   for (let start = 0; start < a.length; start += 1) {
     for (let end = start + best + 1; end <= a.length; end += 1) {
