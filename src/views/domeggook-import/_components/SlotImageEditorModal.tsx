@@ -235,7 +235,7 @@ export default function SlotImageEditorModal({
           <Stack spacing={2.5} sx={{ flex: 1, minWidth: 260, overflowY: 'auto' }}>
             {/* 배경 — 토글 on 시 즉시 누끼(모델 로드), 툴버튼은 기존 누끼 도구와 동일 구성 */}
             <Stack spacing={1}>
-              <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+              <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
                 <Typography variant="subtitle2">배경</Typography>
                 <Switch
                   size="small"
@@ -281,18 +281,16 @@ export default function SlotImageEditorModal({
 
             {/* 워터마크 — 스위치 켜면 설정 패널, 속성 변경마다 자동 합성 */}
             <Stack spacing={1}>
-              <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+              <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
                 <Typography variant="subtitle2">워터마크</Typography>
-                <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                  {isWatermarkComposing && <CircularProgress size={14} />}
-                  <Switch
-                    size="small"
-                    checked={isWatermarkOn}
-                    disabled={isBusy}
-                    onChange={(_event, checked) => setIsWatermarkOn(checked)}
-                    slotProps={{ input: { 'aria-label': '워터마크 사용' } }}
-                  />
-                </Stack>
+                <Switch
+                  size="small"
+                  checked={isWatermarkOn}
+                  disabled={isBusy}
+                  onChange={(_event, checked) => setIsWatermarkOn(checked)}
+                  slotProps={{ input: { 'aria-label': '워터마크 사용' } }}
+                />
+                {isWatermarkComposing && <CircularProgress size={14} />}
               </Stack>
               <Collapse in={isWatermarkOn}>
                 <Stack spacing={1}>
