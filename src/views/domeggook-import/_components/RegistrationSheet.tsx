@@ -1017,7 +1017,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         <SheetRow
           label="KC인증"
           value={safetyCertText ?? '—'}
-          caption={safetyCertText ? '공급사가 등록한 값 — 인증번호 확인 후 입력하세요' : undefined}
           onCopy={safetyCertNo ? () => copyText('KC 인증번호', safetyCertNo, 8) : undefined}
         />
         <SheetRow label="원산지" value={item.origin ?? '—'} onCopy={item.origin ? () => copyText('원산지', item.origin as string, 8) : undefined} />
@@ -1032,11 +1031,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         <SheetRow
           label="상품별 배송비"
           value={shippingFee > 0 ? KRW(shippingFee) : item.delivery.feeType ?? '—'}
-          caption={
-            item.delivery.feeType?.includes('수량별')
-              ? '수량에 따라 배송비가 늘어납니다 — 발주 수량 기준으로 확인하세요'
-              : undefined
-          }
           onCopy={() => copyText('배송비', String(shippingFee), 9)}
         />
         <SheetRow
@@ -1068,7 +1062,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         <SheetRow
           label="반품배송비 (편도)"
           value={item.returnInfo.fee !== null ? KRW(item.returnInfo.fee) : '—'}
-          caption={item.returnInfo.fee !== null ? '공급사 반품비 — 이 금액 이상으로 설정하세요' : undefined}
           onCopy={item.returnInfo.fee !== null ? () => copyText('반품배송비', String(item.returnInfo.fee), 10) : undefined}
         />
         <SheetRow
@@ -1124,7 +1117,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       <SectionBlock number={12} done={copiedSections.has(12)} title="판매자 코드">
         <SheetRow
           value={`DG-${item.no}`}
-          caption="주문이 들어오면 이 번호로 도매꾹에서 바로 찾아 발주하세요"
           onCopy={() => copyText('판매자 상품코드', `DG-${item.no}`, 12)}
         />
       </SectionBlock>
