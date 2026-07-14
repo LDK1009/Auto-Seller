@@ -440,8 +440,11 @@ export default function DomeggookImportView() {
                               onClick={() => setCropTarget('main')}
                             >
                               <CropOutlinedIcon sx={{ fontSize: 18 }} />
-                              <Typography variant="caption">상세이미지
-                                잘라오기</Typography>
+                              <Typography variant="caption" sx={{ lineHeight: 1.3 }}>
+                                상세이미지
+                                <br />
+                                잘라오기
+                              </Typography>
                             </CropAddTile>
                           </PickStrip>
                         </Stack>
@@ -478,8 +481,11 @@ export default function DomeggookImportView() {
                               onClick={() => setCropTarget('extra')}
                             >
                               <CropOutlinedIcon sx={{ fontSize: 18 }} />
-                              <Typography variant="caption">상세이미지
-                                잘라오기</Typography>
+                              <Typography variant="caption" sx={{ lineHeight: 1.3 }}>
+                                상세이미지
+                                <br />
+                                잘라오기
+                              </Typography>
                             </CropAddTile>
                           </PickStrip>
                         </Stack>
