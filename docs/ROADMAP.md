@@ -27,7 +27,7 @@
 | 7 | [x] **L-4. 랜딩 + 헤더** | ✅ 07-06 완료 — 히어로(슬로건 3행·체커보드 모티프·CTA 1개) + 여정 3단계 + 약속 3가지 + 도구 그리드 + 헤더 GNB(도매매·이미지 도구 드롭다운·계산기) + OG 메타 | — |
 | 8 | [x] **L-7. 애널리틱스** | ✅ 07-06 완료 — GA4 (zip_download=NSM, handoff, domeme_lookup). `NEXT_PUBLIC_GA_ID` 설정 시에만 동작 → GA4 속성 생성은 대표 (측정 ID를 .env에 추가) | 🔴 R-2 |
 | 9 | [x] **L-8. 배포** | ✅ 07-07 완료 — www.auto-seller.co.kr 라이브 (GitHub CI/CD, 프로덕션 env 5종, 커밋 이메일 매칭 해결). master 푸시 = 즉시 반영 | — |
-| 10 | [~] **L-9. 커뮤니티 첫 글** | ✍ **확정본 v2 (07-14)** → [community-post-draft.md](./launch/community-post-draft.md). ~~실험 +2주 트리거~~ **폐기 — 출시·실험 분리 (07-14)**. 서사 "도구부터 만든 개발자", 발행 = 아사장(W2) → 셀러오션(W3), 상세는 [MARKETING.md](./MARKETING.md) | — |
+| 10 | [~] **L-9. 커뮤니티 첫 글** | ✍ **확정본 v2 (07-14)** → [cafe-w2-first-post.md](./launch/content/cafe/cafe-w2-first-post.md). ~~실험 +2주 트리거~~ **폐기 — 출시·실험 분리 (07-14)**. 서사 "도구부터 만든 개발자", 발행 = 아사장(W2) → 셀러오션(W3), 상세는 [MARKETING.md](./MARKETING.md) | — |
 
 ---
 
