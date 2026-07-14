@@ -1128,14 +1128,13 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
 type SectionBlockProps = {
   number: number;
   title: string;
-  caption?: string;
   action?: ReactNode;
   done?: boolean; // 복사 완료 — 뱃지가 체크로 바뀜 (진행 추적)
   contentSpacing?: number; // 본문 행간 (기본 1.25 — 상품명처럼 밀도 높은 섹션은 넓게)
   children: ReactNode;
 };
 
-function SectionBlock({ number, title, caption, action, done = false, contentSpacing = 1.25, children }: SectionBlockProps) {
+function SectionBlock({ number, title, action, done = false, contentSpacing = 1.25, children }: SectionBlockProps) {
   return (
     <SectionBox>
       <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
@@ -1143,11 +1142,6 @@ function SectionBlock({ number, title, caption, action, done = false, contentSpa
         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
           {title}
         </Typography>
-        {caption && (
-          <Typography variant="caption" color="text.secondary">
-            {caption}
-          </Typography>
-        )}
         <Stack sx={{ ml: 'auto' }}>{action}</Stack>
       </Stack>
       <Stack spacing={contentSpacing}>{children}</Stack>
@@ -1276,11 +1270,10 @@ function RateChips({ presets, value, onChange, max, zeroLabel }: RateChipsProps)
 type SheetRowProps = {
   label?: string; // 섹션 제목과 겹치는 단일 값 행은 생략 (라벨 중복 제거)
   value: string;
-  caption?: string;
   onCopy?: () => void;
 };
 
-function SheetRow({ label, value, caption, onCopy }: SheetRowProps) {
+function SheetRow({ label, value, onCopy }: SheetRowProps) {
   return (
     <RowBox>
       {label && (
@@ -1300,11 +1293,6 @@ function SheetRow({ label, value, caption, onCopy }: SheetRowProps) {
             </InlineCopyButton>
           )}
         </Stack>
-        {caption && (
-          <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
-            {caption}
-          </Typography>
-        )}
       </Stack>
     </RowBox>
   );
