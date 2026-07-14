@@ -41,6 +41,7 @@ import type { DomeggookItemImage } from '@/shared/types/domeggook';
 import CodeIcon from '@mui/icons-material/Code';
 import CropOutlinedIcon from '@mui/icons-material/CropOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 
 // 대표/추가 이미지 슬롯 항목 — 원본(도매꾹 이미지) 또는 크롭(상세에서 잘라옴)
 type PickedImage = {
@@ -254,31 +255,11 @@ export default function DomeggookImportView() {
     }
   };
 
-  ////////// 상세 이미지 전체 다운로드 — 개별 장 그대로 zip
-  const handleDownloadDetailImages = async () => {
+  ////////// 상세 미리보기 — 자세히 보기 모달을 첫 상세 이미지부터 연다
+  const handlePreviewDetail = () => {
     if (!item) return;
-    if (detailImages.length === 0) return;
-
-    try {
-      const files = await downloadDomeggookImages(detailImages, item.no, (done, total) =>
-        setDownloadProgress(`상세 이미지 내려받는 중… ${done}/${total}`),
-      );
-      setDownloadProgress('압축 중…');
-      const zipBlob = await buildZipWithNames(
-        files.map((file, index) => ({
-          name: `상세이미지_${String(index + 1).padStart(2, '0')}_${file.name}`,
-          blob: file.blob,
-        })),
-      );
-      downloadBlob(zipBlob, `상세이미지_${item.no}.zip`);
-      trackEvent('zip_download', { tool: 'detail-images' });
-      enqueueSnackbar(`상세 이미지 ${files.length}장을 압축해 내려받았습니다.`, { variant: 'success' });
-    } catch (error) {
-      console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '다운로드에 실패했습니다.', { variant: 'error' });
-    } finally {
-      setDownloadProgress(null);
-    }
+    const firstDetailIndex = item.images.findIndex((image) => image.kind === 'detail');
+    if (firstDetailIndex >= 0) setPreviewIndex(firstDetailIndex);
   };
 
   const isBusy = status === 'loading' || downloadProgress !== null;
@@ -608,6 +589,14 @@ export default function DomeggookImportView() {
                       <>
                         <ActionRow>
                           <Button
+                            variant="outlined"
+                            startIcon={<VisibilityOutlinedIcon />}
+                            disabled={isBusy}
+                            onClick={handlePreviewDetail}
+                          >
+                            미리보기
+                          </Button>
+                          <Button
                             variant="contained"
                             startIcon={<CodeIcon />}
                             disabled={isBusy}
@@ -615,17 +604,9 @@ export default function DomeggookImportView() {
                           >
                             HTML 복사
                           </Button>
-                          <Button
-                            variant="outlined"
-                            startIcon={<FileDownloadOutlinedIcon />}
-                            disabled={isBusy}
-                            onClick={handleDownloadDetailImages}
-                          >
-                            이미지 전체 다운로드
-                          </Button>
                         </ActionRow>
                         <Typography variant="caption" color="text.secondary">
-                          HTML 복사 후 에디터에 붙여넣으세요. 이미지가 안 붙으면 전체 다운로드 후 업로드하세요.
+                          HTML 복사 → 스마트스토어 상세설명의 [HTML 작성] 클릭 → 붙여넣기
                         </Typography>
                       </>
                     )
