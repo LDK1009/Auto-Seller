@@ -266,7 +266,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     if (bundledOptions.length === 0) return;
     const XLSX = await import('xlsx'); // 클릭 시 동적 로드 (번들 비대 방지)
     const headerRow = ['옵션명', '옵션값', '사용여부'];
-    const dataRows = bundledOptions.map((option) => ['옵션', option.name, 'Y']);
+    const dataRows = bundledOptions.map((option) => ['옵션', option.name.slice(0, 25), 'Y']); // 옵션값 25자 제한 (스마트스토어 규격)
     const sheet = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows]);
     sheet['!cols'] = [{ wch: 12 }, { wch: 30 }, { wch: 10 }];
     const book = XLSX.utils.book_new();
