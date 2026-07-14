@@ -8,7 +8,7 @@
 // - MOQ ≥ 2: 묶음(1+1 등) 구성 판매 안내 — 고객 1주문 = 도매꾹 MOQ 구매이므로 원가에 반영
 // - A/S 정보: 셀러 고정값 (localStorage — useSellerFixedInfo)
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import styled from '@emotion/styled';
 import { alpha } from '@mui/material/styles';
 import Stack from '@mui/material/Stack';
@@ -60,6 +60,9 @@ type RegistrationSheetProps = {
 };
 
 const KRW = (value: number) => `${Math.round(value).toLocaleString()}원`;
+
+// 카테고리 경로에서 맨 끝(최하위) 이름만 — 스마트스토어 검색창은 "A > B > C" 전체 경로로 검색 불가
+const lastCategorySegment = (path: string) => path.split('>').map((part) => part.trim()).filter(Boolean).pop() ?? path;
 
 export default function RegistrationSheet({ item, imageSection, detailSection }: RegistrationSheetProps) {
   const { enqueueSnackbar } = useSnackbar();
@@ -233,6 +236,15 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     }
   };
 
+  ////////// 추천 카테고리 자동 조회 (마운트 1회 — 버튼 없이 기본 표시)
+  const hasAutoSuggestedRef = useRef(false);
+  useEffect(() => {
+    if (hasAutoSuggestedRef.current) return;
+    hasAutoSuggestedRef.current = true;
+    handleLoadCategorySuggest();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   ////////// 복사 — section 번호를 주면 해당 섹션 뱃지가 체크로 바뀜 (진행 추적)
   const [copiedSections, setCopiedSections] = useState<Set<number>>(new Set());
   const copyText = async (label: string, value: string, section?: number) => {
@@ -247,7 +259,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   // 전체 복사도 시트(=스마트스토어 폼) 순서 그대로
   const copyAll = async () => {
     const lines = [
-      item.categoryPath && `도매꾹 카테고리(참고): ${item.categoryPath}`,
+      categoryCandidates?.[0] && `카테고리: ${lastCategorySegment(categoryCandidates[0].path)}`,
       `상품명: ${productName}`,
       recommendedPrice !== null &&
         `판매가: ${recommendedPrice}${bundleUnits > 1 ? ` (${bundleUnits}개 묶음 기준)` : ''}`,
@@ -303,47 +315,48 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         </Alert>
       )}
 
-      {/* 1. 카테고리 */}
-      <SectionBlock number={1} done={copiedSections.has(1)} title="카테고리">
-        <SheetRow
-          label="도매꾹 카테고리 (참고)"
-          value={item.categoryPath ?? '—'}
-          onCopy={item.categoryPath ? () => copyText('카테고리', item.categoryPath as string, 1) : undefined}
-        />
-        {/* 스마트스토어 카테고리 후보 — 네이버쇼핑 상위 상품들의 카테고리 최빈값 */}
-        <Stack spacing={1} sx={{ px: 1.5 }}>
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              스마트스토어 카테고리 후보
+      {/* 1. 카테고리 — 추천 카테고리 자동 조회 (네이버쇼핑 상위 상품 최빈값) */}
+      <SectionBlock
+        number={1}
+        done={copiedSections.has(1)}
+        title="추천 카테고리"
+        action={
+          <Button size="small" onClick={handleLoadCategorySuggest} disabled={isLoadingCategory}>
+            {isLoadingCategory ? '조회 중…' : '다시 추천'}
+          </Button>
+        }
+      >
+        {isLoadingCategory && categoryCandidates === null ? (
+          <Typography variant="body2" color="text.secondary">
+            추천 카테고리를 찾는 중…
+          </Typography>
+        ) : categoryCandidates !== null && categoryCandidates.length > 0 ? (
+          <Stack spacing={0.5}>
+            {categoryCandidates.map((candidate, index) => (
+              <Stack key={candidate.path} direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                <Typography variant="body2" sx={{ fontWeight: index === 0 ? 700 : 500 }}>
+                  {candidate.path}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  (상위 {candidate.sampleSize}개 중 {candidate.count}개)
+                </Typography>
+                <CopyButton
+                  aria-label="카테고리 복사"
+                  onClick={() => copyText('카테고리', lastCategorySegment(candidate.path), 1)}
+                >
+                  <ContentCopyIcon fontSize="small" />
+                </CopyButton>
+              </Stack>
+            ))}
+            <Typography variant="caption" color="text.secondary">
+              복사하면 맨 끝 카테고리명만 복사됩니다 — 등록 화면 검색창에 붙여넣어 선택하세요.
             </Typography>
-            <Button size="small" onClick={handleLoadCategorySuggest} disabled={isLoadingCategory}>
-              {isLoadingCategory ? '조회 중…' : categoryCandidates === null ? '후보 확인' : '다시 확인'}
-            </Button>
           </Stack>
-          {categoryCandidates !== null && categoryCandidates.length > 0 && (
-            <Stack spacing={0.5}>
-              {categoryCandidates.map((candidate, index) => (
-                <Stack key={candidate.path} direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                  <Typography variant="body2" sx={{ fontWeight: index === 0 ? 700 : 500 }}>
-                    {candidate.path}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    (상위 {candidate.sampleSize}개 중 {candidate.count}개)
-                  </Typography>
-                  <CopyButton
-                    aria-label="카테고리 후보 복사"
-                    onClick={() => copyText('카테고리', candidate.path, 1)}
-                  >
-                    <ContentCopyIcon fontSize="small" />
-                  </CopyButton>
-                </Stack>
-              ))}
-              <Typography variant="caption" color="text.secondary">
-                1순위 후보를 등록 화면에서 검색해 선택하세요.
-              </Typography>
-            </Stack>
-          )}
-        </Stack>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            추천 카테고리를 찾지 못했습니다 — 상품명을 다듬고 [다시 추천]을 눌러보세요.
+          </Typography>
+        )}
       </SectionBlock>
 
       {/* 2. 상품명 */}
