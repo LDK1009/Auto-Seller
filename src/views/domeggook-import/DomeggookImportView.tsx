@@ -38,6 +38,7 @@ import DomeggookSearchPanel from '@/shared/components/DomeggookSearchPanel';
 import LicenseGate from './_components/LicenseGate';
 import DetailCropModal from './_components/DetailCropModal';
 import RegistrationSheet from './_components/RegistrationSheet';
+import SlotImageEditorModal from './_components/SlotImageEditorModal';
 import type { DomeggookItemImage } from '@/shared/types/domeggook';
 import CropOutlinedIcon from '@mui/icons-material/CropOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
@@ -168,6 +169,24 @@ export default function DomeggookImportView() {
         return [...previous, picked];
       });
     }
+  };
+
+  ////////// 편집 적용 — 가공 Blob으로 해당 슬롯 교체 (원본 항목은 대체 — [원본으로]는 모달 안에서)
+  const handleEditorApply = (blob: Blob) => {
+    if (!slotPreview) return;
+    cropSequenceRef.current += 1;
+    const edited: PickedImage = {
+      id: `edit-${cropSequenceRef.current}`,
+      source: 'crop',
+      previewUrl: URL.createObjectURL(blob),
+      blob,
+    };
+    if (slotPreview.context === 'main') {
+      setMainImage(edited);
+    } else {
+      setExtraImages((previous) => previous.map((entry) => (entry.id === slotPreview.picked.id ? edited : entry)));
+    }
+    setSlotPreview(null);
   };
 
   ////////// 상품이미지 전체 다운로드 — zip 안에 대표이미지/추가이미지/동영상 3폴더
@@ -609,57 +628,26 @@ export default function DomeggookImportView() {
         )}
       </Stack>
 
-      {/* 슬롯 이미지 미리보기 — 1000×1000(권장 규격) 기준 프레임에 표시 */}
-      <Dialog open={slotPreview !== null} onClose={() => setSlotPreview(null)} maxWidth={false} disableScrollLock>
-        {slotPreview && (
-          <Stack spacing={1.5} sx={{ p: 2.5 }}>
-            <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                {slotPreview.context === 'main' ? '대표이미지 미리보기' : '추가이미지 미리보기'}
-              </Typography>
-              <IconButton size="small" onClick={() => setSlotPreview(null)} aria-label="닫기">
-                <CloseIcon sx={{ fontSize: 20 }} />
-              </IconButton>
-            </Stack>
-            <SlotPreviewFrame>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={slotPreview.picked.previewUrl} alt="미리보기" />
-            </SlotPreviewFrame>
-            <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography variant="caption" color="text.secondary">
-                권장 규격 1000×1000 기준 미리보기
-              </Typography>
-              {slotPreview.context === 'main' &&
-                (mainImage?.id === slotPreview.picked.id ? (
-                  <Chip size="small" color="primary" variant="outlined" label="현재 대표이미지" />
-                ) : (
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() => {
-                      setMainImage(slotPreview.picked);
-                      setSlotPreview(null);
-                    }}
-                  >
-                    대표로 사용
-                  </Button>
-                ))}
-              {slotPreview.context === 'extra' && (
-                <Button
-                  size="small"
-                  color="error"
-                  onClick={() => {
-                    removeExtra(slotPreview.picked.id);
-                    setSlotPreview(null);
-                  }}
-                >
-                  제거
-                </Button>
-              )}
-            </Stack>
-          </Stack>
-        )}
-      </Dialog>
+      {/* 슬롯 이미지 미리보기+편집 — 누끼·배경 합성·워터마크, [적용] 시 슬롯 교체 */}
+      {slotPreview && (
+        <SlotImageEditorModal
+          open
+          imageUrl={slotPreview.picked.previewUrl}
+          imageBlob={slotPreview.picked.blob}
+          context={slotPreview.context}
+          isCurrentMain={mainImage?.id === slotPreview.picked.id}
+          onClose={() => setSlotPreview(null)}
+          onApply={handleEditorApply}
+          onSetMain={() => {
+            setMainImage(slotPreview.picked);
+            setSlotPreview(null);
+          }}
+          onRemove={() => {
+            removeExtra(slotPreview.picked.id);
+            setSlotPreview(null);
+          }}
+        />
+      )}
 
       {/* 상세이미지 잘라오기 — 대표/추가 소섹션 공용 크롭 모달 */}
       <DetailCropModal
@@ -812,23 +800,6 @@ const DetailThumb = styled.button(({ theme }) => ({
 }));
 
 // 슬롯 미리보기 프레임 — 1000×1000 권장 규격 비율(정사각) 흰 배경, 이미지 contain
-const SlotPreviewFrame = styled.div(({ theme }) => ({
-  width: 'min(80vw, 520px)',
-  aspectRatio: '1 / 1',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  overflow: 'hidden',
-  borderRadius: theme.shape.borderRadius,
-  border: `1px solid ${theme.palette.divider}`,
-  backgroundColor: '#ffffff',
-  '& img': {
-    maxWidth: '100%',
-    maxHeight: '100%',
-    objectFit: 'contain',
-  },
-}));
-
 //////////////////// 대표/추가 이미지 선택 스트립 ////////////////////
 const ThumbRemoveButton = styled(IconButton)(({ theme }) => ({
   position: 'absolute',
