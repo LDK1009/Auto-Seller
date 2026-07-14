@@ -25,7 +25,7 @@ import FormatColorResetIcon from '@mui/icons-material/FormatColorReset';
 import PaletteIcon from '@mui/icons-material/Palette';
 import CheckIcon from '@mui/icons-material/Check';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { BackgroundOption } from '../_constants/backgroundRemoval';
+import type { BackgroundOption } from '@/shared/constants/backgroundRemoval';
 import type { ImageJob } from '../_store/backgroundRemovalStore';
 import { useBackgroundImageSearch } from '../_hooks/useBackgroundImageSearch';
 import ColorPickerPopover, { getPatternPreviewCss } from './ColorPickerPopover';

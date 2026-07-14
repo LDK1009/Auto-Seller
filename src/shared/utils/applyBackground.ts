@@ -9,7 +9,7 @@ import {
   type BackgroundOption,
   type PatternKind,
   type GradientDirection,
-} from '../_constants/backgroundRemoval';
+} from '@/shared/constants/backgroundRemoval';
 
 //////////////////// 그라데이션 방향 → 그라데이션 객체 ////////////////////
 // 선형: (x0,y0)=선택 색 시작점 → (x1,y1)=흰색 도착점. 'center'는 중앙에서 퍼지는 radial.

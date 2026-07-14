@@ -11,8 +11,8 @@ import {
   filterAcceptedImageFiles,
   notifyRejectedImageFiles,
 } from '@/shared/utils/imageFileValidation';
-import { WATERMARK_RESULT_SUFFIX } from '../_constants/watermark';
-import { applyWatermark, getWatermarkExtension } from '../_utils/applyWatermark';
+import { WATERMARK_RESULT_SUFFIX } from '@/shared/constants/watermark';
+import { applyWatermark, getWatermarkExtension } from '@/shared/utils/applyWatermark';
 import { useWatermarkStore, type WatermarkJob } from '../_store/watermarkStore';
 
 export function useWatermark() {

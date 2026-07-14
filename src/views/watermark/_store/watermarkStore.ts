@@ -4,7 +4,7 @@
 // 이 라우트 전용 상태와 순수 변경 액션만 담는다 (State 레이어).
 
 import { create } from 'zustand';
-import { DEFAULT_WATERMARK_SETTINGS, type WatermarkSettings } from '../_constants/watermark';
+import { DEFAULT_WATERMARK_SETTINGS, type WatermarkSettings } from '@/shared/constants/watermark';
 
 //////////////////// 타입 ////////////////////
 export type WatermarkStatus = 'pending' | 'done' | 'error';

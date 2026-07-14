@@ -6,7 +6,7 @@ import {
   POSITION_ALIGN,
   WATERMARK_MARGIN_RATIO,
   type WatermarkSettings,
-} from '../_constants/watermark';
+} from '@/shared/constants/watermark';
 
 const KEEPABLE_FORMATS = ['image/jpeg', 'image/png', 'image/webp'];
 const OUTPUT_QUALITY = 0.92;

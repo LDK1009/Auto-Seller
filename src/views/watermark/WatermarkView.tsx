@@ -15,14 +15,14 @@ import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import ImagePreviewModal, { type PreviewImage } from '@/shared/components/ImagePreviewModal';
 import { useTransformedPreview } from '@/shared/hooks/useTransformedPreview';
-import { applyWatermark } from './_utils/applyWatermark';
+import { applyWatermark } from '@/shared/utils/applyWatermark';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
 import ImageDropzone from '@/shared/components/ImageDropzone';
 import StatBox from '@/shared/components/StatBox';
 import AnimatedProgressBar from '@/shared/components/AnimatedProgressBar';
 import { useWatermark } from './_hooks/useWatermark';
-import WatermarkSettingsPanel from './_components/WatermarkSettingsPanel';
+import WatermarkSettingsPanel from '@/shared/components/WatermarkSettingsPanel';
 import WatermarkJobCard from './_components/WatermarkJobCard';
 
 export default function WatermarkView() {

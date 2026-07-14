@@ -6,7 +6,7 @@
 // persist 미사용: File/Blob은 직렬화 불가 + 세션 휘발 상태가 맞음.
 
 import { create } from 'zustand';
-import { DEFAULT_CUSTOM_COLOR, type BackgroundOption } from '../_constants/backgroundRemoval';
+import { DEFAULT_CUSTOM_COLOR, type BackgroundOption } from '@/shared/constants/backgroundRemoval';
 
 //////////////////// 타입 ////////////////////
 export type ProcessStatus = 'pending' | 'processing' | 'done' | 'error';

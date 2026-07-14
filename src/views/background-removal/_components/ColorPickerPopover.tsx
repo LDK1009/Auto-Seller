@@ -19,7 +19,7 @@ import {
   type BackgroundOption,
   type PatternKind,
   type GradientDirection,
-} from '../_constants/backgroundRemoval';
+} from '@/shared/constants/backgroundRemoval';
 
 const APPLY_DEBOUNCE_MS = 400;
 

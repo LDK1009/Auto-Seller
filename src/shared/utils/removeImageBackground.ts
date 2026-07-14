@@ -6,7 +6,7 @@ import {
   REMOVE_BG_CONFIG,
   STEP_PROGRESS,
   DOWNLOAD_STEP_LABEL,
-} from '../_constants/backgroundRemoval';
+} from '@/shared/constants/backgroundRemoval';
 
 //////////////////// 진행 정보 ////////////////////
 // phase: 'download' = 모델 다운로드(바 indeterminate), 'compute' = 누끼 연산(바 채움)

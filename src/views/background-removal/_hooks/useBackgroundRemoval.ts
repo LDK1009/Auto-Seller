@@ -8,9 +8,9 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { enqueueSnackbar } from 'notistack';
-import { RESULT_SUFFIX, OUTPUT_EXTENSION, type BackgroundOption } from '../_constants/backgroundRemoval';
-import { removeImageBackground } from '../_utils/removeImageBackground';
-import { applyBackground } from '../_utils/applyBackground';
+import { RESULT_SUFFIX, OUTPUT_EXTENSION, type BackgroundOption } from '@/shared/constants/backgroundRemoval';
+import { removeImageBackground } from '@/shared/utils/removeImageBackground';
+import { applyBackground } from '@/shared/utils/applyBackground';
 import { fetchBackgroundImage } from '@/shared/services/backgroundImageSearch';
 import { buildZip, downloadBlob } from '@/shared/utils/zip';
 import { trackEvent } from '@/shared/utils/analytics';

@@ -18,7 +18,7 @@ import {
   POSITION_GRID,
   type WatermarkSettings,
   type WatermarkType,
-} from '../_constants/watermark';
+} from '@/shared/constants/watermark';
 
 type WatermarkSettingsPanelProps = {
   settings: WatermarkSettings;
