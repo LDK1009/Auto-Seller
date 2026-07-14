@@ -106,5 +106,25 @@ export function validateProductName(rawName: string): NameCheckResult[] {
     results.push({ level: 'pass', label: '중복 단어', message: '반복 단어가 없습니다.' });
   }
 
+  ////////// 6) 동의어 나열 (한 토큰이 다른 토큰에 포함 — 모기채·전기모기채·전자모기채식 반복은 스팸 처리 위험)
+  const uniqueTokens = Array.from(new Set(name.split(/\s+/).filter((word) => word.length >= 3)));
+  const synonymPairs: string[] = [];
+  for (const shorter of uniqueTokens) {
+    for (const longer of uniqueTokens) {
+      if (shorter !== longer && longer.includes(shorter)) {
+        synonymPairs.push(`${shorter}⊂${longer}`);
+      }
+    }
+  }
+  if (synonymPairs.length > 0) {
+    results.push({
+      level: 'warn',
+      label: '동의어 반복',
+      message: `유사 키워드 나열 감지 (${synonymPairs.slice(0, 3).join(', ')}) — 동의어 반복은 스팸으로 분류될 수 있습니다. 하나만 남기세요.`,
+    });
+  } else if (name.length > 0) {
+    results.push({ level: 'pass', label: '동의어 반복', message: '유사 키워드 나열이 없습니다.' });
+  }
+
   return results;
 }

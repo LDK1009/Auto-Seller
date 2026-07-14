@@ -31,6 +31,7 @@ import { useSellerFixedInfo } from '../_hooks/useSellerFixedInfo';
 import { validateProductName, PROMO_WORDS, type NameCheckLevel } from '../_utils/validateProductName';
 import { detectComplianceRisk } from '../_utils/detectComplianceRisk';
 import { buildSuggestedProductName } from '../_utils/buildSuggestedProductName';
+import { scoreProductName, type ProductNameGrade } from '../_utils/scoreProductName';
 import { fetchKeywordStats, fetchCategorySuggest, fetchKeywordDetail, type CategoryCandidate } from '@/shared/services/keywordStatsService';
 import type { KeywordDetail } from '@/shared/types/keywordDetail';
 import type { KeywordStat } from '@/shared/types/keywordStats';
@@ -44,6 +45,18 @@ const CHECK_CHIP_COLORS: Record<NameCheckLevel, 'success' | 'warning' | 'error'>
   pass: 'success',
   warn: 'warning',
   fail: 'error',
+};
+
+// 상품명 점수 등급 표기
+const GRADE_COLORS: Record<ProductNameGrade, 'success' | 'warning' | 'error'> = {
+  good: 'success',
+  ok: 'warning',
+  bad: 'error',
+};
+const GRADE_LABELS: Record<ProductNameGrade, string> = {
+  good: '좋음',
+  ok: '보통',
+  bad: '수정 필요',
 };
 
 // 구매/리뷰 혜택 권장 프리셋 (초보 표준 세팅 — 등록 UI 혜택 구간의 결정 부담 제거)
@@ -84,6 +97,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
 
   const nameChecks = validateProductName(productName);
   const issueChecks = nameChecks.filter((check) => check.level !== 'pass');
+  const nameScore = scoreProductName(productName, nameChecks, tagStats);
   const complianceRisks = detectComplianceRisk(item.title, item.categoryPath);
 
   ////////// 태그 후보: 공급사 키워드(1순위) + 상품명 토큰 — 홍보어·비정상 토큰 제외, 10개
@@ -355,8 +369,33 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         )}
       </SectionBlock>
 
-      {/* 2. 상품명 */}
-      <SectionBlock number={2} done={copiedSections.has(2)} title="상품명">
+      {/* 2. 상품명 — 채점: 기본 검사 70 + 검색량 30 */}
+      <SectionBlock
+        number={2}
+        done={copiedSections.has(2)}
+        title="상품명"
+        action={
+          <Tooltip
+            title={
+              nameScore.hasSearchPart
+                ? '기본 검사 70점 + 검색량 키워드 30점 기준'
+                : '기본 검사 기준 — [검색량 확인]을 누르면 키워드 점수(30점)까지 반영됩니다'
+            }
+          >
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: `${GRADE_COLORS[nameScore.grade]}.main` }}>
+                {nameScore.normalized}점
+              </Typography>
+              <Chip
+                size="small"
+                variant="outlined"
+                color={GRADE_COLORS[nameScore.grade]}
+                label={GRADE_LABELS[nameScore.grade]}
+              />
+            </Stack>
+          </Tooltip>
+        }
+      >
         <FieldRow>
           <TextField
             fullWidth
