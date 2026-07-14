@@ -57,12 +57,15 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
   const autoScrollSpeedRef = useRef(0);
   const [isCropping, setIsCropping] = useState(false);
 
-  ////////// 열릴 때 기본 박스 = 콘텐츠 최대 너비 × 1:1 (좌상단)
+  ////////// 열릴 때 기본 박스 = 보이는 영역보다 작게 (뷰포트 높이 80%와 콘텐츠 폭 중 작은 값, 가로 중앙)
   useEffect(() => {
     if (!open) return;
     const frame = requestAnimationFrame(() => {
       const width = contentRef.current?.clientWidth;
-      if (width) setBox({ x: 0, y: 0, size: width });
+      const viewHeight = scrollRef.current?.clientHeight;
+      if (!width || !viewHeight) return;
+      const size = Math.min(width, Math.floor(viewHeight * 0.8));
+      setBox({ x: Math.max((width - size) / 2, 0), y: 0, size });
     });
     return () => cancelAnimationFrame(frame);
   }, [open]);
@@ -244,8 +247,8 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth={false} disableScrollLock>
-      <Stack spacing={1.5} sx={{ p: 2.5, width: 'min(88vw, 760px)' }}>
+    <Dialog open={open} onClose={onClose} fullScreen disableScrollLock>
+      <Stack spacing={1.5} sx={{ p: 2.5, height: '100%', maxWidth: 960, mx: 'auto', width: '100%' }}>
         {/* 헤더 */}
         <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
           <Stack spacing={0.25}>
@@ -332,7 +335,8 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
 
 //////////////////////////////////////// 스타일 ////////////////////////////////////////
 const ScrollArea = styled.div(({ theme }) => ({
-  maxHeight: '64vh',
+  flex: 1,
+  minHeight: 0,
   overflowY: 'auto',
   borderRadius: theme.shape.borderRadius,
   border: `1px solid ${theme.palette.divider}`,
