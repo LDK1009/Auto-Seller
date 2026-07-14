@@ -268,7 +268,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     ]
       .filter(Boolean)
       .join('\n');
-    await copyText('등록 정보 시트 전체', lines);
+    await copyText('등록 정보 전체', lines);
     setCopiedSections(new Set(Array.from({ length: 15 }, (_, index) => index + 1)));
   };
 
@@ -277,7 +277,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       {/* 헤더 */}
       <Stack spacing={0.75}>
         <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="h6">등록 정보 시트</Typography>
+          <Typography variant="h6">등록 정보</Typography>
           <Button variant="outlined" size="small" startIcon={<ContentCopyIcon />} onClick={copyAll}>
             전체 복사
           </Button>
