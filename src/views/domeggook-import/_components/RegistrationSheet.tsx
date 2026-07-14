@@ -388,14 +388,20 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         </Alert>
       ))}
 
-      {/* MOQ 묶음 안내 */}
-      {bundleUnits >= 2 && (
-        <Alert severity={bundleUnits > 2 ? 'warning' : 'info'}>
-          이 상품의 도매꾹 최소 구매수량은 <b>{bundleUnits}개</b>입니다. 고객 1주문마다 {bundleUnits}개를
-          구매해야 하므로 <b>{bundleUnits === 2 ? '1+1' : `${bundleUnits}개 묶음`} 구성 판매</b>를 권장합니다.
-          아래 판매가·재고는 묶음 기준으로 계산했습니다.
-        </Alert>
-      )}
+      {/* MOQ 안내 — 판매 기준 전환 시에도 알럿을 유지해 레이아웃 시프트(스크롤 점프) 방지 */}
+      {item.moq >= 2 &&
+        (pricingMode === 'bundle' ? (
+          <Alert severity={item.moq > 2 ? 'warning' : 'info'}>
+            이 상품의 도매꾹 최소 구매수량은 <b>{item.moq}개</b>입니다. 고객 1주문마다 {item.moq}개를
+            구매해야 하므로 <b>{item.moq === 2 ? '1+1' : `${item.moq}개 묶음`} 구성 판매</b>를 권장합니다.
+            아래 판매가·재고는 묶음 기준으로 계산했습니다.
+          </Alert>
+        ) : (
+          <Alert severity="info">
+            낱개 사입 기준으로 계산 중입니다. 도매꾹 최소 구매수량이 <b>{item.moq}개</b>이므로 미리
+            사입해 두고 1개씩 판매하는 방식입니다 — 아래 판매가·재고는 낱개 기준입니다.
+          </Alert>
+        ))}
 
       {/* 1. 카테고리 — 추천 카테고리 자동 조회 (네이버쇼핑 상위 상품 최빈값) */}
       <SectionBlock number={1} done={copiedSections.has(1)} title="카테고리">
@@ -599,23 +605,19 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                   </CopyButton>
                 </Stack>
               </Stack>
-              <Stack spacing={0.25}>
-                <Typography variant="caption" color="text.secondary">
-                  할인가
-                </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                  {listPrice !== null ? (
-                    <>
-                      {recommendedPrice.toLocaleString()}
-                      <Typography component="span" variant="body2" color="text.secondary">
-                        원
-                      </Typography>
-                    </>
-                  ) : (
-                    '—'
-                  )}
-                </Typography>
-              </Stack>
+              {listPrice !== null && (
+                <Stack spacing={0.25}>
+                  <Typography variant="caption" color="text.secondary">
+                    할인가
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    {recommendedPrice.toLocaleString()}
+                    <Typography component="span" variant="body2" color="text.secondary">
+                      원
+                    </Typography>
+                  </Typography>
+                </Stack>
+              )}
               <Stack spacing={0.25}>
                 <Typography variant="caption" color="text.secondary">
                   개당 순이익
@@ -658,18 +660,12 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               <Typography variant="caption" color="text.secondary">
                 목표 마진
               </Typography>
-              <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-                {TARGET_MARGIN_PRESETS.map((rate) => (
-                  <Chip
-                    key={rate}
-                    size="small"
-                    label={`${rate}%`}
-                    color={targetMarginRate === rate ? 'primary' : 'default'}
-                    variant={targetMarginRate === rate ? 'filled' : 'outlined'}
-                    onClick={() => setTargetMarginRate(rate)}
-                  />
-                ))}
-              </Stack>
+              <RateChips
+                presets={TARGET_MARGIN_PRESETS}
+                value={targetMarginRate}
+                onChange={setTargetMarginRate}
+                max={80}
+              />
               {/* 근거 + 면책(툴팁) — 칩 아래 설명 줄 */}
               <Tooltip title={FEE_DISCLAIMER}>
                 <Typography variant="caption" color="text.secondary" sx={{ cursor: 'help', alignSelf: 'flex-start' }}>
@@ -741,23 +737,18 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               </Alert>
             )}
 
-            {/* 할인 적용 — 없음/10/20/30, 정가·결제가 설명은 하단 줄 */}
+            {/* 할인 — 없음/10/20/30/직접 입력, 정가·결제가 설명은 하단 줄 */}
             <Stack spacing={0.75}>
               <Typography variant="caption" color="text.secondary">
-                할인 적용
+                할인
               </Typography>
-              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'center' }} useFlexGap>
-                {DISCOUNT_DISPLAY_PRESETS.map((rate) => (
-                  <Chip
-                    key={rate}
-                    size="small"
-                    label={rate === 0 ? '없음' : `${rate}%`}
-                    color={discountRate === rate ? 'primary' : 'default'}
-                    variant={discountRate === rate ? 'filled' : 'outlined'}
-                    onClick={() => setDiscountRate(rate)}
-                  />
-                ))}
-              </Stack>
+              <RateChips
+                presets={DISCOUNT_DISPLAY_PRESETS}
+                value={discountRate}
+                onChange={setDiscountRate}
+                max={90}
+                zeroLabel="없음"
+              />
               {listPrice !== null && (
                 <Typography variant="caption" color="text.secondary">
                   판매가 {KRW(listPrice)}에 {discountRate}% 할인을 걸면 고객은 {KRW(recommendedPrice)}에
@@ -1108,6 +1099,73 @@ function SectionBlock({ number, title, caption, action, done = false, contentSpa
       </Stack>
       <Stack spacing={contentSpacing}>{children}</Stack>
     </SectionBox>
+  );
+}
+
+//////////////////// 비율 칩 행 (프리셋 + 직접 입력) ////////////////////
+type RateChipsProps = {
+  presets: number[];
+  value: number;
+  onChange: (next: number) => void;
+  max: number; // 직접 입력 상한 (%)
+  zeroLabel?: string; // 0 프리셋 표기 (예: '없음')
+};
+
+function RateChips({ presets, value, onChange, max, zeroLabel }: RateChipsProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [inputText, setInputText] = useState('');
+  const isCustomValue = value > 0 && !presets.includes(value);
+
+  const applyInput = () => {
+    const parsed = Number(inputText.trim());
+    if (Number.isFinite(parsed) && parsed >= 1) {
+      onChange(Math.min(max, Math.round(parsed)));
+    }
+    setIsEditing(false);
+  };
+
+  return (
+    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+      {presets.map((rate) => (
+        <Chip
+          key={rate}
+          size="small"
+          label={rate === 0 && zeroLabel ? zeroLabel : `${rate}%`}
+          color={value === rate ? 'primary' : 'default'}
+          variant={value === rate ? 'filled' : 'outlined'}
+          onClick={() => {
+            setIsEditing(false);
+            onChange(rate);
+          }}
+        />
+      ))}
+      {isEditing ? (
+        <TextField
+          autoFocus
+          size="small"
+          value={inputText}
+          onChange={(event) => setInputText(event.target.value.replace(/[^\d]/g, ''))}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') applyInput();
+            if (event.key === 'Escape') setIsEditing(false);
+          }}
+          onBlur={applyInput}
+          slotProps={{ input: { endAdornment: <InputAdornment position="end">%</InputAdornment> } }}
+          sx={{ width: 88, '& .MuiInputBase-input': { py: 0.5 } }}
+        />
+      ) : (
+        <Chip
+          size="small"
+          label={isCustomValue ? `${value}%` : '직접 입력'}
+          color={isCustomValue ? 'primary' : 'default'}
+          variant={isCustomValue ? 'filled' : 'outlined'}
+          onClick={() => {
+            setInputText(isCustomValue ? String(value) : '');
+            setIsEditing(true);
+          }}
+        />
+      )}
+    </Stack>
   );
 }
 
