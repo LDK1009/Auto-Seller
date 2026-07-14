@@ -1024,7 +1024,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         <SheetRow
           label="미성년자 구매"
           value={item.adult ? '불가 (성인용품)' : '가능'}
-          caption={item.adult ? '성인 인증 상품 — 미성년자 구매 불가로 설정하세요' : undefined}
         />
       </SectionBlock>
 
@@ -1052,11 +1051,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                   .join(' · ')
               : '—'
           }
-          caption={
-            item.delivery.jejuExtra !== null || item.delivery.islandsExtra !== null
-              ? '스마트스토어 폼에도 그대로 입력하세요 — 빠뜨리면 셀러 부담입니다'
-              : undefined
-          }
           onCopy={
             item.delivery.jejuExtra !== null
               ? () => copyText('제주 추가배송비', String(item.delivery.jejuExtra), 9)
@@ -1066,7 +1060,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         <SheetRow
           label="평균 발송일"
           value={item.delivery.sendAvgDays !== null ? `${item.delivery.sendAvgDays}일` : '—'}
-          caption={item.delivery.sendAvgDays !== null ? '오늘출발 설정 판단 기준입니다' : undefined}
         />
       </SectionBlock>
 
@@ -1081,7 +1074,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         <SheetRow
           label="교환배송비 (왕복)"
           value={exchangeFee !== null ? KRW(exchangeFee) : '—'}
-          caption={item.returnInfo.exchangeDouble ? '교환비 = 반품비 × 2 (왕복)' : undefined}
           onCopy={exchangeFee !== null ? () => copyText('교환배송비', String(exchangeFee), 10) : undefined}
         />
       </SectionBlock>
