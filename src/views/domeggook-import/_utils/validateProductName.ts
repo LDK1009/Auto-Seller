@@ -10,9 +10,9 @@ export type NameCheckResult = {
   message: string; // 판정 설명
 };
 
-// 권장/최대 길이 (스마트스토어 최대 100자, SEO 관행 50자)
+// 권장/최대 길이 (스마트스토어 최대 100자, 검색 노출 권장 35자)
 export const NAME_MAX_LENGTH = 100;
-export const NAME_RECOMMENDED_LENGTH = 50;
+export const NAME_RECOMMENDED_LENGTH = 35;
 
 // 홍보성 문구 — 네이버 상품명 가이드가 명시적으로 배제하는 유형 (검색 노출 불이익)
 // (태그 후보 필터에서도 재사용하므로 export)

@@ -18,6 +18,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import Chip from '@mui/material/Chip';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
@@ -29,6 +30,7 @@ import { transientOptions } from '@/shared/utils/emotionTransientProps';
 import { useSellerFixedInfo } from '../_hooks/useSellerFixedInfo';
 import { validateProductName, PROMO_WORDS, type NameCheckLevel } from '../_utils/validateProductName';
 import { detectComplianceRisk } from '../_utils/detectComplianceRisk';
+import { buildSuggestedProductName } from '../_utils/buildSuggestedProductName';
 import { fetchKeywordStats, fetchCategorySuggest, fetchKeywordDetail, type CategoryCandidate } from '@/shared/services/keywordStatsService';
 import type { KeywordDetail } from '@/shared/types/keywordDetail';
 import type { KeywordStat } from '@/shared/types/keywordStats';
@@ -81,7 +83,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
 
   const nameChecks = validateProductName(productName);
   const issueChecks = nameChecks.filter((check) => check.level !== 'pass');
-  const passedCheckCount = nameChecks.length - issueChecks.length;
   const complianceRisks = detectComplianceRisk(item.title, item.categoryPath);
 
   ////////// 태그 후보: 공급사 키워드(1순위) + 상품명 토큰 — 홍보어·비정상 토큰 제외, 10개
@@ -92,6 +93,9 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   const tagCandidates = Array.from(new Set([...item.keywords, ...nameTokens]))
     .filter((tag) => !PROMO_WORDS.some((word) => tag.toLowerCase().includes(word.toLowerCase())))
     .slice(0, 10);
+
+  // 추천 상품명 — 태그 후보 조합 (검색량 조회 후엔 검색량 내림차순 반영)
+  const suggestedName = buildSuggestedProductName(tagCandidates, tagStats);
 
   ////////// 원가·판매가 계산 (MOQ 반영)
   const bundleUnits = Math.max(item.moq, 1); // 고객 1주문당 도매꾹에서 사야 하는 수량
@@ -365,7 +369,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           <TextField
             fullWidth
             size="small"
-            label="상품명 (도매꾹 원본 — 수정해서 쓰세요)"
+            label="상품명"
             value={productName}
             onChange={(event) => setProductName(event.target.value)}
             slotProps={{
@@ -378,26 +382,28 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             <ContentCopyIcon fontSize="small" />
           </CopyButton>
         </FieldRow>
-        {/* 검사 결과 — 통과는 1칩으로 압축, 경고·실패만 개별 노출 (노이즈 최소화) */}
-        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
-          {issueChecks.map((check) => (
-            <Chip
-              key={check.label}
-              size="small"
-              variant="filled"
-              color={CHECK_CHIP_COLORS[check.level]}
-              label={`${check.label}: ${check.message}`}
-            />
-          ))}
-          {passedCheckCount > 0 && (
-            <Chip
-              size="small"
-              variant="outlined"
-              color="success"
-              label={issueChecks.length === 0 ? `검사 ${passedCheckCount}개 모두 통과` : `${passedCheckCount}개 통과`}
-            />
-          )}
-        </Stack>
+        {/* 검사 결과 — 문제 항목만 간략 칩, 상세는 툴팁 */}
+        {issueChecks.length > 0 && (
+          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+            {issueChecks.map((check) => (
+              <Tooltip key={check.label} title={check.message}>
+                <Chip size="small" variant="filled" color={CHECK_CHIP_COLORS[check.level]} label={check.label} />
+              </Tooltip>
+            ))}
+          </Stack>
+        )}
+        {/* 추천 상품명 — 태그 후보 조합 (검색량 확인 후엔 검색량순) */}
+        {suggestedName && suggestedName !== productName && (
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+            <Typography variant="caption" color="text.secondary">
+              추천
+            </Typography>
+            <Typography variant="body2">{suggestedName}</Typography>
+            <Button size="small" onClick={() => setProductName(suggestedName)}>
+              적용
+            </Button>
+          </Stack>
+        )}
       </SectionBlock>
 
       {/* 3. 판매가 */}
