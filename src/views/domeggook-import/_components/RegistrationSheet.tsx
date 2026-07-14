@@ -138,6 +138,14 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     .slice(0, 15)
     .map(([keyword]) => keyword);
 
+  ////////// ⑪ 태그 자동 선별 — 스스 규칙 반영: 상품명에 이미 포함된 키워드는 태그 효과 없음(중복 무효) → 제외,
+  // 검색량 내림차순(미확인은 공급사 등록 순 유지, sort는 stable) 상위 10개 (스스 태그 한도)
+  const compactProductName = productName.replace(/\s+/g, '').toLowerCase();
+  const recommendedTags = Array.from(keywordSearches.keys())
+    .filter((tag) => !compactProductName.includes(tag.replace(/\s+/g, '').toLowerCase()))
+    .sort((a, b) => (keywordSearches.get(b) ?? 0) - (keywordSearches.get(a) ?? 0))
+    .slice(0, 10);
+
   ////////// 키워드 칩 토글 — 클릭으로 상품명에 넣고 빼기
   const productNameTokens = productName.split(/\s+/).filter(Boolean);
   const toggleNameToken = (token: string) => {
@@ -385,7 +393,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       taxLabel && `과세 구분: ${taxLabel}`,
       `배송비: ${shippingFee}${item.delivery.feeType ? ` (${item.delivery.feeType})` : ''}`,
       item.returnInfo.fee !== null && `반품비: ${item.returnInfo.fee} / 교환비: ${exchangeFee}`,
-      tagCandidates.length > 0 && `태그 후보: ${tagCandidates.join(',')}`,
+      recommendedTags.length > 0 && `태그: ${recommendedTags.join(',')}`,
       `판매자 상품코드: DG-${item.no}`,
     ]
       .filter(Boolean)
@@ -1080,11 +1088,11 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       </SectionBlock>
 
       {/* 11. 검색설정 (태그) */}
-      {tagCandidates.length > 0 && (
+      {recommendedTags.length > 0 && (
         <SectionBlock
           number={11}
           done={copiedSections.has(11)}
-          title={`검색설정 — 태그 후보 ${tagCandidates.length}개`}
+          title={`검색설정 — 태그 ${recommendedTags.length}개`}
           action={
             <Stack direction="row" spacing={1}>
               <Button size="small" onClick={handleLoadTagStats} disabled={isLoadingStats}>
@@ -1093,7 +1101,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               <Button
                 size="small"
                 startIcon={<ContentCopyIcon />}
-                onClick={() => copyText('태그', tagCandidates.join(','), 11)}
+                onClick={() => copyText('태그', recommendedTags.join(','), 11)}
               >
                 태그 복사
               </Button>
@@ -1101,7 +1109,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           }
         >
           <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
-            {tagCandidates.map((tag) => {
+            {recommendedTags.map((tag) => {
               const stat = tagStats?.get(tag.replace(/\s+/g, ''));
               const label = stat
                 ? `#${tag} · ${stat.isLowVolume ? '<10' : (stat.monthlySearches ?? '—').toLocaleString()}회${
@@ -1114,8 +1122,9 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             })}
           </Stack>
           <Typography variant="caption" color="text.secondary">
-            경쟁강도(상품수÷검색수)는 낮을수록 틈새 — 페이지 타이틀·메타 디스크립션은 기본값 유지를
-            권장합니다.
+            상품명에 이미 들어간 키워드는 태그 효과가 없어 제외했습니다 — [검색량 확인] 후 검색량 순으로
+            재정렬됩니다. 경쟁강도(상품수÷검색수)는 낮을수록 틈새 · Page Title/Meta description은 기본값
+            유지를 권장합니다.
           </Typography>
         </SectionBlock>
       )}
