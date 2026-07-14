@@ -238,6 +238,17 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         : item.returnInfo.fee
       : null;
   const taxLabel = item.taxType?.includes('면세') ? '면세' : item.taxType?.includes('과세') ? '과세' : item.taxType;
+
+  ////////// KC 안전인증 표시 텍스트 (예: "안전확인 · 전기용품 · XU102308-20002B", 면제면 "면제" 표기)
+  const safetyCertText =
+    item.safetyCerts.length > 0
+      ? item.safetyCerts
+          .map((cert) =>
+            [cert.certName, cert.certType, cert.exempt ? '면제' : cert.no].filter(Boolean).join(' · '),
+          )
+          .join(' / ')
+      : null;
+  const safetyCertNo = item.safetyCerts.find((cert) => cert.no !== null)?.no ?? null;
   const infoDutyText = [
     item.infoDuty.type ? `유형: ${item.infoDuty.type}` : null,
     ...item.infoDuty.items.map((entry) => `${entry.name}: ${entry.desc}`),
@@ -1002,18 +1013,49 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         )}
       </SectionBlock>
 
-      {/* 8. 상품 주요정보 */}
-      <SectionBlock number={8} done={copiedSections.has(8)} title="상품 주요정보">
+      {/* 8. 상품 주요정보 — 스마트스토어 폼 필드와 1:1 (모델명·품번·제조사·KC인증·원산지·상품상태·맞춤제작·미성년자) */}
+      <SectionBlock
+        number={8}
+        done={copiedSections.has(8)}
+        title="상품 주요정보"
+        caption="브랜드·제조일자·유효일자는 도매꾹 미제공 — 필요 시 직접 입력하세요"
+      >
         <SheetRow
-          label="제조사 / 모델명"
-          value={[item.manufacturer, item.model].filter(Boolean).join(' / ') || '—'}
+          label="모델명"
+          value={item.model ?? '—'}
+          onCopy={item.model ? () => copyText('모델명', item.model as string, 8) : undefined}
+        />
+        <SheetRow
+          label="품번"
+          value={item.itemCustomCode ?? '—'}
+          caption={item.itemCustomCode ? '공급사 상품코드 기준' : undefined}
+          onCopy={item.itemCustomCode ? () => copyText('품번', item.itemCustomCode as string, 8) : undefined}
+        />
+        <SheetRow
+          label="제조사"
+          value={item.manufacturer ?? '—'}
+          onCopy={item.manufacturer ? () => copyText('제조사', item.manufacturer as string, 8) : undefined}
+        />
+        <SheetRow
+          label="KC인증"
+          value={safetyCertText ?? '인증 정보 없음'}
+          caption={
+            safetyCertText
+              ? '공급사가 등록한 인증정보 — 등록 전 번호 유효성을 확인하세요'
+              : '카테고리에 따라 KC 인증 필요 여부를 확인하세요'
+          }
           onCopy={
-            item.manufacturer || item.model
-              ? () => copyText('제조사/모델명', [item.manufacturer, item.model].filter(Boolean).join(' / '), 8)
-              : undefined
+            safetyCertNo ? () => copyText('KC 인증번호', safetyCertNo, 8) : undefined
           }
         />
         <SheetRow label="원산지" value={item.origin ?? '—'} onCopy={item.origin ? () => copyText('원산지', item.origin as string, 8) : undefined} />
+        <SheetRow label="상품상태" value="신상품" caption="도매꾹 상품은 전부 신상품입니다" />
+        <SheetRow label="맞춤제작" value="해당 없음" />
+        <SheetRow
+          label="미성년자 구매"
+          value={item.adult ? '불가 (성인용품)' : '가능'}
+          caption={item.adult ? '성인 인증 상품 — 등록 시 미성년자 구매 불가로 설정하세요' : undefined}
+        />
         <SheetRow label="과세 구분" value={taxLabel ?? '—'} onCopy={taxLabel ? () => copyText('과세 구분', taxLabel, 8) : undefined} />
       </SectionBlock>
 

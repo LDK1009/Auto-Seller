@@ -126,6 +126,9 @@ export async function GET(request: Request) {
       origin: toStringOrNull(root.detail?.country),
       manufacturer: toStringOrNull(root.detail?.manufacturer),
       model: toStringOrNull(root.detail?.model),
+      itemCustomCode: toStringOrNull(root.detail?.itemCustomCode),
+      safetyCerts: parseSafetyCerts(root.detail?.safetyCert),
+      adult: String(root.basis?.adult ?? '') === 'true',
       infoDuty: {
         type: toStringOrNull(root.detail?.infoDuty?.type),
         items: (Array.isArray(infoDutyItems) ? infoDutyItems : infoDutyItems ? [infoDutyItems] : [])
@@ -186,6 +189,21 @@ function toStringOrNull(value: unknown): string | null {
   if (value === null || value === undefined) return null;
   const text = String(value).trim();
   return text.length > 0 ? text : null;
+}
+
+////////// KC 안전인증 파싱 (detail.safetyCert — 단일/배열 혼재, '-'는 빈 값)
+function parseSafetyCerts(raw: unknown): { certType: string | null; certName: string | null; no: string | null; exempt: boolean }[] {
+  const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  return list.map((rawEntry) => {
+    const entry = (rawEntry ?? {}) as Record<string, unknown>;
+    const certNo = toStringOrNull(entry.no);
+    return {
+      certType: toStringOrNull(entry.certType) ?? toStringOrNull(entry.type),
+      certName: toStringOrNull(entry.certName) ?? toStringOrNull(entry.name),
+      no: certNo === '-' ? null : certNo,
+      exempt: String(entry.exem ?? '') === 'Y',
+    };
+  });
 }
 
 ////////// 공급사 키워드 파싱 (단일 문자열/배열 혼재 대응)

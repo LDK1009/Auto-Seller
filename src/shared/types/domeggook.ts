@@ -35,6 +35,14 @@ export type DomeggookInfoDuty = {
   items: { name: string; desc: string }[]; // 항목별 고시 내용
 };
 
+////////// KC 안전인증 (detail.safetyCert — KC 대상 상품에만 존재, 실측 2026-07-14)
+export type DomeggookSafetyCert = {
+  certType: string | null; // 인증 분류 (전기용품/생활용품/어린이제품 등)
+  certName: string | null; // 인증 종류 (안전확인/안전인증 등)
+  no: string | null; // 인증번호 (예: XU102308-20002B)
+  exempt: boolean; // 인증 면제 여부 (exem=Y)
+};
+
 ////////// 옵션 조합 (selectOpt — 스스 옵션 폼 이식용)
 export type DomeggookOption = {
   name: string; // 조합 옵션명 (예: "블랙/L")
@@ -59,6 +67,9 @@ export type DomeggookItem = {
   origin: string | null; // 원산지 (detail.country)
   manufacturer: string | null; // 제조사
   model: string | null; // 모델명
+  itemCustomCode: string | null; // 판매자 상품코드 (detail.itemCustomCode — 스스 '품번' 대응, 빈 값 흔함)
+  safetyCerts: DomeggookSafetyCert[]; // KC 안전인증 (없으면 빈 배열)
+  adult: boolean; // 성인용품 여부 (basis.adult — 스스 '미성년자 구매' 매핑)
   infoDuty: DomeggookInfoDuty; // 상품정보제공고시
   delivery: DomeggookDelivery;
   returnInfo: DomeggookReturnInfo;
