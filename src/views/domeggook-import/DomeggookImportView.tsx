@@ -403,29 +403,36 @@ export default function DomeggookImportView() {
                         <Stack spacing={0.75}>
                           <Typography variant="subtitle2">대표이미지 · 1장</Typography>
                           <PickStrip>
-                            {thumbImage && (
-                              <PickThumb
-                                key="main-original"
-                                type="button"
-                                $isSelected={mainImage?.source === 'original'}
-                                onClick={() =>
-                                  setSlotPreview({ picked: pickedFromOriginal(thumbImage), context: 'main' })
-                                }
-                              >
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={thumbImage.proxyUrl} alt="도매꾹 대표" loading="lazy" />
-                              </PickThumb>
-                            )}
-                            {mainImage?.source === 'crop' && (
+                            {mainImage ? (
                               <PickThumb
                                 key={mainImage.id}
-                                type="button"
                                 $isSelected
                                 onClick={() => setSlotPreview({ picked: mainImage, context: 'main' })}
                               >
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={mainImage.previewUrl} alt="크롭 대표" />
+                                <img src={mainImage.previewUrl} alt="대표이미지" />
+                                <ThumbRemoveButton
+                                  size="small"
+                                  aria-label="대표이미지 삭제"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    setMainImage(null);
+                                  }}
+                                >
+                                  <CloseIcon sx={{ fontSize: 14 }} />
+                                </ThumbRemoveButton>
                               </PickThumb>
+                            ) : (
+                              thumbImage && (
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  onClick={() => setMainImage(pickedFromOriginal(thumbImage))}
+                                  sx={{ alignSelf: 'center' }}
+                                >
+                                  도매꾹 대표이미지 사용하기
+                                </Button>
+                              )
                             )}
                             <CropAddTile
                               type="button"
@@ -448,12 +455,21 @@ export default function DomeggookImportView() {
                             {extraImages.map((entry) => (
                               <PickThumb
                                 key={entry.id}
-                                type="button"
                                 $isSelected
                                 onClick={() => setSlotPreview({ picked: entry, context: 'extra' })}
                               >
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={entry.previewUrl} alt="크롭 추가" />
+                                <ThumbRemoveButton
+                                  size="small"
+                                  aria-label="추가이미지 삭제"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    removeExtra(entry.id);
+                                  }}
+                                >
+                                  <CloseIcon sx={{ fontSize: 14 }} />
+                                </ThumbRemoveButton>
                               </PickThumb>
                             ))}
                             <CropAddTile
@@ -730,15 +746,29 @@ const SlotPreviewFrame = styled.div(({ theme }) => ({
 }));
 
 //////////////////// 대표/추가 이미지 선택 스트립 ////////////////////
+const ThumbRemoveButton = styled(IconButton)(({ theme }) => ({
+  position: 'absolute',
+  top: 4,
+  right: 4,
+  padding: 2,
+  backgroundColor: theme.palette.background.paper,
+  border: `1px solid ${theme.palette.divider}`,
+  boxShadow: theme.shadows[1],
+  '&:hover': {
+    backgroundColor: theme.palette.background.paper,
+  },
+}));
+
 const PickStrip = styled.div(({ theme }) => ({
   display: 'flex',
   gap: theme.spacing(1),
   flexWrap: 'wrap',
 }));
 
-const PickThumb = styled('button', transientOptions)<{ $isSelected?: boolean }>(({ theme, $isSelected }) => ({
-  width: 72,
-  height: 72,
+const PickThumb = styled('div', transientOptions)<{ $isSelected?: boolean }>(({ theme, $isSelected }) => ({
+  position: 'relative',
+  width: 108,
+  height: 108,
   flexShrink: 0,
   padding: 0,
   overflow: 'hidden',
@@ -758,8 +788,8 @@ const PickThumb = styled('button', transientOptions)<{ $isSelected?: boolean }>(
 }));
 
 const CropAddTile = styled.button(({ theme }) => ({
-  width: 72,
-  height: 72,
+  width: 108,
+  height: 108,
   flexShrink: 0,
   display: 'flex',
   flexDirection: 'column',
