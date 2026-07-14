@@ -260,20 +260,12 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     .map((option) => `${option.name}\t${option.priceAdd}\t${option.stock}`)
     .join('\n');
 
-  ////////// 옵션 엑셀 다운로드 — 스마트스토어 옵션 일괄등록 양식 그대로 (.xlsx)
-  // 열: 옵션값1·옵션값2·옵션값3·옵션가·재고수량·판매자 관리코드·사용여부, 1행 = 공식 안내문
+  ////////// 옵션 엑셀 다운로드 — 스마트스토어 옵션 일괄등록 양식 (.xlsx)
+  // 1행 = 컬럼 헤더 [선택1 선택2 선택3 옵션가 재고수량 관리코드 사용여부]
   const downloadOptionsExcel = async () => {
     if (bundledOptions.length === 0) return;
     const XLSX = await import('xlsx'); // 클릭 시 동적 로드 (번들 비대 방지)
-    const guideRow = [
-      '25자 이내로 입력해 주세요.\n일부 특수문자는 사용할 수 없습니다.\n예) L\n* 2행은 제거하고 업로드해 주세요.',
-      '25자 이내로 입력해 주세요.\n일부 특수문자는 사용할 수 없습니다.\n예) L\n사용하지 않는 경우, 열을 삭제하고 저장해 주세요.',
-      '25자 이내로 입력해 주세요.\n일부 특수문자는 사용할 수 없습니다.\n예) L\n사용하지 않는 경우, 열을 삭제하고 저장해 주세요.',
-      '숫자만 입력할 수 있습니다.\n0인 옵션이 반드시 있어야하며, 10원 단위로 입력해 주세요.\n예) 2500',
-      '숫자만 입력할 수 있습니다.',
-      '20자 이내로 입력해 주세요.\n일부 특수문자는 사용할 수 없습니다.',
-      'Y,N 중 선택해 주세요.',
-    ];
+    const headerRow = ['선택1', '선택2', '선택3', '옵션가', '재고수량', '관리코드', '사용여부'];
     const dataRows = bundledOptions.map((option, index) => [
       option.name.slice(0, 25),
       '',
@@ -283,7 +275,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       `DG-${item.no}-${index + 1}`.slice(0, 20),
       'Y',
     ]);
-    const sheet = XLSX.utils.aoa_to_sheet([guideRow, ...dataRows]);
+    const sheet = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows]);
     sheet['!cols'] = [{ wch: 26 }, { wch: 26 }, { wch: 26 }, { wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 10 }];
     const book = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(book, sheet, '옵션');
@@ -932,13 +924,29 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         )}
       </SectionBlock>
 
-      {/* 4. 재고수량 */}
+      {/* 4. 재고수량 — 값 옆에 복사 아이콘 밀착, 수직 중앙 */}
       <SectionBlock number={4} done={copiedSections.has(4)} title="재고수량">
-        <SheetRow
-          value={bundleStock !== null ? `${bundleStock.toLocaleString()}개` : '—'}
-          caption={bundleStock === 0 ? '재고가 없습니다 — 공급사 재입고 확인 후 등록하세요' : undefined}
-          onCopy={bundleStock !== null ? () => copyText('재고 수량', String(bundleStock), 4) : undefined}
-        />
+        <RowBox style={{ alignItems: 'center' }}>
+          <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {bundleStock !== null ? `${bundleStock.toLocaleString()}개` : '—'}
+            </Typography>
+            {bundleStock !== null && (
+              <CopyButton
+                size="small"
+                aria-label="재고 수량 복사"
+                onClick={() => copyText('재고 수량', String(bundleStock), 4)}
+              >
+                <ContentCopyIcon sx={{ fontSize: 16 }} />
+              </CopyButton>
+            )}
+          </Stack>
+          {bundleStock === 0 && (
+            <Typography variant="caption" color="text.secondary">
+              재고가 없습니다 — 공급사 재입고 확인 후 등록하세요
+            </Typography>
+          )}
+        </RowBox>
       </SectionBlock>
 
       {/* 5. 옵션 */}
@@ -948,18 +956,9 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         title="옵션"
         action={
           bundledOptions.length > 0 ? (
-            <Stack direction="row" spacing={0.5}>
-              <Button
-                size="small"
-                startIcon={<ContentCopyIcon />}
-                onClick={() => copyText('옵션 표', optionsTsv, 5)}
-              >
-                옵션 표 복사
-              </Button>
-              <Button size="small" startIcon={<FileDownloadOutlinedIcon />} onClick={downloadOptionsExcel}>
-                엑셀 다운로드
-              </Button>
-            </Stack>
+            <Button size="small" startIcon={<FileDownloadOutlinedIcon />} onClick={downloadOptionsExcel}>
+              엑셀 다운로드
+            </Button>
           ) : undefined
         }
       >
@@ -985,9 +984,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 </OptionRow>
               ))}
             </OptionList>
-            <Typography variant="caption" color="text.secondary">
-              복사하면 탭 구분 텍스트로 들어가 엑셀·일괄등록 양식에 그대로 붙습니다.
-            </Typography>
           </>
         ) : (
           <Typography variant="body2" color="text.secondary">
