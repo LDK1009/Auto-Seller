@@ -354,7 +354,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       )}
 
       {/* 1. 카테고리 — 추천 카테고리 자동 조회 (네이버쇼핑 상위 상품 최빈값) */}
-      <SectionBlock number={1} done={copiedSections.has(1)} title="추천 카테고리">
+      <SectionBlock number={1} done={copiedSections.has(1)} title="카테고리">
         {isLoadingCategory && categoryCandidates === null ? (
           <Typography variant="body2" color="text.secondary">
             추천 카테고리를 찾는 중…
@@ -377,9 +377,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 </CopyButton>
               </Stack>
             ))}
-            <Typography variant="caption" color="text.secondary">
-              등록 화면 카테고리 검색창에 붙여넣어 선택하세요.
-            </Typography>
           </Stack>
         ) : (
           <Typography variant="body2" color="text.secondary">
@@ -432,8 +429,11 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         {suggestedName && suggestedName !== productName && (
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
             <Chip size="small" variant="outlined" color="primary" label="추천" />
-            <Typography variant="body2">{suggestedName}</Typography>
-            <Button size="small" onClick={() => setProductName(suggestedName)}>
+            {/* 칩(24px) 기준 높이 통일 — 요소 간 세로 뒤틀림 방지 */}
+            <Typography variant="body2" sx={{ lineHeight: '24px' }}>
+              {suggestedName}
+            </Typography>
+            <Button size="small" onClick={() => setProductName(suggestedName)} sx={{ minHeight: 24, py: 0 }}>
               적용
             </Button>
           </Stack>
