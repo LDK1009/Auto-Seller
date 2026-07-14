@@ -24,6 +24,11 @@ import CircularProgress from '@mui/material/CircularProgress';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
 import QueryStatsOutlinedIcon from '@mui/icons-material/QueryStatsOutlined';
+import TrendingUpOutlinedIcon from '@mui/icons-material/TrendingUpOutlined';
+import TrendingDownOutlinedIcon from '@mui/icons-material/TrendingDownOutlined';
+import EventOutlinedIcon from '@mui/icons-material/EventOutlined';
+import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
+import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
 import { useSnackbar } from 'notistack';
 import { FEE_PRESETS, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from '@/shared/constants/marketFees';
 import { calculateMargin, calculateReversePrice, PRICE_ROUND_UNIT } from '@/shared/utils/marginCalculation';
@@ -820,35 +825,58 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           )}
         </Stack>
         {marketDetail && (
+          /* 시장 신호 칩 — 라벨은 짧게(아이콘+핵심), 판정·설명은 툴팁으로 */
           <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
             {marketDetail.trendDirection === 'up' && (
-              <Tooltip title="최근 검색량이 상승 추세입니다 — 수요가 커지는 중이라 진입 타이밍이 유리합니다">
-                <Chip size="small" color="success" label="검색 수요 상승 중" />
+              <Tooltip title="최근 검색량이 상승 추세 — 수요가 커지는 중이라 진입 타이밍이 유리합니다">
+                <Chip size="small" variant="outlined" color="success" icon={<TrendingUpOutlinedIcon />} label="수요 상승" />
               </Tooltip>
             )}
             {marketDetail.trendDirection === 'down' && (
-              <Tooltip title="최근 검색량이 하락 추세입니다 — 시즌 종료나 수요 감소일 수 있으니 주의하세요">
-                <Chip size="small" color="error" label="검색 수요 하락 중" />
+              <Tooltip title="최근 검색량이 하락 추세 — 시즌 종료나 수요 감소일 수 있으니 주의하세요">
+                <Chip size="small" variant="outlined" color="error" icon={<TrendingDownOutlinedIcon />} label="수요 하락" />
               </Tooltip>
             )}
             {marketDetail.seasonality.label && (
-              <Tooltip title="검색량이 특정 시기에 몰리는 키워드입니다 — 시즌 안에서 팔고 빠지는 전략이 맞습니다">
-                <Chip size="small" variant="outlined" label={`${marketDetail.seasonality.label}${marketDetail.seasonality.isInSeason ? ' — 지금 시즌' : ''}`} />
+              <Tooltip
+                title={
+                  marketDetail.seasonality.isInSeason
+                    ? `검색량이 몰리는 시기(${marketDetail.seasonality.label})이고 지금이 그 시즌입니다 — 시즌 안에 팔고 빠지세요`
+                    : `검색량이 특정 시기(${marketDetail.seasonality.label})에 몰리는 키워드입니다 — 시즌에 맞춰 등록하세요`
+                }
+              >
+                <Chip
+                  size="small"
+                  variant={marketDetail.seasonality.isInSeason ? 'filled' : 'outlined'}
+                  color={marketDetail.seasonality.isInSeason ? 'primary' : 'default'}
+                  icon={<EventOutlinedIcon />}
+                  label={marketDetail.seasonality.isInSeason ? '지금 시즌' : marketDetail.seasonality.label}
+                />
               </Tooltip>
             )}
             {marketDetail.brandShare !== null && (
-              <Tooltip title="검색 상위 상품 중 브랜드 상품 비율 — 높을수록 무명 위탁 상품이 노출되기 어렵습니다">
+              <Tooltip
+                title={`검색 상위 상품 중 ${marketDetail.brandShare}%가 브랜드 상품 — 높을수록 무명 위탁 상품이 노출되기 어렵습니다${
+                  marketDetail.brandShare >= 60 ? '. 60% 이상이라 진입 비추천' : ''
+                }`}
+              >
                 <Chip
                   size="small"
                   variant="outlined"
                   color={marketDetail.brandShare >= 60 ? 'error' : marketDetail.brandShare >= 30 ? 'warning' : 'success'}
-                  label={`브랜드 장악 ${marketDetail.brandShare}%${marketDetail.brandShare >= 60 ? ' — 진입 비추천' : ''}`}
+                  icon={<VerifiedOutlinedIcon />}
+                  label={`브랜드 ${marketDetail.brandShare}%`}
                 />
               </Tooltip>
             )}
             {marketDetail.categorySeason && marketDetail.categoryName && (
-              <Tooltip title="이 상품이 속한 카테고리 전체의 계절성입니다">
-                <Chip size="small" variant="outlined" label={`${marketDetail.categoryName} ${marketDetail.categorySeason}`} />
+              <Tooltip title={`"${marketDetail.categoryName}" 카테고리 전체의 계절성입니다`}>
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  icon={<CategoryOutlinedIcon />}
+                  label={marketDetail.categorySeason}
+                />
               </Tooltip>
             )}
           </Stack>
