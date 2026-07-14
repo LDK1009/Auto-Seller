@@ -3,10 +3,9 @@
 //////////////////////////////////////// 등록 정보 시트 (등록 준비 패키지) ////////////////////////////////////////
 // 스마트스토어 등록 폼에 그대로 붙여넣을 정보를 자동 조합한다 — API 없이 등록 노동의 마지막 구간을 복붙으로.
 // 섹션 순서 = 스마트스토어 등록 화면 실측 순서 (2026-07-13 대표 확인):
-// 카테고리 → 상품명 → 판매가 → 재고수량 → 옵션 → 상품이미지 → 상세설명 → 주요정보 → 배송 → 반품 → A/S → 혜택 → 검색설정 → 판매자 코드
+// 카테고리 → 상품명 → 판매가 → 재고수량 → 옵션 → 상품이미지 → 상세설명 → 주요정보 → 배송 → 반품 → 검색설정 → 판매자 코드
 // - 판매가: 도매꾹가 × 구매단위(MOQ) 원가로 역산 (shared/utils/marginCalculation 재사용)
 // - MOQ ≥ 2: 묶음(1+1 등) 구성 판매 안내 — 고객 1주문 = 도매꾹 MOQ 구매이므로 원가에 반영
-// - A/S 정보: 셀러 고정값 (localStorage — useSellerFixedInfo)
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import styled from '@emotion/styled';
@@ -35,7 +34,6 @@ import { FEE_PRESETS, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from '@/shared/con
 import { calculateMargin, calculateReversePrice, PRICE_ROUND_UNIT } from '@/shared/utils/marginCalculation';
 import type { DomeggookItem } from '@/shared/types/domeggook';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
-import { useSellerFixedInfo } from '../_hooks/useSellerFixedInfo';
 import { validateProductName, PROMO_WORDS, type NameCheckLevel } from '../_utils/validateProductName';
 import { detectComplianceRisk } from '../_utils/detectComplianceRisk';
 import { buildNameTokenPool, composeWithinLength, longestCommonSubstringLength } from '../_utils/buildSuggestedProductName';
@@ -62,15 +60,6 @@ const GRADE_COLORS: Record<ProductNameGrade, 'success' | 'warning' | 'error'> = 
   bad: 'error',
 };
 
-// 구매/리뷰 혜택 권장 프리셋 (초보 표준 세팅 — 등록 UI 혜택 구간의 결정 부담 제거)
-const BENEFIT_PRESET_LINES = [
-  '텍스트 리뷰 적립: 50원',
-  '포토/동영상 리뷰 적립: 150원',
-  '한달사용 텍스트 리뷰: 50원 / 포토·동영상: 150원',
-  '복수구매할인·무이자할부·사은품: 설정 안 함 (마진 확보 우선)',
-  '최소·최대 구매수량: 제한 없음',
-];
-
 type RegistrationSheetProps = {
   item: DomeggookItem;
   imageSection?: ReactNode; // ⑥ 상품이미지 — 이미지 선택·누끼/규격 핸드오프 (뷰가 상태 보유)
@@ -96,7 +85,6 @@ const multilineTooltip = (lines: string[]) => (
 
 export default function RegistrationSheet({ item, imageSection, detailSection }: RegistrationSheetProps) {
   const { enqueueSnackbar } = useSnackbar();
-  const { fixedInfo, updateFixedInfo } = useSellerFixedInfo();
 
   // 순수 UI 상태
   const [productName, setProductName] = useState(item.title);
@@ -397,8 +385,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       taxLabel && `과세 구분: ${taxLabel}`,
       `배송비: ${shippingFee}${item.delivery.feeType ? ` (${item.delivery.feeType})` : ''}`,
       item.returnInfo.fee !== null && `반품비: ${item.returnInfo.fee} / 교환비: ${exchangeFee}`,
-      fixedInfo.afterServicePhone && `A/S 전화번호: ${fixedInfo.afterServicePhone}`,
-      fixedInfo.afterServiceGuide && `A/S 안내: ${fixedInfo.afterServiceGuide}`,
       tagCandidates.length > 0 && `태그 후보: ${tagCandidates.join(',')}`,
       `판매자 상품코드: DG-${item.no}`,
     ]
@@ -1093,80 +1079,11 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         />
       </SectionBlock>
 
-      {/* 11. A/S */}
-      <SectionBlock number={11} done={copiedSections.has(11)} title="A/S 정보" caption="한 번 입력하면 이 브라우저에 저장됩니다">
-        <FieldRow>
-          <TextField
-            fullWidth
-            size="small"
-            label="A/S 전화번호"
-            placeholder="010-0000-0000 (내 연락처 — 위탁판매는 셀러가 CS 창구입니다)"
-            value={fixedInfo.afterServicePhone}
-            onChange={(event) => updateFixedInfo({ afterServicePhone: event.target.value })}
-          />
-          <CopyButton
-            aria-label="A/S 전화번호 복사"
-            onClick={() => copyText('A/S 전화번호', fixedInfo.afterServicePhone, 11)}
-          >
-            <ContentCopyIcon fontSize="small" />
-          </CopyButton>
-        </FieldRow>
-        <FieldRow>
-          <TextField
-            fullWidth
-            size="small"
-            label="A/S 안내 문구"
-            placeholder="예) 상품 문의는 스토어 톡톡 또는 위 번호로 연락 주세요"
-            value={fixedInfo.afterServiceGuide}
-            onChange={(event) => updateFixedInfo({ afterServiceGuide: event.target.value })}
-            slotProps={{
-              input: {
-                endAdornment: <InputAdornment position="end">{fixedInfo.afterServiceGuide.length}자</InputAdornment>,
-              },
-            }}
-          />
-          <CopyButton
-            aria-label="A/S 안내 복사"
-            onClick={() => copyText('A/S 안내', fixedInfo.afterServiceGuide, 11)}
-          >
-            <ContentCopyIcon fontSize="small" />
-          </CopyButton>
-        </FieldRow>
-      </SectionBlock>
-
-      {/* 12. 구매/리뷰 혜택 */}
-      <SectionBlock
-        number={12}
-        done={copiedSections.has(12)}
-        title="구매/리뷰 혜택"
-        caption="초보 권장 세팅"
-        action={
-          <Button
-            size="small"
-            startIcon={<ContentCopyIcon />}
-            onClick={() => copyText('혜택 세팅', BENEFIT_PRESET_LINES.join('\n'), 12)}
-          >
-            복사
-          </Button>
-        }
-      >
-        <PresetBox>
-          {BENEFIT_PRESET_LINES.map((line) => (
-            <Typography key={line} variant="body2">
-              · {line}
-            </Typography>
-          ))}
-        </PresetBox>
-        <Typography variant="caption" color="text.secondary">
-          리뷰가 쌓이기 전에는 리뷰 적립만 켜는 것을 권장합니다.
-        </Typography>
-      </SectionBlock>
-
-      {/* 13. 검색설정 (태그) */}
+      {/* 11. 검색설정 (태그) */}
       {tagCandidates.length > 0 && (
         <SectionBlock
-          number={13}
-          done={copiedSections.has(13)}
+          number={11}
+          done={copiedSections.has(11)}
           title={`검색설정 — 태그 후보 ${tagCandidates.length}개`}
           action={
             <Stack direction="row" spacing={1}>
@@ -1176,7 +1093,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               <Button
                 size="small"
                 startIcon={<ContentCopyIcon />}
-                onClick={() => copyText('태그', tagCandidates.join(','), 13)}
+                onClick={() => copyText('태그', tagCandidates.join(','), 11)}
               >
                 태그 복사
               </Button>
@@ -1203,12 +1120,12 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         </SectionBlock>
       )}
 
-      {/* 14. 판매자 코드 */}
-      <SectionBlock number={14} done={copiedSections.has(14)} title="판매자 코드">
+      {/* 12. 판매자 코드 */}
+      <SectionBlock number={12} done={copiedSections.has(12)} title="판매자 코드">
         <SheetRow
           value={`DG-${item.no}`}
           caption="주문이 들어오면 이 번호로 도매꾹에서 바로 찾아 발주하세요"
-          onCopy={() => copyText('판매자 상품코드', `DG-${item.no}`, 14)}
+          onCopy={() => copyText('판매자 상품코드', `DG-${item.no}`, 12)}
         />
       </SectionBlock>
     </Stack>
@@ -1443,15 +1360,6 @@ const FieldRow = styled.div(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   gap: theme.spacing(1),
-}));
-
-const PresetBox = styled.div(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  gap: theme.spacing(0.5),
-  padding: theme.spacing(1.5),
-  borderRadius: theme.shape.borderRadius,
-  backgroundColor: theme.palette.background.default,
 }));
 
 const OptionHeader = styled.div(({ theme }) => ({
