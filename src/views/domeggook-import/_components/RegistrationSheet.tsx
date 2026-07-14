@@ -749,12 +749,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 max={90}
                 zeroLabel="없음"
               />
-              {listPrice !== null && (
-                <Typography variant="caption" color="text.secondary">
-                  판매가 {KRW(listPrice)}에 {discountRate}% 할인을 걸면 고객은 {KRW(recommendedPrice)}에
-                  구매합니다 — 순이익은 그대로 유지됩니다.
-                </Typography>
-              )}
             </Stack>
           </>
         ) : (
