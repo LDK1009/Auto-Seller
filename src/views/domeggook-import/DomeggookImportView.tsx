@@ -37,6 +37,7 @@ import LicenseGate from './_components/LicenseGate';
 import DetailCropModal from './_components/DetailCropModal';
 import RegistrationSheet from './_components/RegistrationSheet';
 import SlotImageEditorModal from './_components/SlotImageEditorModal';
+import DetailPreviewModal from './_components/DetailPreviewModal';
 import type { DomeggookItemImage } from '@/shared/types/domeggook';
 import CodeIcon from '@mui/icons-material/Code';
 import CropOutlinedIcon from '@mui/icons-material/CropOutlined';
@@ -76,6 +77,7 @@ export default function DomeggookImportView() {
   const [previewIndex, setPreviewIndex] = useState<number | null>(null); // 자세히 보기 (item.images 인덱스 — 0=대표)
   // 슬롯 이미지 미리보기 (1000×1000 기준) — context에 따라 [대표로 사용]/[제거] 제공
   const [slotPreview, setSlotPreview] = useState<{ picked: PickedImage; context: 'main' | 'extra' } | null>(null);
+  const [isDetailPreviewOpen, setIsDetailPreviewOpen] = useState(false); // ⑦ 상세설명 미리보기
 
   const detailImages = item ? item.images.filter((image) => image.kind === 'detail') : [];
 
@@ -253,13 +255,6 @@ export default function DomeggookImportView() {
       console.error(error);
       enqueueSnackbar('복사에 실패했습니다.', { variant: 'error' });
     }
-  };
-
-  ////////// 상세 미리보기 — 자세히 보기 모달을 첫 상세 이미지부터 연다
-  const handlePreviewDetail = () => {
-    if (!item) return;
-    const firstDetailIndex = item.images.findIndex((image) => image.kind === 'detail');
-    if (firstDetailIndex >= 0) setPreviewIndex(firstDetailIndex);
   };
 
   const isBusy = status === 'loading' || downloadProgress !== null;
@@ -592,7 +587,7 @@ export default function DomeggookImportView() {
                             variant="outlined"
                             startIcon={<VisibilityOutlinedIcon />}
                             disabled={isBusy}
-                            onClick={handlePreviewDetail}
+                            onClick={() => setIsDetailPreviewOpen(true)}
                           >
                             미리보기
                           </Button>
@@ -638,6 +633,13 @@ export default function DomeggookImportView() {
           }}
         />
       )}
+
+      {/* 상세설명 미리보기 — 상세 이미지 세로 이어붙임 스크롤 */}
+      <DetailPreviewModal
+        open={isDetailPreviewOpen}
+        images={detailImages}
+        onClose={() => setIsDetailPreviewOpen(false)}
+      />
 
       {/* 상세이미지 잘라오기 — 대표/추가 소섹션 공용 크롭 모달 */}
       <DetailCropModal
