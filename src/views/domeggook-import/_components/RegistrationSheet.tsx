@@ -480,17 +480,18 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           )}
         </Stack>
 
-        {/* 추천 상품명 — 시드 풀 조합 (검색량 확인 후엔 검색량순) */}
+        {/* 추천 상품명 — 시드 풀 조합 (검색량 확인 후엔 검색량순), 추천 키워드와 동일한 라벨 패턴 */}
         {suggestedName && suggestedName !== productName && (
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-            <Chip size="small" variant="outlined" color="primary" label="추천" />
-            {/* 칩(24px) 기준 높이 통일 — 요소 간 세로 뒤틀림 방지 */}
-            <Typography variant="body2" sx={{ lineHeight: '24px' }}>
-              {suggestedName}
+          <Stack spacing={0.75}>
+            <Typography variant="caption" color="text.secondary">
+              추천 상품명
             </Typography>
-            <Button size="small" onClick={() => setProductName(suggestedName)} sx={{ minHeight: 24, py: 0 }}>
-              적용
-            </Button>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+              <Typography variant="body2">{suggestedName}</Typography>
+              <Button size="small" onClick={() => setProductName(suggestedName)} sx={{ minHeight: 24, py: 0 }}>
+                적용
+              </Button>
+            </Stack>
           </Stack>
         )}
 
