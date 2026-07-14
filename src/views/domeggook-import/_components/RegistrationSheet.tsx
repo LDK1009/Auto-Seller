@@ -1033,7 +1033,11 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         <SheetRow
           label="상품별 배송비"
           value={shippingFee > 0 ? KRW(shippingFee) : item.delivery.feeType ?? '—'}
-          caption={[item.delivery.feeType, item.delivery.pay].filter(Boolean).join(' · ')}
+          caption={
+            item.delivery.feeType?.includes('수량별')
+              ? '수량에 따라 배송비가 늘어납니다 — 발주 수량 기준으로 확인하세요'
+              : undefined
+          }
           onCopy={() => copyText('배송비', String(shippingFee), 9)}
         />
         <SheetRow
