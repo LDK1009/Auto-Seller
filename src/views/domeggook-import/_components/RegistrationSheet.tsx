@@ -3,7 +3,7 @@
 //////////////////////////////////////// 등록 정보 시트 (등록 준비 패키지) ////////////////////////////////////////
 // 스마트스토어 등록 폼에 그대로 붙여넣을 정보를 자동 조합한다 — API 없이 등록 노동의 마지막 구간을 복붙으로.
 // 섹션 순서 = 스마트스토어 등록 화면 실측 순서 (2026-07-13 대표 확인):
-// 카테고리 → 상품명 → 판매가 → 재고수량 → 옵션 → 상품이미지 → 상세설명 → 주요정보 → 고시 → 배송 → 반품 → A/S → 혜택 → 검색설정 → 판매자 코드
+// 카테고리 → 상품명 → 판매가 → 재고수량 → 옵션 → 상품이미지 → 상세설명 → 주요정보 → 배송 → 반품 → A/S → 혜택 → 검색설정 → 판매자 코드
 // - 판매가: 도매꾹가 × 구매단위(MOQ) 원가로 역산 (shared/utils/marginCalculation 재사용)
 // - MOQ ≥ 2: 묶음(1+1 등) 구성 판매 안내 — 고객 1주문 = 도매꾹 MOQ 구매이므로 원가에 반영
 // - A/S 정보: 셀러 고정값 (localStorage — useSellerFixedInfo)
@@ -254,20 +254,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
 
   // 공급사가 "해당없음"이라고 써넣은 모델명은 값 없음 취급
   const modelName = item.model && item.model.replace(/\s/g, '') !== '해당없음' ? item.model : null;
-  const infoDutyText = [
-    item.infoDuty.type ? `유형: ${item.infoDuty.type}` : null,
-    ...item.infoDuty.items.map((entry) => `${entry.name}: ${entry.desc}`),
-  ]
-    .filter(Boolean)
-    .join('\n');
-  // 고시 항목 표시 — 전 항목 값이 동일하면 한 줄 요약 ("전 9개 항목: 상세정보 별도표기"), 다르면 줄바꿈 목록
-  const infoDutyDescSet = new Set(item.infoDuty.items.map((entry) => entry.desc));
-  const infoDutyCaption =
-    item.infoDuty.items.length === 0
-      ? undefined
-      : infoDutyDescSet.size === 1
-        ? `전 ${item.infoDuty.items.length}개 항목: ${[...infoDutyDescSet][0]}`
-        : item.infoDuty.items.map((entry) => `${entry.name}: ${entry.desc}`).join('\n');
 
   ////////// 옵션 조합 (묶음 판매 시 가산가·재고도 묶음 단위로 환산)
   const bundledOptions = item.options;
@@ -409,7 +395,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       item.model && `모델명: ${item.model}`,
       item.origin && `원산지: ${item.origin}`,
       taxLabel && `과세 구분: ${taxLabel}`,
-      infoDutyText && `상품정보제공고시:\n${infoDutyText}`,
       `배송비: ${shippingFee}${item.delivery.feeType ? ` (${item.delivery.feeType})` : ''}`,
       item.returnInfo.fee !== null && `반품비: ${item.returnInfo.fee} / 교환비: ${exchangeFee}`,
       fixedInfo.afterServicePhone && `A/S 전화번호: ${fixedInfo.afterServicePhone}`,
@@ -1050,18 +1035,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         />
       </SectionBlock>
 
-      {/* 9. 상품정보제공고시 — 전 항목 값이 같으면 한 줄로 압축, 다르면 줄바꿈 목록 */}
-      <SectionBlock number={9} done={copiedSections.has(9)} title="상품정보제공고시">
-        <SheetRow
-          label="고시 유형"
-          value={item.infoDuty.type ?? '—'}
-          caption={infoDutyCaption}
-          onCopy={infoDutyText ? () => copyText('상품정보제공고시', infoDutyText, 9) : undefined}
-        />
-      </SectionBlock>
-
-      {/* 10. 배송 */}
-      <SectionBlock number={10} done={copiedSections.has(10)} title="배송">
+      {/* 9. 배송 */}
+      <SectionBlock number={9} done={copiedSections.has(9)} title="배송">
         <SheetRow
           value={shippingFee > 0 ? KRW(shippingFee) : item.delivery.feeType ?? '—'}
           caption={[item.delivery.feeType, item.delivery.pay, item.delivery.jejuExtra !== null && `제주 +${KRW(item.delivery.jejuExtra)}`]
@@ -1071,8 +1046,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         />
       </SectionBlock>
 
-      {/* 11. 반품/교환 */}
-      <SectionBlock number={11} done={copiedSections.has(11)} title="반품/교환">
+      {/* 10. 반품/교환 */}
+      <SectionBlock number={10} done={copiedSections.has(10)} title="반품/교환">
         <SheetRow
           value={
             item.returnInfo.fee !== null
@@ -1084,8 +1059,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         />
       </SectionBlock>
 
-      {/* 12. A/S */}
-      <SectionBlock number={12} done={copiedSections.has(12)} title="A/S 정보" caption="한 번 입력하면 이 브라우저에 저장됩니다">
+      {/* 11. A/S */}
+      <SectionBlock number={11} done={copiedSections.has(11)} title="A/S 정보" caption="한 번 입력하면 이 브라우저에 저장됩니다">
         <FieldRow>
           <TextField
             fullWidth
@@ -1097,7 +1072,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           />
           <CopyButton
             aria-label="A/S 전화번호 복사"
-            onClick={() => copyText('A/S 전화번호', fixedInfo.afterServicePhone, 12)}
+            onClick={() => copyText('A/S 전화번호', fixedInfo.afterServicePhone, 11)}
           >
             <ContentCopyIcon fontSize="small" />
           </CopyButton>
@@ -1118,24 +1093,24 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           />
           <CopyButton
             aria-label="A/S 안내 복사"
-            onClick={() => copyText('A/S 안내', fixedInfo.afterServiceGuide, 12)}
+            onClick={() => copyText('A/S 안내', fixedInfo.afterServiceGuide, 11)}
           >
             <ContentCopyIcon fontSize="small" />
           </CopyButton>
         </FieldRow>
       </SectionBlock>
 
-      {/* 13. 구매/리뷰 혜택 */}
+      {/* 12. 구매/리뷰 혜택 */}
       <SectionBlock
-        number={13}
-        done={copiedSections.has(13)}
+        number={12}
+        done={copiedSections.has(12)}
         title="구매/리뷰 혜택"
         caption="초보 권장 세팅"
         action={
           <Button
             size="small"
             startIcon={<ContentCopyIcon />}
-            onClick={() => copyText('혜택 세팅', BENEFIT_PRESET_LINES.join('\n'), 13)}
+            onClick={() => copyText('혜택 세팅', BENEFIT_PRESET_LINES.join('\n'), 12)}
           >
             복사
           </Button>
@@ -1153,11 +1128,11 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         </Typography>
       </SectionBlock>
 
-      {/* 14. 검색설정 (태그) */}
+      {/* 13. 검색설정 (태그) */}
       {tagCandidates.length > 0 && (
         <SectionBlock
-          number={14}
-          done={copiedSections.has(14)}
+          number={13}
+          done={copiedSections.has(13)}
           title={`검색설정 — 태그 후보 ${tagCandidates.length}개`}
           action={
             <Stack direction="row" spacing={1}>
@@ -1167,7 +1142,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               <Button
                 size="small"
                 startIcon={<ContentCopyIcon />}
-                onClick={() => copyText('태그', tagCandidates.join(','), 14)}
+                onClick={() => copyText('태그', tagCandidates.join(','), 13)}
               >
                 태그 복사
               </Button>
@@ -1194,12 +1169,12 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         </SectionBlock>
       )}
 
-      {/* 15. 판매자 코드 */}
-      <SectionBlock number={15} done={copiedSections.has(15)} title="판매자 코드">
+      {/* 14. 판매자 코드 */}
+      <SectionBlock number={14} done={copiedSections.has(14)} title="판매자 코드">
         <SheetRow
           value={`DG-${item.no}`}
           caption="주문이 들어오면 이 번호로 도매꾹에서 바로 찾아 발주하세요"
-          onCopy={() => copyText('판매자 상품코드', `DG-${item.no}`, 15)}
+          onCopy={() => copyText('판매자 상품코드', `DG-${item.no}`, 14)}
         />
       </SectionBlock>
     </Stack>
