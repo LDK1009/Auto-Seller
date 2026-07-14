@@ -273,8 +273,23 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   };
 
   ////////// 시장 분석 (대표 태그 키워드의 가격대·브랜드·시즌을 시트에 이식)
+  // 시장 비교 시드 — generic 대표어(우산)는 다른 급 상품까지 섞여 밴드가 부정확.
+  // 검색량이 확인되고 현재 상품명에 실제 포함된 키워드 중 가장 구체적(긴) 것을 선택,
+  // 없으면 시드 풀 1순위 → 태그 후보 1순위로 폴백
+  const normalizedProductName = productName.replace(/\s+/g, '').toLowerCase();
+  const marketSeed =
+    nameTokenPool
+      .filter(
+        (token) =>
+          (tagStats?.get(token.replace(/\s+/g, ''))?.monthlySearches ?? 0) > 0 &&
+          normalizedProductName.includes(token.replace(/\s+/g, '').toLowerCase()),
+      )
+      .sort((a, b) => b.length - a.length)[0] ??
+    nameTokenPool[0] ??
+    tagCandidates[0];
+
   const handleLoadMarket = async () => {
-    const seedKeyword = tagCandidates[0];
+    const seedKeyword = marketSeed;
     if (!seedKeyword) return;
     setIsLoadingMarket(true);
     try {
@@ -764,17 +779,19 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             {isLoadingMarket ? '분석 중…' : marketDetail === null ? '시장 가격 비교' : '다시 분석'}
           </Button>
           {marketDetail?.priceBand && recommendedPrice !== null && (
-            <Typography variant="body2">
-              시장가 {KRW(marketDetail.priceBand.min)}~{KRW(marketDetail.priceBand.max)} · 중앙{' '}
-              {KRW(marketDetail.priceBand.median)} —{' '}
-              <b>
-                {recommendedPrice <= marketDetail.priceBand.median
-                  ? '추천가가 시장 중앙 이하 (가격 경쟁력 있음)'
-                  : recommendedPrice <= marketDetail.priceBand.max
-                    ? '추천가가 시장 범위 내'
-                    : '추천가가 시장 상단 초과 — 마진율 조정 검토'}
-              </b>
-            </Typography>
+            <Tooltip title={`"${marketDetail.keyword}" 네이버쇼핑 상위 40개 상품의 가격비교 최저가 기준입니다`}>
+              <Typography variant="body2" sx={{ cursor: 'help' }}>
+                &quot;{marketDetail.keyword}&quot; 시장가 {KRW(marketDetail.priceBand.min)}~
+                {KRW(marketDetail.priceBand.max)} · 중앙 {KRW(marketDetail.priceBand.median)} —{' '}
+                <b>
+                  {recommendedPrice <= marketDetail.priceBand.median
+                    ? '추천가가 시장 중앙 이하 (가격 경쟁력 있음)'
+                    : recommendedPrice <= marketDetail.priceBand.max
+                      ? '추천가가 시장 범위 내'
+                      : '추천가가 시장 상단 초과 — 마진율 조정 검토'}
+                </b>
+              </Typography>
+            </Tooltip>
           )}
         </Stack>
         {marketDetail && (
