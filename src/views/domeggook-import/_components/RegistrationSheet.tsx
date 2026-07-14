@@ -63,8 +63,8 @@ type RegistrationSheetProps = {
 
 const KRW = (value: number) => `${Math.round(value).toLocaleString()}원`;
 
-// 카테고리 경로에서 맨 끝(최하위) 이름만 — 스마트스토어 검색창은 "A > B > C" 전체 경로로 검색 불가
-const lastCategorySegment = (path: string) => path.split('>').map((part) => part.trim()).filter(Boolean).pop() ?? path;
+// 카테고리 경로 복사용 변환 — "A > B > C" → "A B C" (스마트스토어 검색창은 > 구분 경로로 검색 불가)
+const categorySearchText = (path: string) => path.split('>').map((part) => part.trim()).filter(Boolean).join(' ');
 
 export default function RegistrationSheet({ item, imageSection, detailSection }: RegistrationSheetProps) {
   const { enqueueSnackbar } = useSnackbar();
@@ -263,7 +263,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   // 전체 복사도 시트(=스마트스토어 폼) 순서 그대로
   const copyAll = async () => {
     const lines = [
-      categoryCandidates?.[0] && `카테고리: ${lastCategorySegment(categoryCandidates[0].path)}`,
+      categoryCandidates?.[0] && `카테고리: ${categorySearchText(categoryCandidates[0].path)}`,
       `상품명: ${productName}`,
       recommendedPrice !== null &&
         `판매가: ${recommendedPrice}${bundleUnits > 1 ? ` (${bundleUnits}개 묶음 기준)` : ''}`,
@@ -320,16 +320,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       )}
 
       {/* 1. 카테고리 — 추천 카테고리 자동 조회 (네이버쇼핑 상위 상품 최빈값) */}
-      <SectionBlock
-        number={1}
-        done={copiedSections.has(1)}
-        title="추천 카테고리"
-        action={
-          <Button size="small" onClick={handleLoadCategorySuggest} disabled={isLoadingCategory}>
-            {isLoadingCategory ? '조회 중…' : '다시 추천'}
-          </Button>
-        }
-      >
+      <SectionBlock number={1} done={copiedSections.has(1)} title="추천 카테고리">
         {isLoadingCategory && categoryCandidates === null ? (
           <Typography variant="body2" color="text.secondary">
             추천 카테고리를 찾는 중…
@@ -346,19 +337,19 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 </Typography>
                 <CopyButton
                   aria-label="카테고리 복사"
-                  onClick={() => copyText('카테고리', lastCategorySegment(candidate.path), 1)}
+                  onClick={() => copyText('카테고리', categorySearchText(candidate.path), 1)}
                 >
                   <ContentCopyIcon fontSize="small" />
                 </CopyButton>
               </Stack>
             ))}
             <Typography variant="caption" color="text.secondary">
-              복사하면 맨 끝 카테고리명만 복사됩니다 — 등록 화면 검색창에 붙여넣어 선택하세요.
+              복사하면 띄어쓰기 구분으로 복사됩니다 — 등록 화면 검색창에 붙여넣어 선택하세요.
             </Typography>
           </Stack>
         ) : (
           <Typography variant="body2" color="text.secondary">
-            추천 카테고리를 찾지 못했습니다 — 상품명을 다듬고 [다시 추천]을 눌러보세요.
+            추천 카테고리를 찾지 못했습니다 — 등록 화면에서 상품명 키워드로 직접 검색해 선택하세요.
           </Typography>
         )}
       </SectionBlock>
