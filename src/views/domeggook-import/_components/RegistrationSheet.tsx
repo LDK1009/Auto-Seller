@@ -20,6 +20,8 @@ import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
+import Switch from '@mui/material/Switch';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import CircularProgress from '@mui/material/CircularProgress';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
@@ -39,7 +41,7 @@ import type { KeywordStat, RelatedKeyword } from '@/shared/types/keywordStats';
 
 const SMARTSTORE_FEE_RATE = FEE_PRESETS[0].rate; // 5.6% (스마트스토어)
 // 할인율 표시 프리셋 (%) — 최종 결제가는 유지하고 정가만 역산 (스스 관행: 정가+할인 표기)
-const DISCOUNT_DISPLAY_PRESETS = [0, 10, 20, 30];
+const DISCOUNT_DISPLAY_PRESETS = [10, 20, 30];
 
 // 상품명 검사 결과 칩 색
 const CHECK_CHIP_COLORS: Record<NameCheckLevel, 'success' | 'warning' | 'error'> = {
@@ -87,7 +89,10 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   // 순수 UI 상태
   const [productName, setProductName] = useState(item.title);
   const [targetMarginRate, setTargetMarginRate] = useState(TARGET_MARGIN_PRESETS[2]); // 기본 20%
-  const [discountRate, setDiscountRate] = useState(0); // 할인율 표시 (0 = 표시 안 함)
+  const [pricingMode, setPricingMode] = useState<'bundle' | 'single'>('bundle'); // 묶음(1주문=MOQ개) / 낱개(사업자 사입)
+  const [includeShipping, setIncludeShipping] = useState(false); // true = 판매가에 배송비 포함 (무료배송 판매)
+  const [isDiscountEnabled, setIsDiscountEnabled] = useState(false); // 할인 표시 여부 — 켠 뒤 % 선택
+  const [discountRate, setDiscountRate] = useState(10); // 할인율 (할인 표시 켰을 때만 사용)
   const [tagStats, setTagStats] = useState<Map<string, KeywordStat> | null>(null); // null = 미조회
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [categoryCandidates, setCategoryCandidates] = useState<CategoryCandidate[] | null>(null); // null = 미조회
@@ -164,17 +169,20 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     setProductName(topGroup[Math.floor(Math.random() * topGroup.length)]);
   };
 
-  ////////// 원가·판매가 계산 (MOQ 반영)
-  const bundleUnits = Math.max(item.moq, 1); // 고객 1주문당 도매꾹에서 사야 하는 수량
+  ////////// 원가·판매가 계산 (MOQ·판매 방식 반영)
+  // 묶음: 고객 1주문 = 도매꾹 MOQ개 구매 / 낱개: 사업자가 미리 사입해 1개씩 발송
+  const bundleUnits = pricingMode === 'single' ? 1 : Math.max(item.moq, 1);
   const unitPrice = item.domePrice ?? 0;
   const costPrice = unitPrice * bundleUnits;
   const shippingFee = item.delivery.baseFee ?? 0;
+  // 배송비 포함 판매(무료배송)면 고객에게 받는 배송비 0 — 판매가가 배송 원가까지 커버
+  const shippingCharge = includeShipping ? 0 : shippingFee;
 
   const reverseResult = calculateReversePrice({
     costPrice,
     targetMarginRate,
     feeRate: SMARTSTORE_FEE_RATE,
-    shippingCharge: shippingFee, // 고객에게 받는 배송비 = 도매꾹 배송비 그대로 (기본값)
+    shippingCharge,
     shippingCost: shippingFee,
     otherCost: 0,
   });
@@ -192,7 +200,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           sellingPrice: recommendedPrice,
           costPrice,
           feeRate: SMARTSTORE_FEE_RATE,
-          shippingCharge: shippingFee,
+          shippingCharge,
           shippingCost: shippingFee,
           otherCost: 0,
         })
@@ -202,7 +210,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
 
   // 할인가 분해: 최종 결제가(추천가)는 그대로 두고, 표시용 정가를 역산 (정가 × (1−할인율) ≥ 최종가 보장)
   const listPrice =
-    recommendedPrice !== null && discountRate > 0
+    recommendedPrice !== null && isDiscountEnabled && discountRate > 0
       ? Math.ceil(recommendedPrice / (1 - discountRate / 100) / PRICE_ROUND_UNIT) * PRICE_ROUND_UNIT
       : null;
 
@@ -650,6 +658,57 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 </Typography>
               </Tooltip>
             </Stack>
+            {/* 판매 방식 — 묶음/낱개(사업자 사입) + 배송비 별도/포함 */}
+            <Stack direction="row" spacing={2.5} sx={{ flexWrap: 'wrap', alignItems: 'center' }} useFlexGap>
+              {item.moq > 1 && (
+                <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                  <Typography variant="caption" color="text.secondary">
+                    판매 기준
+                  </Typography>
+                  <Tooltip title={`고객 1주문마다 도매꾹에서 ${Math.max(item.moq, 1)}개를 구매하는 위탁 방식`}>
+                    <Chip
+                      size="small"
+                      label={`묶음 ${Math.max(item.moq, 1)}개`}
+                      color={pricingMode === 'bundle' ? 'primary' : 'default'}
+                      variant={pricingMode === 'bundle' ? 'filled' : 'outlined'}
+                      onClick={() => setPricingMode('bundle')}
+                    />
+                  </Tooltip>
+                  <Tooltip title="도매꾹에서 미리 대량 사입해 1개씩 판매하는 사업자 방식 — 원가 = 낱개 단가">
+                    <Chip
+                      size="small"
+                      label="낱개"
+                      color={pricingMode === 'single' ? 'primary' : 'default'}
+                      variant={pricingMode === 'single' ? 'filled' : 'outlined'}
+                      onClick={() => setPricingMode('single')}
+                    />
+                  </Tooltip>
+                </Stack>
+              )}
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                <Typography variant="caption" color="text.secondary">
+                  배송비
+                </Typography>
+                <Tooltip title="고객에게 배송비를 별도로 받습니다 — 판매가는 상품값만">
+                  <Chip
+                    size="small"
+                    label="별도"
+                    color={!includeShipping ? 'primary' : 'default'}
+                    variant={!includeShipping ? 'filled' : 'outlined'}
+                    onClick={() => setIncludeShipping(false)}
+                  />
+                </Tooltip>
+                <Tooltip title="무료배송으로 판매 — 배송 원가까지 판매가에 녹여서 계산">
+                  <Chip
+                    size="small"
+                    label="포함 (무료배송)"
+                    color={includeShipping ? 'primary' : 'default'}
+                    variant={includeShipping ? 'filled' : 'outlined'}
+                    onClick={() => setIncludeShipping(true)}
+                  />
+                </Tooltip>
+              </Stack>
+            </Stack>
             {isFlooredByResale && item.resaleMinimum !== null && (
               <Alert severity="info">
                 공급사 최소 재판매가 <b>{KRW(item.resaleMinimum)}</b> 규정에 맞춰 추천가를 올렸습니다 —
@@ -657,21 +716,34 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               </Alert>
             )}
 
-            {/* 보조 — 할인율 표시 분해 (최종 결제가는 유지, 정가만 역산) */}
+            {/* 보조 — 할인 표시 (켠 뒤 % 선택, 최종 결제가는 유지·정가만 역산) */}
             <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'center' }} useFlexGap>
-              <Typography variant="caption" color="text.secondary">
-                할인 표시
-              </Typography>
-              {DISCOUNT_DISPLAY_PRESETS.map((rate) => (
-                <Chip
-                  key={rate}
-                  size="small"
-                  label={rate === 0 ? '없음' : `${rate}%`}
-                  color={discountRate === rate ? 'primary' : 'default'}
-                  variant={discountRate === rate ? 'filled' : 'outlined'}
-                  onClick={() => setDiscountRate(rate)}
-                />
-              ))}
+              <FormControlLabel
+                sx={{ mr: 0 }}
+                control={
+                  <Switch
+                    size="small"
+                    checked={isDiscountEnabled}
+                    onChange={(event) => setIsDiscountEnabled(event.target.checked)}
+                  />
+                }
+                label={
+                  <Typography variant="caption" color="text.secondary">
+                    할인 표시
+                  </Typography>
+                }
+              />
+              {isDiscountEnabled &&
+                DISCOUNT_DISPLAY_PRESETS.map((rate) => (
+                  <Chip
+                    key={rate}
+                    size="small"
+                    label={`${rate}%`}
+                    color={discountRate === rate ? 'primary' : 'default'}
+                    variant={discountRate === rate ? 'filled' : 'outlined'}
+                    onClick={() => setDiscountRate(rate)}
+                  />
+                ))}
               {listPrice !== null && (
                 <>
                   <Typography variant="body2">
@@ -710,21 +782,35 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         </Stack>
         {marketDetail && (
           <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
-            {marketDetail.trendDirection === 'up' && <Chip size="small" color="success" label="검색 수요 상승 중" />}
-            {marketDetail.trendDirection === 'down' && <Chip size="small" color="error" label="검색 수요 하락 중" />}
+            {marketDetail.trendDirection === 'up' && (
+              <Tooltip title="최근 검색량이 상승 추세입니다 — 수요가 커지는 중이라 진입 타이밍이 유리합니다">
+                <Chip size="small" color="success" label="검색 수요 상승 중" />
+              </Tooltip>
+            )}
+            {marketDetail.trendDirection === 'down' && (
+              <Tooltip title="최근 검색량이 하락 추세입니다 — 시즌 종료나 수요 감소일 수 있으니 주의하세요">
+                <Chip size="small" color="error" label="검색 수요 하락 중" />
+              </Tooltip>
+            )}
             {marketDetail.seasonality.label && (
-              <Chip size="small" variant="outlined" label={`${marketDetail.seasonality.label}${marketDetail.seasonality.isInSeason ? ' — 지금 시즌' : ''}`} />
+              <Tooltip title="검색량이 특정 시기에 몰리는 키워드입니다 — 시즌 안에서 팔고 빠지는 전략이 맞습니다">
+                <Chip size="small" variant="outlined" label={`${marketDetail.seasonality.label}${marketDetail.seasonality.isInSeason ? ' — 지금 시즌' : ''}`} />
+              </Tooltip>
             )}
             {marketDetail.brandShare !== null && (
-              <Chip
-                size="small"
-                variant="outlined"
-                color={marketDetail.brandShare >= 60 ? 'error' : marketDetail.brandShare >= 30 ? 'warning' : 'success'}
-                label={`브랜드 장악 ${marketDetail.brandShare}%${marketDetail.brandShare >= 60 ? ' — 진입 비추천' : ''}`}
-              />
+              <Tooltip title="검색 상위 상품 중 브랜드 상품 비율 — 높을수록 무명 위탁 상품이 노출되기 어렵습니다">
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  color={marketDetail.brandShare >= 60 ? 'error' : marketDetail.brandShare >= 30 ? 'warning' : 'success'}
+                  label={`브랜드 장악 ${marketDetail.brandShare}%${marketDetail.brandShare >= 60 ? ' — 진입 비추천' : ''}`}
+                />
+              </Tooltip>
             )}
             {marketDetail.categorySeason && marketDetail.categoryName && (
-              <Chip size="small" variant="outlined" label={`${marketDetail.categoryName} ${marketDetail.categorySeason}`} />
+              <Tooltip title="이 상품이 속한 카테고리 전체의 계절성입니다">
+                <Chip size="small" variant="outlined" label={`${marketDetail.categoryName} ${marketDetail.categorySeason}`} />
+              </Tooltip>
             )}
           </Stack>
         )}
