@@ -1100,11 +1100,15 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           <OptionList>
             {recommendedTags.map((tag) => {
               const stat = tagStats?.get(tag.replace(/\s+/g, ''));
+              // 연관 키워드 출신 태그는 tagStats(시드 조회분)에 없음 — keywordSearches의 검색량으로 폴백
+              const fallbackSearches = keywordSearches.get(tag) ?? 0;
               const searchesLabel = stat
                 ? stat.isLowVolume
                   ? '10 미만'
                   : (stat.monthlySearches ?? 0).toLocaleString()
-                : '—';
+                : fallbackSearches > 0
+                  ? fallbackSearches.toLocaleString()
+                  : '—';
               const ratioColor =
                 stat && stat.ratio !== null
                   ? stat.ratio < 1
@@ -1128,11 +1132,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               );
             })}
           </OptionList>
-          <Typography variant="caption" color="text.secondary">
-            {tagStats
-              ? '경쟁강도(상품수÷검색수)는 낮을수록 틈새입니다 · Page Title/Meta는 기본값 유지'
-              : '상품명에 있는 키워드는 태그 효과가 없어 뺐습니다 · Page Title/Meta는 기본값 유지'}
-          </Typography>
         </SectionBlock>
       )}
 
