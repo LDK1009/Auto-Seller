@@ -20,7 +20,6 @@ import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
-import Switch from '@mui/material/Switch';
 import CircularProgress from '@mui/material/CircularProgress';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
@@ -40,7 +39,7 @@ import type { KeywordStat, RelatedKeyword } from '@/shared/types/keywordStats';
 
 const SMARTSTORE_FEE_RATE = FEE_PRESETS[0].rate; // 5.6% (스마트스토어)
 // 할인율 표시 프리셋 (%) — 최종 결제가는 유지하고 정가만 역산 (스스 관행: 정가+할인 표기)
-const DISCOUNT_DISPLAY_PRESETS = [10, 20, 30];
+const DISCOUNT_DISPLAY_PRESETS = [0, 10, 20, 30];
 
 // 상품명 검사 결과 칩 색
 const CHECK_CHIP_COLORS: Record<NameCheckLevel, 'success' | 'warning' | 'error'> = {
@@ -90,8 +89,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   const [targetMarginRate, setTargetMarginRate] = useState(TARGET_MARGIN_PRESETS[2]); // 기본 20%
   const [pricingMode, setPricingMode] = useState<'bundle' | 'single'>('bundle'); // 묶음(1주문=MOQ개) / 낱개(사업자 사입)
   const [includeShipping, setIncludeShipping] = useState(false); // true = 판매가에 배송비 포함 (무료배송 판매)
-  const [isDiscountEnabled, setIsDiscountEnabled] = useState(false); // 할인 적용 여부 — 켠 뒤 % 선택
-  const [discountRate, setDiscountRate] = useState(10); // 할인율 (할인 적용 켰을 때만 사용)
+  const [discountRate, setDiscountRate] = useState(0); // 할인율 (0 = 할인 없음)
   const [tagStats, setTagStats] = useState<Map<string, KeywordStat> | null>(null); // null = 미조회
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [categoryCandidates, setCategoryCandidates] = useState<CategoryCandidate[] | null>(null); // null = 미조회
@@ -165,6 +163,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     const topGroup = Array.from(attempts.entries())
       .filter(([, score]) => score >= bestScore - 5)
       .map(([name]) => name);
+    // eslint-disable-next-line react-hooks/purity -- 클릭 핸들러 내 난수 (렌더 아님)
     setProductName(topGroup[Math.floor(Math.random() * topGroup.length)]);
   };
 
@@ -209,9 +208,11 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
 
   // 할인가 분해: 최종 결제가(추천가)는 그대로 두고, 표시용 정가를 역산 (정가 × (1−할인율) ≥ 최종가 보장)
   const listPrice =
-    recommendedPrice !== null && isDiscountEnabled && discountRate > 0
+    recommendedPrice !== null && discountRate > 0
       ? Math.ceil(recommendedPrice / (1 - discountRate / 100) / PRICE_ROUND_UNIT) * PRICE_ROUND_UNIT
       : null;
+  // 스탯 표기: 판매가 = 등록 판매가(할인 시 역산 정가), 할인가 = 고객 최종 결제가
+  const displaySellingPrice = listPrice ?? recommendedPrice;
 
   ////////// 파생 값
   const bundleStock = item.inventory !== null ? Math.floor(item.inventory / bundleUnits) : null;
@@ -342,9 +343,9 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     const lines = [
       categoryCandidates?.[0] && `카테고리: ${compactCategoryPath(categoryCandidates[0].path)}`,
       `상품명: ${productName}`,
-      recommendedPrice !== null &&
-        `판매가: ${recommendedPrice}${bundleUnits > 1 ? ` (${bundleUnits}개 묶음 기준)` : ''}`,
-      listPrice !== null && `정가(할인 적용용): ${listPrice} (−${discountRate}% → ${recommendedPrice})`,
+      displaySellingPrice !== null &&
+        `판매가: ${displaySellingPrice}${bundleUnits > 1 ? ` (${bundleUnits}개 묶음 기준)` : ''}`,
+      listPrice !== null && `할인 ${discountRate}% → 최종 결제가 ${recommendedPrice}`,
       bundleStock !== null && `재고: ${bundleStock}${bundleUnits > 1 ? ` (묶음 기준, 낱개 ${item.inventory})` : ''}`,
       optionsTsv && `옵션 (옵션명/가산가/재고${bundleUnits > 1 ? ' — 묶음 기준' : ''}):\n${optionsTsv}`,
       item.manufacturer && `제조사: ${item.manufacturer}`,
@@ -577,26 +578,43 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       <SectionBlock number={3} done={copiedSections.has(3)} title="판매가" contentSpacing={2}>
         {recommendedPrice !== null ? (
           <>
-            {/* 결과 스탯 — 큰 숫자 + 작은 단위 */}
+            {/* 결과 스탯 — 판매가 · 할인가 · 순이익 · 마진 (큰 숫자 + 작은 단위) */}
             <Stack direction="row" spacing={4} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <Stack spacing={0.25}>
                 <Typography variant="caption" color="text.secondary">
-                  추천 판매가
+                  판매가
                 </Typography>
                 <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
                   <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 700, lineHeight: 1.1 }}>
-                    {recommendedPrice.toLocaleString()}
+                    {(displaySellingPrice ?? recommendedPrice).toLocaleString()}
                     <Typography component="span" variant="body2" color="text.secondary">
                       원
                     </Typography>
                   </Typography>
                   <CopyButton
                     aria-label="판매가 복사"
-                    onClick={() => copyText('판매가', String(recommendedPrice), 3)}
+                    onClick={() => copyText('판매가', String(displaySellingPrice ?? recommendedPrice), 3)}
                   >
                     <ContentCopyIcon fontSize="small" />
                   </CopyButton>
                 </Stack>
+              </Stack>
+              <Stack spacing={0.25}>
+                <Typography variant="caption" color="text.secondary">
+                  할인가
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  {listPrice !== null ? (
+                    <>
+                      {recommendedPrice.toLocaleString()}
+                      <Typography component="span" variant="body2" color="text.secondary">
+                        원
+                      </Typography>
+                    </>
+                  ) : (
+                    '—'
+                  )}
+                </Typography>
               </Stack>
               <Stack spacing={0.25}>
                 <Typography variant="caption" color="text.secondary">
@@ -617,7 +635,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               </Stack>
               <Stack spacing={0.25}>
                 <Typography variant="caption" color="text.secondary">
-                  실마진
+                  마진
                 </Typography>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
                   {marginRateAtPrice !== null ? (
@@ -651,14 +669,14 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                     onClick={() => setTargetMarginRate(rate)}
                   />
                 ))}
-                {/* 근거 + 면책(툴팁으로 격하 — 상시 노출 제거) */}
-                <Tooltip title={FEE_DISCLAIMER}>
-                  <Typography variant="caption" color="text.secondary" sx={{ cursor: 'help' }}>
-                    · 원가 {KRW(costPrice)}
-                    {bundleUnits > 1 && ` (${KRW(unitPrice)}×${bundleUnits})`} · 수수료 {SMARTSTORE_FEE_RATE}% ⓘ
-                  </Typography>
-                </Tooltip>
               </Stack>
+              {/* 근거 + 면책(툴팁) — 칩 아래 설명 줄 */}
+              <Tooltip title={FEE_DISCLAIMER}>
+                <Typography variant="caption" color="text.secondary" sx={{ cursor: 'help', alignSelf: 'flex-start' }}>
+                  원가 {KRW(costPrice)}
+                  {bundleUnits > 1 && ` (${KRW(unitPrice)}×${bundleUnits})`} · 수수료 {SMARTSTORE_FEE_RATE}% ⓘ
+                </Typography>
+              </Tooltip>
             </Stack>
 
             {/* 판매 기준 — 묶음/낱개(사업자 사입), MOQ 1이면 의미 없어 숨김 */}
@@ -723,39 +741,29 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               </Alert>
             )}
 
-            {/* 할인 적용 — 켠 뒤 % 선택 (최종 결제가는 유지·정가만 역산) */}
+            {/* 할인 적용 — 없음/10/20/30, 정가·결제가 설명은 하단 줄 */}
             <Stack spacing={0.75}>
               <Typography variant="caption" color="text.secondary">
                 할인 적용
               </Typography>
               <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'center' }} useFlexGap>
-                <Switch
-                  size="small"
-                  checked={isDiscountEnabled}
-                  onChange={(event) => setIsDiscountEnabled(event.target.checked)}
-                />
-                {isDiscountEnabled &&
-                  DISCOUNT_DISPLAY_PRESETS.map((rate) => (
-                    <Chip
-                      key={rate}
-                      size="small"
-                      label={`${rate}%`}
-                      color={discountRate === rate ? 'primary' : 'default'}
-                      variant={discountRate === rate ? 'filled' : 'outlined'}
-                      onClick={() => setDiscountRate(rate)}
-                    />
-                  ))}
-                {listPrice !== null && (
-                  <>
-                    <Typography variant="body2">
-                      정가 <b>{KRW(listPrice)}</b> − {discountRate}% 할인 → 최종 {KRW(recommendedPrice)}
-                    </Typography>
-                    <CopyButton aria-label="정가 복사" onClick={() => copyText('정가', String(listPrice), 3)}>
-                      <ContentCopyIcon fontSize="small" />
-                    </CopyButton>
-                  </>
-                )}
+                {DISCOUNT_DISPLAY_PRESETS.map((rate) => (
+                  <Chip
+                    key={rate}
+                    size="small"
+                    label={rate === 0 ? '없음' : `${rate}%`}
+                    color={discountRate === rate ? 'primary' : 'default'}
+                    variant={discountRate === rate ? 'filled' : 'outlined'}
+                    onClick={() => setDiscountRate(rate)}
+                  />
+                ))}
               </Stack>
+              {listPrice !== null && (
+                <Typography variant="caption" color="text.secondary">
+                  판매가 {KRW(listPrice)}에 {discountRate}% 할인을 걸면 고객은 {KRW(recommendedPrice)}에
+                  구매합니다 — 순이익은 그대로 유지됩니다.
+                </Typography>
+              )}
             </Stack>
           </>
         ) : (
