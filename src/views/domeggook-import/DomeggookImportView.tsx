@@ -40,6 +40,7 @@ import DetailCropModal from './_components/DetailCropModal';
 import RegistrationSheet from './_components/RegistrationSheet';
 import SlotImageEditorModal from './_components/SlotImageEditorModal';
 import type { DomeggookItemImage } from '@/shared/types/domeggook';
+import CodeIcon from '@mui/icons-material/Code';
 import CropOutlinedIcon from '@mui/icons-material/CropOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 
@@ -231,6 +232,27 @@ export default function DomeggookImportView() {
       enqueueSnackbar(error instanceof Error ? error.message : '다운로드에 실패했습니다.', { variant: 'error' });
     } finally {
       setDownloadProgress(null);
+    }
+  };
+
+  ////////// 상세설명 HTML 복사 — 상세 이미지 나열 HTML을 서식(text/html)으로 복사 (에디터 붙여넣기용)
+  const handleCopyDetailHtml = async () => {
+    if (detailImages.length === 0) return;
+    const html = detailImages
+      .map((image) => `<img src="${image.url}" alt="" style="max-width:100%;display:block;margin:0 auto;">`)
+      .join('\n');
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([html], { type: 'text/plain' }),
+        }),
+      ]);
+      trackEvent('copy', { tool: 'detail-html' });
+      enqueueSnackbar(`상세 이미지 ${detailImages.length}장을 HTML 서식으로 복사했습니다.`, { variant: 'success' });
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar('복사에 실패했습니다.', { variant: 'error' });
     }
   };
 
@@ -601,16 +623,24 @@ export default function DomeggookImportView() {
                       <>
                         <ActionRow>
                           <Button
+                            variant="contained"
+                            startIcon={<CodeIcon />}
+                            disabled={isBusy}
+                            onClick={handleCopyDetailHtml}
+                          >
+                            상세 HTML 복사 ({detailImages.length}장)
+                          </Button>
+                          <Button
                             variant="outlined"
                             startIcon={<VerticalSplitIcon />}
                             disabled={isBusy}
                             onClick={handleMergeDetail}
                           >
-                            상세 통이미지 받기 ({detailImages.length}장)
+                            통이미지 받기
                           </Button>
                         </ActionRow>
                         <Typography variant="caption" color="text.secondary">
-                          상세 이미지 전체를 세로로 이어붙인 통이미지로 내려받아 에디터에 업로드하세요.
+                          HTML 복사 후 에디터에 붙여넣으세요. 이미지가 안 붙으면 통이미지를 받아 업로드하세요.
                         </Typography>
                       </>
                     )

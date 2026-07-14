@@ -993,8 +993,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         )}
       </SectionBlock>
 
-      {/* 7. 상세설명 — 상세 통이미지 (뷰에서 주입) */}
-      <SectionBlock number={7} done={copiedSections.has(7)} title="상세설명 (상세이미지)">
+      {/* 7. 상세설명 — 상세 HTML/통이미지 (뷰에서 주입) */}
+      <SectionBlock number={7} done={copiedSections.has(7)} title="상세설명">
         {detailSection ?? (
           <Typography variant="body2" color="text.secondary">
             상세 이미지를 에디터에 순서대로 업로드하세요.
