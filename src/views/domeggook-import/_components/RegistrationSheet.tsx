@@ -85,6 +85,13 @@ const compactCategoryPath = (path: string) => path.split('>').map((part) => part
 const compactCount = (value: number) =>
   value >= 10_000 ? `${(value / 10_000).toFixed(value >= 100_000 ? 0 : 1).replace(/\.0$/, '')}만` : value.toLocaleString();
 
+// 줄바꿈 툴팁 (한 줄 = 한 문장 — 가독성)
+const multilineTooltip = (lines: string[]) => (
+  <Typography variant="caption" component="div" sx={{ whiteSpace: 'pre-line' }}>
+    {lines.join('\n')}
+  </Typography>
+);
+
 
 export default function RegistrationSheet({ item, imageSection, detailSection }: RegistrationSheetProps) {
   const { enqueueSnackbar } = useSnackbar();
@@ -825,29 +832,40 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           )}
         </Stack>
         {marketDetail && (
-          /* 시장 신호 칩 — 라벨은 짧게(아이콘+핵심), 판정·설명은 툴팁으로 */
+          /* 시장 신호 칩 — 전부 아웃라인, 라벨은 짧게(아이콘+핵심), 판정·설명은 줄바꿈 툴팁 */
           <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
             {marketDetail.trendDirection === 'up' && (
-              <Tooltip title="최근 검색량이 상승 추세 — 수요가 커지는 중이라 진입 타이밍이 유리합니다">
-                <Chip size="small" variant="outlined" color="success" icon={<TrendingUpOutlinedIcon />} label="수요 상승" />
+              <Tooltip
+                title={multilineTooltip([
+                  '최근 검색량이 상승 추세입니다.',
+                  '수요가 커지는 중 — 진입 타이밍이 유리합니다.',
+                ])}
+              >
+                <MarketChip size="small" variant="outlined" color="success" icon={<TrendingUpOutlinedIcon />} label="수요 상승" />
               </Tooltip>
             )}
             {marketDetail.trendDirection === 'down' && (
-              <Tooltip title="최근 검색량이 하락 추세 — 시즌 종료나 수요 감소일 수 있으니 주의하세요">
-                <Chip size="small" variant="outlined" color="error" icon={<TrendingDownOutlinedIcon />} label="수요 하락" />
+              <Tooltip
+                title={multilineTooltip([
+                  '최근 검색량이 하락 추세입니다.',
+                  '시즌 종료·수요 감소일 수 있으니 주의하세요.',
+                ])}
+              >
+                <MarketChip size="small" variant="outlined" color="error" icon={<TrendingDownOutlinedIcon />} label="수요 하락" />
               </Tooltip>
             )}
             {marketDetail.seasonality.label && (
               <Tooltip
-                title={
+                title={multilineTooltip([
+                  `검색량이 몰리는 시기: ${marketDetail.seasonality.label}`,
                   marketDetail.seasonality.isInSeason
-                    ? `검색량이 몰리는 시기(${marketDetail.seasonality.label})이고 지금이 그 시즌입니다 — 시즌 안에 팔고 빠지세요`
-                    : `검색량이 특정 시기(${marketDetail.seasonality.label})에 몰리는 키워드입니다 — 시즌에 맞춰 등록하세요`
-                }
+                    ? '지금이 그 시즌입니다 — 시즌 안에 팔고 빠지세요.'
+                    : '시즌에 맞춰 등록하세요.',
+                ])}
               >
-                <Chip
+                <MarketChip
                   size="small"
-                  variant={marketDetail.seasonality.isInSeason ? 'filled' : 'outlined'}
+                  variant="outlined"
                   color={marketDetail.seasonality.isInSeason ? 'primary' : 'default'}
                   icon={<EventOutlinedIcon />}
                   label={marketDetail.seasonality.isInSeason ? '지금 시즌' : marketDetail.seasonality.label}
@@ -856,11 +874,13 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             )}
             {marketDetail.brandShare !== null && (
               <Tooltip
-                title={`검색 상위 상품 중 ${marketDetail.brandShare}%가 브랜드 상품 — 높을수록 무명 위탁 상품이 노출되기 어렵습니다${
-                  marketDetail.brandShare >= 60 ? '. 60% 이상이라 진입 비추천' : ''
-                }`}
+                title={multilineTooltip([
+                  `검색 상위 상품 중 ${marketDetail.brandShare}%가 브랜드 상품입니다.`,
+                  '높을수록 무명 위탁 상품이 노출되기 어렵습니다.',
+                  ...(marketDetail.brandShare >= 60 ? ['60% 이상 — 진입 비추천.'] : []),
+                ])}
               >
-                <Chip
+                <MarketChip
                   size="small"
                   variant="outlined"
                   color={marketDetail.brandShare >= 60 ? 'error' : marketDetail.brandShare >= 30 ? 'warning' : 'success'}
@@ -870,8 +890,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               </Tooltip>
             )}
             {marketDetail.categorySeason && marketDetail.categoryName && (
-              <Tooltip title={`"${marketDetail.categoryName}" 카테고리 전체의 계절성입니다`}>
-                <Chip
+              <Tooltip title={multilineTooltip([`"${marketDetail.categoryName}" 카테고리 전체의 계절성입니다.`])}>
+                <MarketChip
                   size="small"
                   variant="outlined"
                   icon={<CategoryOutlinedIcon />}
@@ -1410,6 +1430,20 @@ const RowBox = styled.div(({ theme }) => ({
 const CopyButton = styled(IconButton)({
   flexShrink: 0,
 });
+
+// 시장 신호 칩 — 아이콘 포함 시 기본 여백이 좁아 내부 여백 확장
+const MarketChip = styled(Chip)(({ theme }) => ({
+  height: 28,
+  paddingLeft: theme.spacing(0.5),
+  '& .MuiChip-icon': {
+    fontSize: 16,
+    marginLeft: theme.spacing(0.75),
+  },
+  '& .MuiChip-label': {
+    paddingLeft: theme.spacing(1),
+    paddingRight: theme.spacing(1.25),
+  },
+}));
 
 //////////////////// 시장 가격 밴드 스타일 ////////////////////
 const BandWrap = styled.div(({ theme }) => ({
