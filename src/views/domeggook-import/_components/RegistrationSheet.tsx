@@ -31,7 +31,7 @@ import { transientOptions } from '@/shared/utils/emotionTransientProps';
 import { useSellerFixedInfo } from '../_hooks/useSellerFixedInfo';
 import { validateProductName, PROMO_WORDS, type NameCheckLevel } from '../_utils/validateProductName';
 import { detectComplianceRisk } from '../_utils/detectComplianceRisk';
-import { buildSuggestedProductName } from '../_utils/buildSuggestedProductName';
+import { buildNameTokenPool, composeWithinLength } from '../_utils/buildSuggestedProductName';
 import { scoreProductName, type ProductNameGrade } from '../_utils/scoreProductName';
 import { fetchKeywordStats, fetchCategorySuggest, fetchKeywordDetail, type CategoryCandidate } from '@/shared/services/keywordStatsService';
 import type { KeywordDetail } from '@/shared/types/keywordDetail';
@@ -105,8 +105,31 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     .filter((tag) => !PROMO_WORDS.some((word) => tag.toLowerCase().includes(word.toLowerCase())))
     .slice(0, 10);
 
-  // 추천 상품명 — 교차 검증된 공급사 키워드 + 상품명 토큰 조합 (검색량 조회 후엔 검색량순)
-  const suggestedName = buildSuggestedProductName(item.title, item.keywords, nameTokens, tagStats);
+  // 키워드 풀 — 원 상품명 기준(편집과 무관하게 안정) 교차 검증·동의어 정리·정렬 완료 토큰
+  const originalNameTokens = item.title
+    .split(/\s+/)
+    .map((token) => token.replace(/[^가-힣a-zA-Z0-9]/g, ''))
+    .filter((token) => token.length >= 2);
+  const nameTokenPool = buildNameTokenPool(item.title, item.keywords, originalNameTokens, tagStats);
+  // 추천 상품명 — 풀을 권장 길이 안에서 순서대로 조합
+  const suggestedName = composeWithinLength(nameTokenPool);
+
+  ////////// 키워드 칩 토글 — 클릭으로 상품명에 넣고 빼기
+  const productNameTokens = productName.split(/\s+/).filter(Boolean);
+  const toggleNameToken = (token: string) => {
+    if (productNameTokens.includes(token)) {
+      setProductName(productNameTokens.filter((part) => part !== token).join(' '));
+    } else {
+      setProductName([...productNameTokens, token].join(' '));
+    }
+  };
+
+  ////////// 랜덤 조합 — 풀을 섞어 권장 길이 안에서 재조합
+  const shuffleName = () => {
+    const shuffled = [...nameTokenPool].sort(() => Math.random() - 0.5);
+    const composed = composeWithinLength(shuffled);
+    if (composed) setProductName(composed);
+  };
 
   ////////// 원가·판매가 계산 (MOQ 반영)
   const bundleUnits = Math.max(item.moq, 1); // 고객 1주문당 도매꾹에서 사야 하는 수량
@@ -374,8 +397,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           <Tooltip
             title={
               nameScore.hasSearchPart
-                ? '기본 검사 70점 + 검색량 키워드 30점 기준'
-                : '기본 검사 기준 — [검색량 확인]을 누르면 키워드 점수(30점)까지 반영됩니다'
+                ? '규칙 검사(길이·홍보 문구·특수문자·중복 등) 70점 + 검색량 키워드(많이 검색되는 단어 포함·앞배치) 30점을 합쳐 100점 만점으로 환산한 점수입니다.'
+                : '지금은 규칙 검사(길이·홍보 문구·특수문자·중복 등)만 반영된 점수입니다. 아래 태그의 [검색량 확인]을 누르면 검색량 키워드 점수까지 합산됩니다.'
             }
           >
             <ScoreRing>
@@ -415,10 +438,33 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             </Button>
           </Stack>
         )}
+
+        {/* 키워드 직접 조합 — 칩 클릭으로 넣고 빼기, 랜덤 조합 */}
+        {nameTokenPool.length > 0 && (
+          <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+            {nameTokenPool.map((token) => {
+              const isUsed = productNameTokens.includes(token);
+              return (
+                <Chip
+                  key={token}
+                  size="small"
+                  label={token}
+                  color={isUsed ? 'primary' : 'default'}
+                  variant={isUsed ? 'filled' : 'outlined'}
+                  onClick={() => toggleNameToken(token)}
+                />
+              );
+            })}
+            <Button size="small" onClick={shuffleName}>
+              랜덤 조합
+            </Button>
+          </Stack>
+        )}
+
         <FieldRow>
           <TextField
             fullWidth
-            size="small"
+            size="medium"
             label="상품명"
             value={productName}
             onChange={(event) => setProductName(event.target.value)}
