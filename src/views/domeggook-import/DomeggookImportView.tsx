@@ -23,7 +23,6 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
-import VerticalSplitIcon from '@mui/icons-material/VerticalSplit';
 import { useSnackbar } from 'notistack';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
@@ -32,7 +31,6 @@ import { transientOptions } from '@/shared/utils/emotionTransientProps';
 import { downloadDomeggookImages } from '@/shared/services/domeggookItemService';
 import { useDomeggookItem } from './_hooks/useDomeggookItem';
 import { classifyDomeggookInput, parseDomeggookProductNo } from './_utils/parseDomeggookUrl';
-import { mergeImagesVertically } from './_utils/mergeImagesVertically';
 import { buildZipWithNames, downloadBlob } from '@/shared/utils/zip';
 import DomeggookSearchPanel from '@/shared/components/DomeggookSearchPanel';
 import LicenseGate from './_components/LicenseGate';
@@ -256,8 +254,8 @@ export default function DomeggookImportView() {
     }
   };
 
-  ////////// 상세 통이미지 조립 — 상세 이미지 전체를 세로 병합해 다운로드
-  const handleMergeDetail = async () => {
+  ////////// 상세 이미지 전체 다운로드 — 개별 장 그대로 zip
+  const handleDownloadDetailImages = async () => {
     if (!item) return;
     if (detailImages.length === 0) return;
 
@@ -265,32 +263,19 @@ export default function DomeggookImportView() {
       const files = await downloadDomeggookImages(detailImages, item.no, (done, total) =>
         setDownloadProgress(`상세 이미지 내려받는 중… ${done}/${total}`),
       );
-      setDownloadProgress('통이미지 조립 중…');
-      const parts = await mergeImagesVertically(files.map((file) => file.blob));
-
-      if (parts.length === 1) {
-        downloadBlob(parts[0], `상세통이미지_${item.no}.jpg`);
-      } else {
-        const zipBlob = await buildZipWithNames(
-          parts.map((blob, index) => ({
-            name: `상세통이미지_${item.no}_${String(index + 1).padStart(2, '0')}.jpg`,
-            blob,
-          })),
-        );
-        downloadBlob(zipBlob, `상세통이미지_${item.no}.zip`);
-        trackEvent('zip_download', { tool: 'detail-merge' });
-      }
-      enqueueSnackbar(
-        parts.length === 1
-          ? '상세 통이미지가 완성되었습니다. 에디터에 1장만 업로드하세요.'
-          : `높이 제한으로 ${parts.length}개 파트로 나눠 완성되었습니다.`,
-        { variant: 'success' },
+      setDownloadProgress('압축 중…');
+      const zipBlob = await buildZipWithNames(
+        files.map((file, index) => ({
+          name: `상세이미지_${String(index + 1).padStart(2, '0')}_${file.name}`,
+          blob: file.blob,
+        })),
       );
+      downloadBlob(zipBlob, `상세이미지_${item.no}.zip`);
+      trackEvent('zip_download', { tool: 'detail-images' });
+      enqueueSnackbar(`상세 이미지 ${files.length}장을 압축해 내려받았습니다.`, { variant: 'success' });
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '통이미지 조립에 실패했습니다.', {
-        variant: 'error',
-      });
+      enqueueSnackbar(error instanceof Error ? error.message : '다운로드에 실패했습니다.', { variant: 'error' });
     } finally {
       setDownloadProgress(null);
     }
@@ -628,19 +613,19 @@ export default function DomeggookImportView() {
                             disabled={isBusy}
                             onClick={handleCopyDetailHtml}
                           >
-                            상세 HTML 복사 ({detailImages.length}장)
+                            HTML 복사
                           </Button>
                           <Button
                             variant="outlined"
-                            startIcon={<VerticalSplitIcon />}
+                            startIcon={<FileDownloadOutlinedIcon />}
                             disabled={isBusy}
-                            onClick={handleMergeDetail}
+                            onClick={handleDownloadDetailImages}
                           >
-                            통이미지 받기
+                            이미지 전체 다운로드
                           </Button>
                         </ActionRow>
                         <Typography variant="caption" color="text.secondary">
-                          HTML 복사 후 에디터에 붙여넣으세요. 이미지가 안 붙으면 통이미지를 받아 업로드하세요.
+                          HTML 복사 후 에디터에 붙여넣으세요. 이미지가 안 붙으면 전체 다운로드 후 업로드하세요.
                         </Typography>
                       </>
                     )
