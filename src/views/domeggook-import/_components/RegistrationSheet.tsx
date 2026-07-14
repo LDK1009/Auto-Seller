@@ -91,8 +91,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   const [targetMarginRate, setTargetMarginRate] = useState(TARGET_MARGIN_PRESETS[2]); // 기본 20%
   const [pricingMode, setPricingMode] = useState<'bundle' | 'single'>('bundle'); // 묶음(1주문=MOQ개) / 낱개(사업자 사입)
   const [includeShipping, setIncludeShipping] = useState(false); // true = 판매가에 배송비 포함 (무료배송 판매)
-  const [isDiscountEnabled, setIsDiscountEnabled] = useState(false); // 할인 표시 여부 — 켠 뒤 % 선택
-  const [discountRate, setDiscountRate] = useState(10); // 할인율 (할인 표시 켰을 때만 사용)
+  const [isDiscountEnabled, setIsDiscountEnabled] = useState(false); // 할인 적용 여부 — 켠 뒤 % 선택
+  const [discountRate, setDiscountRate] = useState(10); // 할인율 (할인 적용 켰을 때만 사용)
   const [tagStats, setTagStats] = useState<Map<string, KeywordStat> | null>(null); // null = 미조회
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [categoryCandidates, setCategoryCandidates] = useState<CategoryCandidate[] | null>(null); // null = 미조회
@@ -345,7 +345,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       `상품명: ${productName}`,
       recommendedPrice !== null &&
         `판매가: ${recommendedPrice}${bundleUnits > 1 ? ` (${bundleUnits}개 묶음 기준)` : ''}`,
-      listPrice !== null && `정가(할인 표시용): ${listPrice} (−${discountRate}% → ${recommendedPrice})`,
+      listPrice !== null && `정가(할인 적용용): ${listPrice} (−${discountRate}% → ${recommendedPrice})`,
       bundleStock !== null && `재고: ${bundleStock}${bundleUnits > 1 ? ` (묶음 기준, 낱개 ${item.inventory})` : ''}`,
       optionsTsv && `옵션 (옵션명/가산가/재고${bundleUnits > 1 ? ' — 묶음 기준' : ''}):\n${optionsTsv}`,
       item.manufacturer && `제조사: ${item.manufacturer}`,
@@ -716,7 +716,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               </Alert>
             )}
 
-            {/* 보조 — 할인 표시 (켠 뒤 % 선택, 최종 결제가는 유지·정가만 역산) */}
+            {/* 보조 — 할인 적용 (켠 뒤 % 선택, 최종 결제가는 유지·정가만 역산) */}
             <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'center' }} useFlexGap>
               <FormControlLabel
                 sx={{ mr: 0 }}
@@ -729,7 +729,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 }
                 label={
                   <Typography variant="caption" color="text.secondary">
-                    할인 표시
+                    할인 적용
                   </Typography>
                 }
               />
