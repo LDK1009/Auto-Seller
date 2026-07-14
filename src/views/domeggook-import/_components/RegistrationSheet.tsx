@@ -261,22 +261,14 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     .join('\n');
 
   ////////// 옵션 엑셀 다운로드 — 스마트스토어 옵션 일괄등록 양식 (.xlsx)
-  // 1행 = 컬럼 헤더 [선택1 선택2 선택3 옵션가 재고수량 관리코드 사용여부]
+  // 1행 = 컬럼 헤더 [옵션명 옵션값 사용여부] — 옵션명은 도매꾹이 그룹명을 안 줘 '옵션' 고정
   const downloadOptionsExcel = async () => {
     if (bundledOptions.length === 0) return;
     const XLSX = await import('xlsx'); // 클릭 시 동적 로드 (번들 비대 방지)
-    const headerRow = ['선택1', '선택2', '선택3', '옵션가', '재고수량', '관리코드', '사용여부'];
-    const dataRows = bundledOptions.map((option, index) => [
-      option.name.slice(0, 25),
-      '',
-      '',
-      Math.round(option.priceAdd / 10) * 10, // 10원 단위
-      option.stock,
-      `DG-${item.no}-${index + 1}`.slice(0, 20),
-      'Y',
-    ]);
+    const headerRow = ['옵션명', '옵션값', '사용여부'];
+    const dataRows = bundledOptions.map((option) => ['옵션', option.name, 'Y']);
     const sheet = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows]);
-    sheet['!cols'] = [{ wch: 26 }, { wch: 26 }, { wch: 26 }, { wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 10 }];
+    sheet['!cols'] = [{ wch: 12 }, { wch: 30 }, { wch: 10 }];
     const book = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(book, sheet, '옵션');
     XLSX.writeFile(book, `옵션_일괄등록_${item.no}.xlsx`);
