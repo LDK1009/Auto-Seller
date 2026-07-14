@@ -21,7 +21,6 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
 import Switch from '@mui/material/Switch';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import CircularProgress from '@mui/material/CircularProgress';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
@@ -635,36 +634,40 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               </Stack>
             </Stack>
 
-            {/* 조작 — 목표 마진 (결과 바로 아래, 인과 인접) */}
-            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+            {/* 소섹션 공통 패턴: 라벨 위 · 컨텐츠 아래 (시선 위→아래) */}
+            {/* 목표 마진 */}
+            <Stack spacing={0.75}>
               <Typography variant="caption" color="text.secondary">
                 목표 마진
               </Typography>
-              {TARGET_MARGIN_PRESETS.map((rate) => (
-                <Chip
-                  key={rate}
-                  size="small"
-                  label={`${rate}%`}
-                  color={targetMarginRate === rate ? 'primary' : 'default'}
-                  variant={targetMarginRate === rate ? 'filled' : 'outlined'}
-                  onClick={() => setTargetMarginRate(rate)}
-                />
-              ))}
-              {/* 근거 + 면책(툴팁으로 격하 — 상시 노출 제거) */}
-              <Tooltip title={FEE_DISCLAIMER}>
-                <Typography variant="caption" color="text.secondary" sx={{ cursor: 'help' }}>
-                  · 원가 {KRW(costPrice)}
-                  {bundleUnits > 1 && ` (${KRW(unitPrice)}×${bundleUnits})`} · 수수료 {SMARTSTORE_FEE_RATE}% ⓘ
-                </Typography>
-              </Tooltip>
-            </Stack>
-            {/* 판매 방식 — 묶음/낱개(사업자 사입) + 배송비 별도/포함 */}
-            <Stack direction="row" spacing={2.5} sx={{ flexWrap: 'wrap', alignItems: 'center' }} useFlexGap>
-              {item.moq > 1 && (
-                <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                  <Typography variant="caption" color="text.secondary">
-                    판매 기준
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+                {TARGET_MARGIN_PRESETS.map((rate) => (
+                  <Chip
+                    key={rate}
+                    size="small"
+                    label={`${rate}%`}
+                    color={targetMarginRate === rate ? 'primary' : 'default'}
+                    variant={targetMarginRate === rate ? 'filled' : 'outlined'}
+                    onClick={() => setTargetMarginRate(rate)}
+                  />
+                ))}
+                {/* 근거 + 면책(툴팁으로 격하 — 상시 노출 제거) */}
+                <Tooltip title={FEE_DISCLAIMER}>
+                  <Typography variant="caption" color="text.secondary" sx={{ cursor: 'help' }}>
+                    · 원가 {KRW(costPrice)}
+                    {bundleUnits > 1 && ` (${KRW(unitPrice)}×${bundleUnits})`} · 수수료 {SMARTSTORE_FEE_RATE}% ⓘ
                   </Typography>
+                </Tooltip>
+              </Stack>
+            </Stack>
+
+            {/* 판매 기준 — 묶음/낱개(사업자 사입), MOQ 1이면 의미 없어 숨김 */}
+            {item.moq > 1 && (
+              <Stack spacing={0.75}>
+                <Typography variant="caption" color="text.secondary">
+                  판매 기준
+                </Typography>
+                <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
                   <Tooltip title={`고객 1주문마다 도매꾹에서 ${Math.max(item.moq, 1)}개를 구매하는 위탁 방식`}>
                     <Chip
                       size="small"
@@ -684,11 +687,15 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                     />
                   </Tooltip>
                 </Stack>
-              )}
-              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                <Typography variant="caption" color="text.secondary">
-                  배송비
-                </Typography>
+              </Stack>
+            )}
+
+            {/* 배송비 */}
+            <Stack spacing={0.75}>
+              <Typography variant="caption" color="text.secondary">
+                배송비
+              </Typography>
+              <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
                 <Tooltip title="고객에게 배송비를 별도로 받습니다 — 판매가는 상품값만">
                   <Chip
                     size="small"
@@ -716,44 +723,39 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               </Alert>
             )}
 
-            {/* 보조 — 할인 적용 (켠 뒤 % 선택, 최종 결제가는 유지·정가만 역산) */}
-            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'center' }} useFlexGap>
-              <FormControlLabel
-                sx={{ mr: 0 }}
-                control={
-                  <Switch
-                    size="small"
-                    checked={isDiscountEnabled}
-                    onChange={(event) => setIsDiscountEnabled(event.target.checked)}
-                  />
-                }
-                label={
-                  <Typography variant="caption" color="text.secondary">
-                    할인 적용
-                  </Typography>
-                }
-              />
-              {isDiscountEnabled &&
-                DISCOUNT_DISPLAY_PRESETS.map((rate) => (
-                  <Chip
-                    key={rate}
-                    size="small"
-                    label={`${rate}%`}
-                    color={discountRate === rate ? 'primary' : 'default'}
-                    variant={discountRate === rate ? 'filled' : 'outlined'}
-                    onClick={() => setDiscountRate(rate)}
-                  />
-                ))}
-              {listPrice !== null && (
-                <>
-                  <Typography variant="body2">
-                    정가 <b>{KRW(listPrice)}</b> − {discountRate}% 할인 → 최종 {KRW(recommendedPrice)}
-                  </Typography>
-                  <CopyButton aria-label="정가 복사" onClick={() => copyText('정가', String(listPrice), 3)}>
-                    <ContentCopyIcon fontSize="small" />
-                  </CopyButton>
-                </>
-              )}
+            {/* 할인 적용 — 켠 뒤 % 선택 (최종 결제가는 유지·정가만 역산) */}
+            <Stack spacing={0.75}>
+              <Typography variant="caption" color="text.secondary">
+                할인 적용
+              </Typography>
+              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'center' }} useFlexGap>
+                <Switch
+                  size="small"
+                  checked={isDiscountEnabled}
+                  onChange={(event) => setIsDiscountEnabled(event.target.checked)}
+                />
+                {isDiscountEnabled &&
+                  DISCOUNT_DISPLAY_PRESETS.map((rate) => (
+                    <Chip
+                      key={rate}
+                      size="small"
+                      label={`${rate}%`}
+                      color={discountRate === rate ? 'primary' : 'default'}
+                      variant={discountRate === rate ? 'filled' : 'outlined'}
+                      onClick={() => setDiscountRate(rate)}
+                    />
+                  ))}
+                {listPrice !== null && (
+                  <>
+                    <Typography variant="body2">
+                      정가 <b>{KRW(listPrice)}</b> − {discountRate}% 할인 → 최종 {KRW(recommendedPrice)}
+                    </Typography>
+                    <CopyButton aria-label="정가 복사" onClick={() => copyText('정가', String(listPrice), 3)}>
+                      <ContentCopyIcon fontSize="small" />
+                    </CopyButton>
+                  </>
+                )}
+              </Stack>
             </Stack>
           </>
         ) : (
