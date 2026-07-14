@@ -35,7 +35,6 @@ import { FEE_PRESETS, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from '@/shared/con
 import { calculateMargin, calculateReversePrice, PRICE_ROUND_UNIT } from '@/shared/utils/marginCalculation';
 import type { DomeggookItem } from '@/shared/types/domeggook';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
-import { downloadBlob } from '@/shared/utils/zip';
 import { useSellerFixedInfo } from '../_hooks/useSellerFixedInfo';
 import { validateProductName, PROMO_WORDS, type NameCheckLevel } from '../_utils/validateProductName';
 import { detectComplianceRisk } from '../_utils/detectComplianceRisk';
@@ -261,16 +260,34 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     .map((option) => `${option.name}\t${option.priceAdd}\t${option.stock}`)
     .join('\n');
 
-  ////////// 옵션 엑셀 다운로드 — 일괄등록 양식 (BOM 포함 CSV — 엑셀에서 한글 정상)
-  const downloadOptionsCsv = () => {
+  ////////// 옵션 엑셀 다운로드 — 스마트스토어 옵션 일괄등록 양식 그대로 (.xlsx)
+  // 열: 옵션값1·옵션값2·옵션값3·옵션가·재고수량·판매자 관리코드·사용여부, 1행 = 공식 안내문
+  const downloadOptionsExcel = async () => {
     if (bundledOptions.length === 0) return;
-    const rows = [
-      ['옵션값', '옵션가', '재고수량'],
-      ...bundledOptions.map((option) => [option.name, String(option.priceAdd), String(option.stock)]),
+    const XLSX = await import('xlsx'); // 클릭 시 동적 로드 (번들 비대 방지)
+    const guideRow = [
+      '25자 이내로 입력해 주세요.\n일부 특수문자는 사용할 수 없습니다.\n예) L\n* 2행은 제거하고 업로드해 주세요.',
+      '25자 이내로 입력해 주세요.\n일부 특수문자는 사용할 수 없습니다.\n예) L\n사용하지 않는 경우, 열을 삭제하고 저장해 주세요.',
+      '25자 이내로 입력해 주세요.\n일부 특수문자는 사용할 수 없습니다.\n예) L\n사용하지 않는 경우, 열을 삭제하고 저장해 주세요.',
+      '숫자만 입력할 수 있습니다.\n0인 옵션이 반드시 있어야하며, 10원 단위로 입력해 주세요.\n예) 2500',
+      '숫자만 입력할 수 있습니다.',
+      '20자 이내로 입력해 주세요.\n일부 특수문자는 사용할 수 없습니다.',
+      'Y,N 중 선택해 주세요.',
     ];
-    const csv =
-      '\uFEFF' + rows.map((row) => row.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(',')).join('\r\n');
-    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `옵션_일괄등록_${item.no}.csv`);
+    const dataRows = bundledOptions.map((option, index) => [
+      option.name.slice(0, 25),
+      '',
+      '',
+      Math.round(option.priceAdd / 10) * 10, // 10원 단위
+      option.stock,
+      `DG-${item.no}-${index + 1}`.slice(0, 20),
+      'Y',
+    ]);
+    const sheet = XLSX.utils.aoa_to_sheet([guideRow, ...dataRows]);
+    sheet['!cols'] = [{ wch: 26 }, { wch: 26 }, { wch: 26 }, { wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 10 }];
+    const book = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(book, sheet, '옵션');
+    XLSX.writeFile(book, `옵션_일괄등록_${item.no}.xlsx`);
     setCopiedSections((previous) => new Set(previous).add(5));
   };
 
@@ -939,7 +956,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               >
                 옵션 표 복사
               </Button>
-              <Button size="small" startIcon={<FileDownloadOutlinedIcon />} onClick={downloadOptionsCsv}>
+              <Button size="small" startIcon={<FileDownloadOutlinedIcon />} onClick={downloadOptionsExcel}>
                 엑셀 다운로드
               </Button>
             </Stack>
