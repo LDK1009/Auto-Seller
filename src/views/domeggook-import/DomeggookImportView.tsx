@@ -827,6 +827,10 @@ const RestoreMainTile = styled.button(({ theme }) => ({
   },
   '& .MuiTypography-root': {
     position: 'relative', // 배경 이미지 위로
+    padding: theme.spacing(0.5, 1),
+    borderRadius: theme.shape.borderRadius,
+    backgroundColor: 'rgba(255, 255, 255, 0.82)', // 반투명 흰 배경 — 이미지 위 가독 확보
+    backdropFilter: 'blur(2px)',
   },
   '&:hover': {
     borderColor: theme.palette.primary.main,
