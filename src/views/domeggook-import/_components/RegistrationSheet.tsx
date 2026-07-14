@@ -21,7 +21,6 @@ import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import CheckIcon from '@mui/icons-material/Check';
 import QueryStatsOutlinedIcon from '@mui/icons-material/QueryStatsOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import TrendingUpOutlinedIcon from '@mui/icons-material/TrendingUpOutlined';
@@ -270,7 +269,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     const book = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(book, sheet, '옵션');
     XLSX.writeFile(book, `옵션_일괄등록_${item.no}.xlsx`);
-    setCopiedSections((previous) => new Set(previous).add(5));
   };
 
   ////////// 검색량·연관 키워드 조회 — 시드 = 공급사 키워드 상위 5개 (keywordstool 1콜 한도에 맞춤)
@@ -366,15 +364,11 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  ////////// 복사 — section 번호를 주면 해당 섹션 뱃지가 체크로 바뀜 (진행 추적)
-  const [copiedSections, setCopiedSections] = useState<Set<number>>(new Set());
-  const copyText = async (label: string, value: string, section?: number) => {
+  ////////// 복사
+  const copyText = async (label: string, value: string) => {
     if (!value) return;
     await navigator.clipboard.writeText(value);
     enqueueSnackbar(`${label}을(를) 복사했습니다.`, { variant: 'success' });
-    if (section !== undefined) {
-      setCopiedSections((previous) => new Set(previous).add(section));
-    }
   };
 
   // 전체 복사도 시트(=스마트스토어 폼) 순서 그대로
@@ -399,7 +393,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       .filter(Boolean)
       .join('\n');
     await copyText('등록 정보 전체', lines);
-    setCopiedSections(new Set(Array.from({ length: 15 }, (_, index) => index + 1)));
   };
 
   return (
@@ -440,7 +433,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         ))}
 
       {/* 1. 카테고리 — 추천 카테고리 자동 조회 (네이버쇼핑 상위 상품 최빈값) */}
-      <SectionBlock number={1} done={copiedSections.has(1)} title="카테고리">
+      <SectionBlock number={1} title="카테고리">
         {isLoadingCategory && categoryCandidates === null ? (
           <Typography variant="body2" color="text.secondary">
             추천 카테고리를 찾는 중…
@@ -457,7 +450,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 </Typography>
                 <CopyButton
                   aria-label="카테고리 복사"
-                  onClick={() => copyText('카테고리', compactCategoryPath(candidate.path), 1)}
+                  onClick={() => copyText('카테고리', compactCategoryPath(candidate.path))}
                 >
                   <ContentCopyIcon fontSize="small" />
                 </CopyButton>
@@ -474,7 +467,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       {/* 2. 상품명 — 추천 상품명 / 추천 키워드 / 인풋 3행 구성, 채점 링은 헤더 우측 */}
       <SectionBlock
         number={2}
-        done={copiedSections.has(2)}
+       
         title="상품명"
         contentSpacing={2.5}
         action={
@@ -539,7 +532,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 },
               }}
             />
-            <CopyButton aria-label="상품명 복사" onClick={() => copyText('상품명', productName, 2)}>
+            <CopyButton aria-label="상품명 복사" onClick={() => copyText('상품명', productName)}>
               <ContentCopyIcon fontSize="small" />
             </CopyButton>
           </FieldRow>
@@ -617,7 +610,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       </SectionBlock>
 
       {/* 3. 판매가 — 결과(3스탯) → 조작(마진 칩) → 근거(원가 캡션+면책 툴팁) → 보조(할인·시장) */}
-      <SectionBlock number={3} done={copiedSections.has(3)} title="판매가" contentSpacing={2}>
+      <SectionBlock number={3} title="판매가" contentSpacing={2}>
         {recommendedPrice !== null ? (
           <>
             {/* 결과 스탯 — 판매가 · 할인가 · 순이익 · 마진 (큰 숫자 + 작은 단위) */}
@@ -635,7 +628,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                   </Typography>
                   <CopyButton
                     aria-label="판매가 복사"
-                    onClick={() => copyText('판매가', String(displaySellingPrice ?? recommendedPrice), 3)}
+                    onClick={() => copyText('판매가', String(displaySellingPrice ?? recommendedPrice))}
                   >
                     <ContentCopyIcon fontSize="small" />
                   </CopyButton>
@@ -912,7 +905,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       </SectionBlock>
 
       {/* 4. 재고수량 — 값 옆에 복사 아이콘 밀착, 수직 중앙 */}
-      <SectionBlock number={4} done={copiedSections.has(4)} title="재고수량">
+      <SectionBlock number={4} title="재고수량">
         <RowBox style={{ alignItems: 'center' }}>
           <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
             <Typography variant="body2" sx={{ fontWeight: 600 }}>
@@ -922,7 +915,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               <CopyButton
                 size="small"
                 aria-label="재고 수량 복사"
-                onClick={() => copyText('재고 수량', String(bundleStock), 4)}
+                onClick={() => copyText('재고 수량', String(bundleStock))}
               >
                 <ContentCopyIcon sx={{ fontSize: 16 }} />
               </CopyButton>
@@ -939,7 +932,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       {/* 5. 옵션 */}
       <SectionBlock
         number={5}
-        done={copiedSections.has(5)}
+       
         title="옵션"
         action={
           bundledOptions.length > 0 ? (
@@ -980,7 +973,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       </SectionBlock>
 
       {/* 6. 상품이미지/동영상 — 이미지 선택 + 누끼/규격 핸드오프 (뷰에서 주입) */}
-      <SectionBlock number={6} done={copiedSections.has(6)} title="상품이미지 / 동영상" contentSpacing={3}>
+      <SectionBlock number={6} title="상품이미지 / 동영상" contentSpacing={3}>
         {imageSection ?? (
           <Typography variant="body2" color="text.secondary">
             대표이미지 1장 + 추가이미지 최대 9장을 업로드하세요.
@@ -989,7 +982,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       </SectionBlock>
 
       {/* 7. 상세설명 — 상세 HTML/통이미지 (뷰에서 주입) */}
-      <SectionBlock number={7} done={copiedSections.has(7)} title="상세설명">
+      <SectionBlock number={7} title="상세설명">
         {detailSection ?? (
           <Typography variant="body2" color="text.secondary">
             상세 이미지를 에디터에 순서대로 업로드하세요.
@@ -998,28 +991,28 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       </SectionBlock>
 
       {/* 8. 상품 주요정보 — 도매꾹 API로 확정 가능한 6개 필드만 (모델명·품번·제조사·KC인증·원산지·미성년자) */}
-      <SectionBlock number={8} done={copiedSections.has(8)} title="상품 주요정보">
+      <SectionBlock number={8} title="상품 주요정보">
         <SheetRow
           label="모델명"
           value={modelName ?? '—'}
-          onCopy={modelName ? () => copyText('모델명', modelName, 8) : undefined}
+          onCopy={modelName ? () => copyText('모델명', modelName) : undefined}
         />
         <SheetRow
           label="품번"
           value={item.itemCustomCode ?? '—'}
-          onCopy={item.itemCustomCode ? () => copyText('품번', item.itemCustomCode as string, 8) : undefined}
+          onCopy={item.itemCustomCode ? () => copyText('품번', item.itemCustomCode as string) : undefined}
         />
         <SheetRow
           label="제조사"
           value={item.manufacturer ?? '—'}
-          onCopy={item.manufacturer ? () => copyText('제조사', item.manufacturer as string, 8) : undefined}
+          onCopy={item.manufacturer ? () => copyText('제조사', item.manufacturer as string) : undefined}
         />
         <SheetRow
           label="KC인증"
           value={safetyCertText ?? '—'}
-          onCopy={safetyCertNo ? () => copyText('KC 인증번호', safetyCertNo, 8) : undefined}
+          onCopy={safetyCertNo ? () => copyText('KC 인증번호', safetyCertNo) : undefined}
         />
-        <SheetRow label="원산지" value={item.origin ?? '—'} onCopy={item.origin ? () => copyText('원산지', item.origin as string, 8) : undefined} />
+        <SheetRow label="원산지" value={item.origin ?? '—'} onCopy={item.origin ? () => copyText('원산지', item.origin as string) : undefined} />
         <SheetRow
           label="미성년자 구매"
           value={item.adult ? '불가 (성인용품)' : '가능'}
@@ -1027,11 +1020,11 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       </SectionBlock>
 
       {/* 9. 배송 — 돈 직결 값 3개 (배송비·제주/도서산간 추가·평균 발송일) */}
-      <SectionBlock number={9} done={copiedSections.has(9)} title="배송">
+      <SectionBlock number={9} title="배송">
         <SheetRow
           label="상품별 배송비"
           value={shippingFee > 0 ? KRW(shippingFee) : item.delivery.feeType ?? '—'}
-          onCopy={() => copyText('배송비', String(shippingFee), 9)}
+          onCopy={() => copyText('배송비', String(shippingFee))}
         />
         <SheetRow
           label="제주/도서산간 추가배송비"
@@ -1047,7 +1040,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           }
           onCopy={
             item.delivery.jejuExtra !== null
-              ? () => copyText('제주 추가배송비', String(item.delivery.jejuExtra), 9)
+              ? () => copyText('제주 추가배송비', String(item.delivery.jejuExtra))
               : undefined
           }
         />
@@ -1058,16 +1051,16 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       </SectionBlock>
 
       {/* 10. 반품/교환 — 편도/왕복 분리 (스스 폼 입력 칸과 1:1, 공급사 반품비 = 설정 하한선) */}
-      <SectionBlock number={10} done={copiedSections.has(10)} title="반품/교환">
+      <SectionBlock number={10} title="반품/교환">
         <SheetRow
           label="반품배송비 (편도)"
           value={item.returnInfo.fee !== null ? KRW(item.returnInfo.fee) : '—'}
-          onCopy={item.returnInfo.fee !== null ? () => copyText('반품배송비', String(item.returnInfo.fee), 10) : undefined}
+          onCopy={item.returnInfo.fee !== null ? () => copyText('반품배송비', String(item.returnInfo.fee)) : undefined}
         />
         <SheetRow
           label="교환배송비 (왕복)"
           value={exchangeFee !== null ? KRW(exchangeFee) : '—'}
-          onCopy={exchangeFee !== null ? () => copyText('교환배송비', String(exchangeFee), 10) : undefined}
+          onCopy={exchangeFee !== null ? () => copyText('교환배송비', String(exchangeFee)) : undefined}
         />
       </SectionBlock>
 
@@ -1075,7 +1068,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       {recommendedTags.length > 0 && (
         <SectionBlock
           number={11}
-          done={copiedSections.has(11)}
+         
           title="검색설정"
           action={
             <Stack direction="row" spacing={1}>
@@ -1085,7 +1078,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               <Button
                 size="small"
                 startIcon={<ContentCopyIcon />}
-                onClick={() => copyText('태그', recommendedTags.join(','), 11)}
+                onClick={() => copyText('태그', recommendedTags.join(','))}
               >
                 태그 복사
               </Button>
@@ -1136,10 +1129,10 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       )}
 
       {/* 12. 판매자 코드 */}
-      <SectionBlock number={12} done={copiedSections.has(12)} title="판매자 코드">
+      <SectionBlock number={12} title="판매자 코드">
         <SheetRow
           value={`DG-${item.no}`}
-          onCopy={() => copyText('판매자 상품코드', `DG-${item.no}`, 12)}
+          onCopy={() => copyText('판매자 상품코드', `DG-${item.no}`)}
         />
       </SectionBlock>
     </Stack>
@@ -1151,16 +1144,15 @@ type SectionBlockProps = {
   number: number;
   title: string;
   action?: ReactNode;
-  done?: boolean; // 복사 완료 — 뱃지가 체크로 바뀜 (진행 추적)
   contentSpacing?: number; // 본문 행간 (기본 1.25 — 상품명처럼 밀도 높은 섹션은 넓게)
   children: ReactNode;
 };
 
-function SectionBlock({ number, title, action, done = false, contentSpacing = 1.25, children }: SectionBlockProps) {
+function SectionBlock({ number, title, action, contentSpacing = 1.25, children }: SectionBlockProps) {
   return (
     <SectionBox>
       <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-        <NumberBadge $isDone={done}>{done ? <CheckIcon sx={{ fontSize: 14 }} /> : number}</NumberBadge>
+        <NumberBadge>{number}</NumberBadge>
         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
           {title}
         </Typography>
@@ -1347,7 +1339,7 @@ const ScoreRingLabel = styled.div({
   justifyContent: 'center',
 });
 
-const NumberBadge = styled('span', transientOptions)<{ $isDone?: boolean }>(({ theme, $isDone }) => ({
+const NumberBadge = styled.span(({ theme }) => ({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -1355,8 +1347,8 @@ const NumberBadge = styled('span', transientOptions)<{ $isDone?: boolean }>(({ t
   height: 24,
   flexShrink: 0,
   borderRadius: '50%',
-  backgroundColor: $isDone ? alpha(theme.palette.success.main, 0.12) : alpha(theme.palette.primary.main, 0.1),
-  color: $isDone ? theme.palette.success.main : theme.palette.primary.main,
+  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+  color: theme.palette.primary.main,
   fontSize: 12,
   fontWeight: 700,
 }));
