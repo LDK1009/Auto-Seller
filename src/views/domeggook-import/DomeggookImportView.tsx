@@ -250,7 +250,7 @@ export default function DomeggookImportView() {
         }),
       ]);
       trackEvent('copy', { tool: 'detail-html' });
-      enqueueSnackbar(`상세 이미지 ${detailImages.length}장을 HTML 서식으로 복사했습니다.`, { variant: 'success' });
+      enqueueSnackbar('상세설명 HTML을 복사했습니다 — 스마트스토어 [HTML 작성]에 붙여넣으세요.', { variant: 'success' });
     } catch (error) {
       console.error(error);
       enqueueSnackbar('복사에 실패했습니다.', { variant: 'error' });
