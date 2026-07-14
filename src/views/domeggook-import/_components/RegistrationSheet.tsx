@@ -240,15 +240,17 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   const taxLabel = item.taxType?.includes('면세') ? '면세' : item.taxType?.includes('과세') ? '과세' : item.taxType;
 
   ////////// KC 안전인증 표시 텍스트 (예: "안전확인 · 전기용품 · XU102308-20002B", 면제면 "면제" 표기)
+  // ?? [] — 응답이 브라우저 HTTP 캐시(1h)에 구형으로 남아 신규 필드가 없을 수 있어 방어
+  const safetyCerts = item.safetyCerts ?? [];
   const safetyCertText =
-    item.safetyCerts.length > 0
-      ? item.safetyCerts
+    safetyCerts.length > 0
+      ? safetyCerts
           .map((cert) =>
             [cert.certName, cert.certType, cert.exempt ? '면제' : cert.no].filter(Boolean).join(' · '),
           )
           .join(' / ')
       : null;
-  const safetyCertNo = item.safetyCerts.find((cert) => cert.no !== null)?.no ?? null;
+  const safetyCertNo = safetyCerts.find((cert) => cert.no !== null)?.no ?? null;
   const infoDutyText = [
     item.infoDuty.type ? `유형: ${item.infoDuty.type}` : null,
     ...item.infoDuty.items.map((entry) => `${entry.name}: ${entry.desc}`),
