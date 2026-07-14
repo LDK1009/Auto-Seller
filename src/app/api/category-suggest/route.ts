@@ -58,16 +58,10 @@ export async function GET(request: Request) {
   }
 
   try {
-    const response = await fetch(`${SHOP_API_URL}?query=${encodeURIComponent(query)}&display=${SAMPLE_SIZE}`, {
-      headers: { 'X-Naver-Client-Id': clientId, 'X-Naver-Client-Secret': clientSecret },
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-      cache: 'no-store',
-    });
-    if (!response.ok) {
+    const items = await searchShop(query, clientId, clientSecret);
+    if (items === null) {
       return NextResponse.json({ error: '카테고리 후보 조회에 실패했습니다.' }, { status: 502 });
     }
-    const body = await response.json();
-    const items: any[] = Array.isArray(body?.items) ? body.items : [];
 
     ////////// 카테고리 경로 최빈값 집계
     const pathCounts = new Map<string, number>();
@@ -85,9 +79,14 @@ export async function GET(request: Request) {
       .slice(0, MAX_CANDIDATES)
       .map(([path, count]) => ({ path, count, sampleSize: items.length }));
 
-    ////////// 제목 토큰 빈도 — 경쟁 상품들이 실제 쓰는 단어 (상품당 1회 카운트)
+    ////////// 제목 토큰 빈도 — 1순위 카테고리 리프명으로 2차 검색해 추출
+    // 상품명 검색 결과는 같은 도매꾹 상품을 복제한 위탁셀러 제목이 대부분(순환) —
+    // 카테고리 대표 검색어의 상위 상품(브랜드·잘 파는 셀러)에서 뽑아야 실제 시장 어휘가 나온다.
+    const leafName = candidates[0]?.path.split('>').map((part) => part.trim()).filter(Boolean).pop();
+    const tokenSourceItems = leafName ? ((await searchShop(leafName, clientId, clientSecret)) ?? items) : items;
+
     const tokenCounts = new Map<string, number>();
-    for (const item of items) {
+    for (const item of tokenSourceItems) {
       const plainTitle = String(item.title ?? '')
         .replace(/<[^>]+>/g, '') // <b> 강조 태그 제거
         .replace(/&amp;/g, '&')
@@ -121,4 +120,16 @@ export async function GET(request: Request) {
     console.error(error);
     return NextResponse.json({ error: '카테고리 후보 조회에 실패했습니다.' }, { status: 502 });
   }
+}
+
+////////// 네이버쇼핑 검색 (실패 시 null — 호출부가 폴백 결정)
+async function searchShop(query: string, clientId: string, clientSecret: string): Promise<any[] | null> {
+  const response = await fetch(`${SHOP_API_URL}?query=${encodeURIComponent(query)}&display=${SAMPLE_SIZE}`, {
+    headers: { 'X-Naver-Client-Id': clientId, 'X-Naver-Client-Secret': clientSecret },
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    cache: 'no-store',
+  });
+  if (!response.ok) return null;
+  const body = await response.json();
+  return Array.isArray(body?.items) ? body.items : [];
 }
