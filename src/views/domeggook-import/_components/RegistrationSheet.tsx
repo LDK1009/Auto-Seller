@@ -1077,16 +1077,19 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         />
       </SectionBlock>
 
-      {/* 10. 반품/교환 */}
+      {/* 10. 반품/교환 — 편도/왕복 분리 (스스 폼 입력 칸과 1:1, 공급사 반품비 = 설정 하한선) */}
       <SectionBlock number={10} done={copiedSections.has(10)} title="반품/교환">
         <SheetRow
-          value={
-            item.returnInfo.fee !== null
-              ? `반품 ${KRW(item.returnInfo.fee)} · 교환 ${exchangeFee !== null ? KRW(exchangeFee) : '—'}`
-              : '—'
-          }
+          label="반품배송비 (편도)"
+          value={item.returnInfo.fee !== null ? KRW(item.returnInfo.fee) : '—'}
+          caption={item.returnInfo.fee !== null ? '공급사 반품비 — 이보다 낮게 설정하면 반품마다 차액 손해' : undefined}
+          onCopy={item.returnInfo.fee !== null ? () => copyText('반품배송비', String(item.returnInfo.fee), 10) : undefined}
+        />
+        <SheetRow
+          label="교환배송비 (왕복)"
+          value={exchangeFee !== null ? KRW(exchangeFee) : '—'}
           caption={item.returnInfo.exchangeDouble ? '교환비 = 반품비 × 2 (왕복)' : undefined}
-          onCopy={item.returnInfo.fee !== null ? () => copyText('반품비', String(item.returnInfo.fee), 10) : undefined}
+          onCopy={exchangeFee !== null ? () => copyText('교환배송비', String(exchangeFee), 10) : undefined}
         />
       </SectionBlock>
 
