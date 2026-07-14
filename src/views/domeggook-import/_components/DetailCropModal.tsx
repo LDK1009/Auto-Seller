@@ -20,6 +20,7 @@ import AlignHorizontalLeftIcon from '@mui/icons-material/AlignHorizontalLeft';
 import AlignHorizontalCenterIcon from '@mui/icons-material/AlignHorizontalCenter';
 import AlignHorizontalRightIcon from '@mui/icons-material/AlignHorizontalRight';
 import WidthFullOutlinedIcon from '@mui/icons-material/WidthFullOutlined';
+import CenterFocusStrongOutlinedIcon from '@mui/icons-material/CenterFocusStrongOutlined';
 import type { DomeggookItemImage } from '@/shared/types/domeggook';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
 
@@ -152,15 +153,31 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
             : 0;
       applyPointer(moveEvent.clientX, moveEvent.clientY);
     };
+    // 드래그 중 휠 스크롤 → 스크롤 이동분이 박스 좌표에 반영돼 박스가 포인터를 따라옴
+    const handleScroll = () => applyPointer(lastPointerRef.current.x, lastPointerRef.current.y);
     const handleUp = () => {
       dragRef.current = null;
       autoScrollSpeedRef.current = 0;
       cancelAnimationFrame(frame);
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerup', handleUp);
+      scrollElement.removeEventListener('scroll', handleScroll);
     };
     window.addEventListener('pointermove', handleMove);
     window.addEventListener('pointerup', handleUp);
+    scrollElement.addEventListener('scroll', handleScroll);
+  };
+
+  ////////// 보고 있는 위치로 박스 가져오기 — 현재 스크롤 뷰포트 세로 중앙 (크기·가로 유지)
+  const bringToViewport = () => {
+    const scrollElement = scrollRef.current;
+    if (!scrollElement) return;
+    setBox((current) =>
+      clampBox({
+        ...current,
+        y: scrollElement.scrollTop + Math.max((scrollElement.clientHeight - current.size) / 2, 0),
+      }),
+    );
   };
 
   ////////// 정렬 퀵버튼 — 가로 위치·전체 너비 (세로 위치는 유지)
@@ -262,6 +279,11 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
           <Tooltip title="전체 너비로">
             <IconButton size="small" onClick={expandFullWidth}>
               <WidthFullOutlinedIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="보고 있는 위치로 가져오기">
+            <IconButton size="small" onClick={bringToViewport}>
+              <CenterFocusStrongOutlinedIcon sx={{ fontSize: 18 }} />
             </IconButton>
           </Tooltip>
         </Stack>
