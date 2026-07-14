@@ -38,8 +38,29 @@ import { mergeImagesVertically } from './_utils/mergeImagesVertically';
 import { buildZipWithNames, downloadBlob } from '@/shared/utils/zip';
 import DomeggookSearchPanel from '@/shared/components/DomeggookSearchPanel';
 import LicenseGate from './_components/LicenseGate';
-import ImageSelectGrid from './_components/ImageSelectGrid';
+import DetailCropModal from './_components/DetailCropModal';
 import RegistrationSheet from './_components/RegistrationSheet';
+import type { DomeggookItemImage } from '@/shared/types/domeggook';
+import CropOutlinedIcon from '@mui/icons-material/CropOutlined';
+
+// 대표/추가 이미지 슬롯 항목 — 원본(도매꾹 이미지) 또는 크롭(상세에서 잘라옴)
+type PickedImage = {
+  id: string;
+  source: 'original' | 'crop';
+  previewUrl: string;
+  original?: DomeggookItemImage;
+  blob?: Blob;
+};
+
+const MAX_EXTRA_IMAGES = 9; // 스마트스토어 추가이미지 한도
+
+// 원본 이미지 → 슬롯 항목 (순수 변환 — 컴포넌트 밖)
+const pickedFromOriginal = (image: DomeggookItemImage): PickedImage => ({
+  id: `org-${image.url}`,
+  source: 'original',
+  previewUrl: image.proxyUrl,
+  original: image,
+});
 
 // 핸드오프 대상 도구 — autoStart: 도착 즉시 작업 자동 시작 (원클릭 이어달리기)
 const HANDOFF_TARGETS = [
@@ -65,7 +86,10 @@ export default function DomeggookImportView() {
   const { status, item, errorMessage, lookup, reset } = useDomeggookItem();
 
   // 순수 UI 상태
-  const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
+  const [mainImage, setMainImage] = useState<PickedImage | null>(null); // 대표 1장
+  const [extraImages, setExtraImages] = useState<PickedImage[]>([]); // 추가 최대 9장
+  const [cropTarget, setCropTarget] = useState<'main' | 'extra' | null>(null); // 크롭 모달 대상 소섹션
+  const cropSequenceRef = useRef(0);
   const [downloadProgress, setDownloadProgress] = useState<string | null>(null);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null); // 자세히 보기 (item.images 인덱스 — 0=대표)
 
@@ -98,14 +122,15 @@ export default function DomeggookImportView() {
     });
   };
 
-  ////////// 조회 (성공 시 기본 선택 = 대표이미지만)
+  ////////// 조회 (성공 시 대표이미지 자동 선택, 추가는 비움)
   const handleLookup = async (input: string) => {
-    setSelectedUrls(new Set());
+    setMainImage(null);
+    setExtraImages([]);
     const fetched = await lookup(input);
     trackEvent('domeggook_lookup', { result: fetched ? 'success' : 'fail' });
     if (fetched) {
-      const thumbUrls = fetched.images.filter((image) => image.kind === 'thumb').map((image) => image.url);
-      setSelectedUrls(new Set(thumbUrls));
+      const thumb = fetched.images.find((image) => image.kind === 'thumb');
+      if (thumb) setMainImage(pickedFromOriginal(thumb));
     }
   };
 
@@ -133,26 +158,69 @@ export default function DomeggookImportView() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  ////////// 이미지 선택 조작
-  const toggleUrl = (url: string) => {
-    setSelectedUrls((prev) => {
-      const next = new Set(prev);
-      if (next.has(url)) next.delete(url);
-      else next.add(url);
-      return next;
+  ////////// 대표/추가 슬롯 조작
+  const pickMainOriginal = (image: DomeggookItemImage) => {
+    setMainImage(pickedFromOriginal(image));
+  };
+
+  const toggleExtraOriginal = (image: DomeggookItemImage) => {
+    const picked = pickedFromOriginal(image);
+    setExtraImages((previous) => {
+      if (previous.some((entry) => entry.id === picked.id)) {
+        return previous.filter((entry) => entry.id !== picked.id);
+      }
+      if (previous.length >= MAX_EXTRA_IMAGES) {
+        enqueueSnackbar(`추가이미지는 최대 ${MAX_EXTRA_IMAGES}장입니다.`, { variant: 'info' });
+        return previous;
+      }
+      return [...previous, picked];
     });
   };
 
-  ////////// 선택 이미지 → 도구 핸드오프
+  const removeExtra = (id: string) => {
+    setExtraImages((previous) => previous.filter((entry) => entry.id !== id));
+  };
+
+  ////////// 크롭 완료 — 대상 소섹션 슬롯에 투입
+  const handleCropDone = (blob: Blob) => {
+    cropSequenceRef.current += 1;
+    const picked: PickedImage = {
+      id: `crop-${cropSequenceRef.current}`,
+      source: 'crop',
+      previewUrl: URL.createObjectURL(blob),
+      blob,
+    };
+    if (cropTarget === 'main') {
+      setMainImage(picked);
+    } else {
+      setExtraImages((previous) => {
+        if (previous.length >= MAX_EXTRA_IMAGES) {
+          enqueueSnackbar(`추가이미지는 최대 ${MAX_EXTRA_IMAGES}장입니다.`, { variant: 'info' });
+          return previous;
+        }
+        return [...previous, picked];
+      });
+    }
+  };
+
+  ////////// 선택 이미지(대표 + 추가) → 도구 핸드오프 (원본은 다운로드, 크롭은 Blob 그대로)
   const handleSendTo = async (path: string, autoStart: boolean) => {
     if (!item) return;
-    const selectedImages = item.images.filter((image) => selectedUrls.has(image.url));
-    if (selectedImages.length === 0) return;
+    const picked = [...(mainImage ? [mainImage] : []), ...extraImages];
+    if (picked.length === 0) return;
 
     try {
-      const files = await downloadDomeggookImages(selectedImages, item.no, (done, total) =>
-        setDownloadProgress(`이미지 내려받는 중… ${done}/${total}`),
-      );
+      const files: { name: string; blob: Blob }[] = [];
+      for (let index = 0; index < picked.length; index += 1) {
+        const entry = picked[index];
+        setDownloadProgress(`이미지 준비 중… ${index + 1}/${picked.length}`);
+        if (entry.source === 'original' && entry.original) {
+          const [file] = await downloadDomeggookImages([entry.original], item.no);
+          files.push(file);
+        } else if (entry.blob) {
+          files.push({ name: `crop-${item.no}-${entry.id}.jpg`, blob: entry.blob });
+        }
+      }
       useImageHandoffStore.getState().setImages(files, autoStart);
       trackEvent('handoff', { from: 'domeggook-import', to: path.replace('/', '') });
       router.push(path);
@@ -165,12 +233,9 @@ export default function DomeggookImportView() {
     }
   };
 
-  ////////// 상세 통이미지 조립 — 선택한 상세 이미지를 세로 병합해 다운로드
+  ////////// 상세 통이미지 조립 — 상세 이미지 전체를 세로 병합해 다운로드
   const handleMergeDetail = async () => {
     if (!item) return;
-    const detailImages = item.images.filter(
-      (image) => image.kind === 'detail' && selectedUrls.has(image.url),
-    );
     if (detailImages.length === 0) return;
 
     try {
@@ -208,10 +273,7 @@ export default function DomeggookImportView() {
     }
   };
 
-  const selectedDetailCount = item
-    ? item.images.filter((image) => image.kind === 'detail' && selectedUrls.has(image.url)).length
-    : 0;
-
+  const pickedCount = (mainImage ? 1 : 0) + extraImages.length;
   const isBusy = status === 'loading' || downloadProgress !== null;
 
   return (
@@ -403,21 +465,91 @@ export default function DomeggookImportView() {
                       <Alert severity="info">이 상품에서 가져올 수 있는 이미지를 찾지 못했습니다.</Alert>
                     ) : (
                       <>
-                        <ImageSelectGrid
-                          images={item.images}
-                          selectedUrls={selectedUrls}
-                          onToggle={toggleUrl}
-                          onSelectAll={() => setSelectedUrls(new Set(item.images.map((image) => image.url)))}
-                          onClearAll={() => setSelectedUrls(new Set())}
-                        />
-                        {/* 누끼·규격 변환 핸드오프 */}
+                        {/* 대표이미지 — 원본 클릭 선택(1장) 또는 상세에서 크롭 */}
+                        <Stack spacing={0.75}>
+                          <Typography variant="caption" color="text.secondary">
+                            대표이미지 · 1장
+                          </Typography>
+                          <PickStrip>
+                            {item.images.map((image) => (
+                              <PickThumb
+                                key={`main-${image.url}`}
+                                type="button"
+                                $isSelected={mainImage?.id === `org-${image.url}`}
+                                onClick={() => pickMainOriginal(image)}
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={image.proxyUrl} alt="" loading="lazy" />
+                              </PickThumb>
+                            ))}
+                            {mainImage?.source === 'crop' && (
+                              <PickThumb key={mainImage.id} type="button" $isSelected>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={mainImage.previewUrl} alt="크롭 대표" />
+                              </PickThumb>
+                            )}
+                            <CropAddTile
+                              type="button"
+                              disabled={detailImages.length === 0}
+                              onClick={() => setCropTarget('main')}
+                            >
+                              <CropOutlinedIcon sx={{ fontSize: 18 }} />
+                              <Typography variant="caption">상세에서
+                                잘라오기</Typography>
+                            </CropAddTile>
+                          </PickStrip>
+                        </Stack>
+
+                        {/* 추가이미지 — 원본 다중 선택 + 크롭 (최대 9장) */}
+                        <Stack spacing={0.75}>
+                          <Typography variant="caption" color="text.secondary">
+                            추가이미지 · {extraImages.length}/{MAX_EXTRA_IMAGES}장
+                          </Typography>
+                          <PickStrip>
+                            {item.images.map((image) => (
+                              <PickThumb
+                                key={`extra-${image.url}`}
+                                type="button"
+                                $isSelected={extraImages.some((entry) => entry.id === `org-${image.url}`)}
+                                onClick={() => toggleExtraOriginal(image)}
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={image.proxyUrl} alt="" loading="lazy" />
+                              </PickThumb>
+                            ))}
+                            {extraImages
+                              .filter((entry) => entry.source === 'crop')
+                              .map((entry) => (
+                                <PickThumb
+                                  key={entry.id}
+                                  type="button"
+                                  $isSelected
+                                  onClick={() => removeExtra(entry.id)}
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={entry.previewUrl} alt="크롭 추가" />
+                                </PickThumb>
+                              ))}
+                            <CropAddTile
+                              type="button"
+                              disabled={detailImages.length === 0}
+                              onClick={() => setCropTarget('extra')}
+                            >
+                              <CropOutlinedIcon sx={{ fontSize: 18 }} />
+                              <Typography variant="caption">상세에서
+                                잘라오기</Typography>
+                            </CropAddTile>
+                          </PickStrip>
+                        </Stack>
+
+                        {/* 누끼·규격 변환 핸드오프 — 대표+추가 선택본 */}
                         <ActionRow>
                           {HANDOFF_TARGETS.map((target) => (
                             <Button
                               key={target.key}
                               variant="contained"
                               startIcon={target.icon}
-                              disabled={selectedUrls.size === 0 || isBusy}
+                              disabled={pickedCount === 0 || isBusy}
                               onClick={() => handleSendTo(target.path, target.autoStart)}
                             >
                               {target.label}
@@ -429,10 +561,17 @@ export default function DomeggookImportView() {
                             </Typography>
                           )}
                         </ActionRow>
-                        <Typography variant="caption" color="text.secondary">
-                          대표이미지 1장 + 추가이미지 최대 9장 — 선택한 이미지를 누끼·규격 변환으로 보내
-                          완성본을 업로드하세요.
-                        </Typography>
+
+                        {/* 동영상 */}
+                        <Stack spacing={0.5}>
+                          <Typography variant="caption" color="text.secondary">
+                            동영상
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            도매꾹은 상품 동영상을 제공하지 않습니다 — 직접 촬영·제작한 영상을 등록 화면에서
+                            업로드하세요.
+                          </Typography>
+                        </Stack>
                       </>
                     )
                   }
@@ -447,15 +586,14 @@ export default function DomeggookImportView() {
                           <Button
                             variant="outlined"
                             startIcon={<VerticalSplitIcon />}
-                            disabled={selectedDetailCount === 0 || isBusy}
+                            disabled={isBusy}
                             onClick={handleMergeDetail}
                           >
-                            상세 통이미지 받기{selectedDetailCount > 0 && ` (${selectedDetailCount}장)`}
+                            상세 통이미지 받기 ({detailImages.length}장)
                           </Button>
                         </ActionRow>
                         <Typography variant="caption" color="text.secondary">
-                          위 상품이미지 섹션에서 선택한 상세 이미지를 세로로 이어붙인 통이미지로 내려받아
-                          에디터에 업로드하세요.
+                          상세 이미지 전체를 세로로 이어붙인 통이미지로 내려받아 에디터에 업로드하세요.
                         </Typography>
                       </>
                     )
@@ -466,6 +604,14 @@ export default function DomeggookImportView() {
           </>
         )}
       </Stack>
+
+      {/* 상세에서 잘라오기 — 대표/추가 소섹션 공용 크롭 모달 */}
+      <DetailCropModal
+        open={cropTarget !== null}
+        images={detailImages}
+        onClose={() => setCropTarget(null)}
+        onCrop={handleCropDone}
+      />
 
       {/* 이미지 자세히 보기 모달 — 1번 대표, 이후 상세 슬라이드. 긴 상세이미지는 세로 스크롤 */}
       {/* disableScrollLock — 스크롤바 제거로 인한 레이아웃 밀림(섹션 깨짐) 방지 */}
@@ -606,6 +752,60 @@ const DetailThumb = styled.button(({ theme }) => ({
     height: '100%',
     objectFit: 'cover',
     display: 'block',
+  },
+}));
+
+//////////////////// 대표/추가 이미지 선택 스트립 ////////////////////
+const PickStrip = styled.div(({ theme }) => ({
+  display: 'flex',
+  gap: theme.spacing(1),
+  flexWrap: 'wrap',
+}));
+
+const PickThumb = styled('button', transientOptions)<{ $isSelected?: boolean }>(({ theme, $isSelected }) => ({
+  width: 72,
+  height: 72,
+  flexShrink: 0,
+  padding: 0,
+  overflow: 'hidden',
+  borderRadius: theme.shape.borderRadius,
+  border: $isSelected ? `2px solid ${theme.palette.primary.main}` : `1px solid ${theme.palette.divider}`,
+  backgroundColor: theme.palette.background.default,
+  cursor: 'pointer',
+  '&:hover': {
+    borderColor: theme.palette.primary.main,
+  },
+  '& img': {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    display: 'block',
+  },
+}));
+
+const CropAddTile = styled.button(({ theme }) => ({
+  width: 72,
+  height: 72,
+  flexShrink: 0,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: theme.spacing(0.25),
+  borderRadius: theme.shape.borderRadius,
+  border: `1px dashed ${theme.palette.divider}`,
+  backgroundColor: 'transparent',
+  color: theme.palette.text.secondary,
+  cursor: 'pointer',
+  textAlign: 'center',
+  lineHeight: 1.2,
+  '&:hover:not(:disabled)': {
+    borderColor: theme.palette.primary.main,
+    color: theme.palette.primary.main,
+  },
+  '&:disabled': {
+    opacity: 0.4,
+    cursor: 'default',
   },
 }));
 
