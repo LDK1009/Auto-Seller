@@ -23,6 +23,7 @@ import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
+import QueryStatsOutlinedIcon from '@mui/icons-material/QueryStatsOutlined';
 import { useSnackbar } from 'notistack';
 import { FEE_PRESETS, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from '@/shared/constants/marketFees';
 import { calculateMargin, calculateReversePrice, PRICE_ROUND_UNIT } from '@/shared/utils/marginCalculation';
@@ -773,25 +774,39 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             {reverseResult.achievable === false ? reverseResult.reason : '가격 정보를 불러오지 못했습니다.'}
           </Alert>
         )}
-        {/* 시장 가격 비교 — 대표 태그 키워드 기준 */}
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-          <Button size="small" onClick={handleLoadMarket} disabled={isLoadingMarket || tagCandidates.length === 0}>
+        {/* 시장 가격 비교 — 시드 키워드 기준, 밴드 시각화 */}
+        <Stack spacing={1.5}>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={isLoadingMarket ? <CircularProgress size={14} /> : <QueryStatsOutlinedIcon />}
+            onClick={handleLoadMarket}
+            disabled={isLoadingMarket || tagCandidates.length === 0}
+            sx={{ alignSelf: 'flex-start' }}
+          >
             {isLoadingMarket ? '분석 중…' : marketDetail === null ? '시장 가격 비교' : '다시 분석'}
           </Button>
           {marketDetail?.priceBand && recommendedPrice !== null && (
-            <Tooltip title={`"${marketDetail.keyword}" 네이버쇼핑 상위 40개 상품의 가격비교 최저가 기준입니다`}>
-              <Typography variant="body2" sx={{ cursor: 'help' }}>
-                &quot;{marketDetail.keyword}&quot; 시장가 {KRW(marketDetail.priceBand.min)}~
-                {KRW(marketDetail.priceBand.max)} · 중앙 {KRW(marketDetail.priceBand.median)} —{' '}
-                <b>
-                  {recommendedPrice <= marketDetail.priceBand.median
-                    ? '추천가가 시장 중앙 이하 (가격 경쟁력 있음)'
-                    : recommendedPrice <= marketDetail.priceBand.max
-                      ? '추천가가 시장 범위 내'
-                      : '추천가가 시장 상단 초과 — 마진율 조정 검토'}
-                </b>
-              </Typography>
-            </Tooltip>
+            <Stack spacing={0.75}>
+              <Tooltip title={`"${marketDetail.keyword}" 네이버쇼핑 상위 40개 상품의 가격비교 최저가 기준입니다`}>
+                <Typography variant="body2" sx={{ cursor: 'help', alignSelf: 'flex-start' }}>
+                  &quot;{marketDetail.keyword}&quot; 시장가 —{' '}
+                  <b>
+                    {recommendedPrice <= marketDetail.priceBand.median
+                      ? '내 가격이 시장 중앙 이하 (가격 경쟁력 있음)'
+                      : recommendedPrice <= marketDetail.priceBand.max
+                        ? '내 가격이 시장 범위 내'
+                        : '내 가격이 시장 상단 초과 — 마진율 조정 검토'}
+                  </b>
+                </Typography>
+              </Tooltip>
+              <MarketPriceBand
+                min={marketDetail.priceBand.min}
+                median={marketDetail.priceBand.median}
+                max={marketDetail.priceBand.max}
+                myPrice={recommendedPrice}
+              />
+            </Stack>
           )}
         </Stack>
         {marketDetail && (
@@ -1115,6 +1130,51 @@ function SectionBlock({ number, title, caption, action, done = false, contentSpa
   );
 }
 
+//////////////////// 시장 가격 밴드 (읽기 전용 슬라이드 — 최저·중앙·최고 + 내 가격 마커) ////////////////////
+type MarketPriceBandProps = {
+  min: number;
+  median: number;
+  max: number;
+  myPrice: number;
+};
+
+function MarketPriceBand({ min, median, max, myPrice }: MarketPriceBandProps) {
+  const range = Math.max(max - min, 1);
+  const positionOf = (value: number) => Math.min(100, Math.max(0, ((value - min) / range) * 100));
+  const myPosition = positionOf(myPrice);
+  const medianPosition = positionOf(median);
+  const isOverMax = myPrice > max;
+
+  return (
+    <BandWrap>
+      {/* 내 가격 라벨 (트랙 위) */}
+      <BandMyLabel style={{ left: `${myPosition}%` }}>
+        <Typography variant="caption" sx={{ fontWeight: 700, color: isOverMax ? 'error.main' : 'primary.main' }}>
+          내 가격 {KRW(myPrice)}
+        </Typography>
+      </BandMyLabel>
+      <BandTrack>
+        <BandMedianTick style={{ left: `${medianPosition}%` }} />
+        <BandMyMarker style={{ left: `${myPosition}%` }} $isOver={isOverMax} />
+      </BandTrack>
+      {/* 눈금 라벨 (트랙 아래) — 중앙값은 실제 위치에 */}
+      <BandScale>
+        <Typography variant="caption" color="text.secondary">
+          최저 {KRW(min)}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          최고 {KRW(max)}
+        </Typography>
+        <BandMedianLabel style={{ left: `${medianPosition}%` }}>
+          <Typography variant="caption" color="text.secondary">
+            중앙 {KRW(median)}
+          </Typography>
+        </BandMedianLabel>
+      </BandScale>
+    </BandWrap>
+  );
+}
+
 //////////////////// 비율 칩 행 (프리셋 + 직접 입력) ////////////////////
 type RateChipsProps = {
   presets: number[];
@@ -1306,4 +1366,63 @@ const RowBox = styled.div(({ theme }) => ({
 
 const CopyButton = styled(IconButton)({
   flexShrink: 0,
+});
+
+//////////////////// 시장 가격 밴드 스타일 ////////////////////
+const BandWrap = styled.div(({ theme }) => ({
+  position: 'relative',
+  maxWidth: 560,
+  width: '100%',
+  paddingTop: theme.spacing(3), // 내 가격 라벨 공간
+  paddingBottom: theme.spacing(3.5), // 눈금 라벨 공간
+}));
+
+const BandTrack = styled.div(({ theme }) => ({
+  position: 'relative',
+  height: 6,
+  borderRadius: 3,
+  backgroundColor: alpha(theme.palette.primary.main, 0.12),
+}));
+
+const BandMedianTick = styled.div(({ theme }) => ({
+  position: 'absolute',
+  top: -3,
+  width: 2,
+  height: 12,
+  transform: 'translateX(-50%)',
+  backgroundColor: theme.palette.text.secondary,
+  borderRadius: 1,
+}));
+
+const BandMyMarker = styled('div', transientOptions)<{ $isOver: boolean }>(({ theme, $isOver }) => ({
+  position: 'absolute',
+  top: '50%',
+  width: 14,
+  height: 14,
+  transform: 'translate(-50%, -50%)',
+  borderRadius: '50%',
+  backgroundColor: $isOver ? theme.palette.error.main : theme.palette.primary.main,
+  border: `2px solid ${theme.palette.background.paper}`,
+  boxShadow: theme.shadows[1],
+}));
+
+const BandMyLabel = styled.div({
+  position: 'absolute',
+  top: 0,
+  transform: 'translateX(-50%)',
+  whiteSpace: 'nowrap',
+});
+
+const BandScale = styled.div({
+  position: 'relative',
+  display: 'flex',
+  justifyContent: 'space-between',
+  marginTop: 6,
+});
+
+const BandMedianLabel = styled.div({
+  position: 'absolute',
+  top: 0,
+  transform: 'translateX(-50%)',
+  whiteSpace: 'nowrap',
 });
