@@ -439,7 +439,7 @@ export default function DomeggookImportView() {
                               disabled={detailImages.length === 0}
                               onClick={() => setCropTarget('main')}
                             >
-                              <CropOutlinedIcon sx={{ fontSize: 18 }} />
+                              <CropOutlinedIcon sx={{ fontSize: 24 }} />
                               <Typography variant="caption" sx={{ lineHeight: 1.3 }}>
                                 상세이미지
                                 <br />
@@ -480,7 +480,7 @@ export default function DomeggookImportView() {
                               disabled={detailImages.length === 0}
                               onClick={() => setCropTarget('extra')}
                             >
-                              <CropOutlinedIcon sx={{ fontSize: 18 }} />
+                              <CropOutlinedIcon sx={{ fontSize: 24 }} />
                               <Typography variant="caption" sx={{ lineHeight: 1.3 }}>
                                 상세이미지
                                 <br />
@@ -801,7 +801,7 @@ const CropAddTile = styled.button(({ theme }) => ({
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: theme.spacing(0.25),
+  gap: theme.spacing(0.75),
   borderRadius: theme.shape.borderRadius,
   border: `1px dashed ${theme.palette.divider}`,
   backgroundColor: 'transparent',
