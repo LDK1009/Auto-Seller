@@ -1085,46 +1085,27 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             </Stack>
           }
         >
-          <OptionHeader>
-            <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>태그</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ width: 90, textAlign: 'right' }}>월 검색량</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ width: 90, textAlign: 'right' }}>경쟁강도</Typography>
-          </OptionHeader>
-          <OptionList>
+          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
             {recommendedTags.map((tag) => {
               const stat = tagStats?.get(tag.replace(/\s+/g, ''));
               // 연관 키워드 출신 태그는 tagStats(시드 조회분)에 없음 — keywordSearches의 검색량으로 폴백
-              const fallbackSearches = keywordSearches.get(tag) ?? 0;
-              const searchesLabel = stat
+              const searches = stat
                 ? stat.isLowVolume
                   ? '10 미만'
                   : (stat.monthlySearches ?? 0).toLocaleString()
-                : fallbackSearches > 0
-                  ? fallbackSearches.toLocaleString()
-                  : '—';
-              const ratioColor =
-                stat && stat.ratio !== null
-                  ? stat.ratio < 1
-                    ? 'success.main'
-                    : stat.ratio <= 5
-                      ? 'warning.main'
-                      : 'error.main'
-                  : 'text.primary';
+                : (keywordSearches.get(tag) ?? 0) > 0
+                  ? (keywordSearches.get(tag) ?? 0).toLocaleString()
+                  : null;
               return (
-                <OptionRow key={tag}>
-                  <Typography variant="body2" sx={{ flex: 1, minWidth: 0, wordBreak: 'break-all' }}>
-                    #{tag}
-                  </Typography>
-                  <Typography variant="body2" sx={{ width: 90, textAlign: 'right' }}>
-                    {searchesLabel}
-                  </Typography>
-                  <Typography variant="body2" sx={{ width: 90, textAlign: 'right', color: ratioColor }}>
-                    {stat?.ratio ?? '—'}
-                  </Typography>
-                </OptionRow>
+                <Chip
+                  key={tag}
+                  size="small"
+                  variant="outlined"
+                  label={searches ? `#${tag} · ${searches}회` : `#${tag}`}
+                />
               );
             })}
-          </OptionList>
+          </Stack>
         </SectionBlock>
       )}
 
