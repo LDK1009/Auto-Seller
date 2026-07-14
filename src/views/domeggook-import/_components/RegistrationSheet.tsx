@@ -404,8 +404,47 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         )}
       </SectionBlock>
 
-      {/* 2. 상품명 — 추천 상품명 / 추천 키워드 / 인풋+채점 링 3행 구성 */}
-      <SectionBlock number={2} done={copiedSections.has(2)} title="상품명" contentSpacing={2.5}>
+      {/* 2. 상품명 — 추천 상품명 / 추천 키워드 / 인풋 3행 구성, 채점 링은 헤더 우측 */}
+      <SectionBlock
+        number={2}
+        done={copiedSections.has(2)}
+        title="상품명"
+        contentSpacing={2.5}
+        action={
+          <Tooltip
+            title={
+              nameScore.hasSearchPart
+                ? '규칙 검사(길이·홍보 문구·특수문자·중복 등) 70점 + 검색량 키워드(많이 검색되는 단어 포함·앞배치) 30점을 합쳐 100점 만점으로 환산한 점수입니다.'
+                : '지금은 규칙 검사(길이·홍보 문구·특수문자·중복 등)만 반영된 점수입니다. 검색량 데이터가 도착하면 키워드 점수까지 합산됩니다.'
+            }
+          >
+            <ScoreRing>
+              <CircularProgress
+                variant="determinate"
+                value={100}
+                size={44}
+                thickness={4}
+                sx={{ color: 'action.hover', position: 'absolute' }}
+              />
+              <CircularProgress
+                variant="determinate"
+                value={nameScore.normalized}
+                size={44}
+                thickness={4}
+                color={GRADE_COLORS[nameScore.grade]}
+              />
+              <ScoreRingLabel>
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 700, color: `${GRADE_COLORS[nameScore.grade]}.main` }}
+                >
+                  {nameScore.normalized}
+                </Typography>
+              </ScoreRingLabel>
+            </ScoreRing>
+          </Tooltip>
+        }
+      >
         {/* 추천 상품명 — 시드 풀 조합 (검색량 확인 후엔 검색량순) */}
         {suggestedName && suggestedName !== productName && (
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
@@ -463,38 +502,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               },
             }}
           />
-          <Tooltip
-            title={
-              nameScore.hasSearchPart
-                ? '규칙 검사(길이·홍보 문구·특수문자·중복 등) 70점 + 검색량 키워드(많이 검색되는 단어 포함·앞배치) 30점을 합쳐 100점 만점으로 환산한 점수입니다.'
-                : '지금은 규칙 검사(길이·홍보 문구·특수문자·중복 등)만 반영된 점수입니다. 검색량 데이터가 도착하면 키워드 점수까지 합산됩니다.'
-            }
-          >
-            <ScoreRing>
-              <CircularProgress
-                variant="determinate"
-                value={100}
-                size={44}
-                thickness={4}
-                sx={{ color: 'action.hover', position: 'absolute' }}
-              />
-              <CircularProgress
-                variant="determinate"
-                value={nameScore.normalized}
-                size={44}
-                thickness={4}
-                color={GRADE_COLORS[nameScore.grade]}
-              />
-              <ScoreRingLabel>
-                <Typography
-                  variant="caption"
-                  sx={{ fontWeight: 700, color: `${GRADE_COLORS[nameScore.grade]}.main` }}
-                >
-                  {nameScore.normalized}
-                </Typography>
-              </ScoreRingLabel>
-            </ScoreRing>
-          </Tooltip>
           <CopyButton aria-label="상품명 복사" onClick={() => copyText('상품명', productName, 2)}>
             <ContentCopyIcon fontSize="small" />
           </CopyButton>
