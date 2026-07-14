@@ -666,11 +666,13 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 onChange={setTargetMarginRate}
                 max={80}
               />
-              {/* 근거 + 면책(툴팁) — 칩 아래 설명 줄 */}
+              {/* 계산 수식 — 판매가는 할인 시 할인가(최종 결제가) 기준, 수수료는 스마트스토어 요율 */}
               <Tooltip title={FEE_DISCLAIMER}>
                 <Typography variant="caption" color="text.secondary" sx={{ cursor: 'help', alignSelf: 'flex-start' }}>
-                  원가 {KRW(costPrice)}
-                  {bundleUnits > 1 && ` (${KRW(unitPrice)}×${bundleUnits})`} · 수수료 {SMARTSTORE_FEE_RATE}% ⓘ
+                  순이익({profitAtPrice !== null ? KRW(profitAtPrice) : '—'}) = 판매가({KRW(recommendedPrice)})
+                  − 원가({KRW(costPrice)}
+                  {bundleUnits > 1 ? ` = ${KRW(unitPrice)}×${bundleUnits}` : ''}) − 수수료({SMARTSTORE_FEE_RATE}%)
+                  {includeShipping && ` − 배송비(${KRW(shippingFee)})`} ⓘ
                 </Typography>
               </Tooltip>
             </Stack>
