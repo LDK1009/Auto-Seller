@@ -20,6 +20,7 @@ import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
 import { useSnackbar } from 'notistack';
@@ -52,11 +53,6 @@ const GRADE_COLORS: Record<ProductNameGrade, 'success' | 'warning' | 'error'> = 
   good: 'success',
   ok: 'warning',
   bad: 'error',
-};
-const GRADE_LABELS: Record<ProductNameGrade, string> = {
-  good: '좋음',
-  ok: '보통',
-  bad: '수정 필요',
 };
 
 // 구매/리뷰 혜택 권장 프리셋 (초보 표준 세팅 — 등록 UI 혜택 구간의 결정 부담 제거)
@@ -382,17 +378,30 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 : '기본 검사 기준 — [검색량 확인]을 누르면 키워드 점수(30점)까지 반영됩니다'
             }
           >
-            <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: `${GRADE_COLORS[nameScore.grade]}.main` }}>
-                {nameScore.normalized}점
-              </Typography>
-              <Chip
-                size="small"
-                variant="outlined"
-                color={GRADE_COLORS[nameScore.grade]}
-                label={GRADE_LABELS[nameScore.grade]}
+            <ScoreRing>
+              <CircularProgress
+                variant="determinate"
+                value={100}
+                size={44}
+                thickness={4}
+                sx={{ color: 'action.hover', position: 'absolute' }}
               />
-            </Stack>
+              <CircularProgress
+                variant="determinate"
+                value={nameScore.normalized}
+                size={44}
+                thickness={4}
+                color={GRADE_COLORS[nameScore.grade]}
+              />
+              <ScoreRingLabel>
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 700, color: `${GRADE_COLORS[nameScore.grade]}.main` }}
+                >
+                  {nameScore.normalized}
+                </Typography>
+              </ScoreRingLabel>
+            </ScoreRing>
           </Tooltip>
         }
       >
@@ -892,6 +901,22 @@ const SectionBox = styled.div(({ theme }) => ({
   border: `1px solid ${theme.palette.divider}`,
   backgroundColor: theme.palette.background.paper,
 }));
+
+// 상품명 점수 원형 프로그레스 (배경 트랙 + 점수 링 + 중앙 숫자)
+const ScoreRing = styled.div({
+  position: 'relative',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+});
+
+const ScoreRingLabel = styled.div({
+  position: 'absolute',
+  inset: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+});
 
 const NumberBadge = styled('span', transientOptions)<{ $isDone?: boolean }>(({ theme, $isDone }) => ({
   display: 'inline-flex',
