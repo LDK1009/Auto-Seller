@@ -488,7 +488,12 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             </Typography>
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
               <Typography variant="body2">{suggestedName}</Typography>
-              <Button size="small" onClick={() => setProductName(suggestedName)} sx={{ minHeight: 24, py: 0 }}>
+              {/* 패딩·라인높이 제거 — 본문 텍스트와 수직 중앙 일치 */}
+              <Button
+                size="small"
+                onClick={() => setProductName(suggestedName)}
+                sx={{ minHeight: 0, minWidth: 0, p: 0, lineHeight: 1.43, verticalAlign: 'baseline' }}
+              >
                 적용
               </Button>
             </Stack>
