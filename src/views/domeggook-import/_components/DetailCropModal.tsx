@@ -6,7 +6,7 @@
 // - 크롭: 표시 좌표 → 각 이미지 natural 좌표로 환산해 1000×1000 캔버스에 합성 (경계 걸침 지원)
 // - 이미지는 프록시(같은 출처) 경유라 캔버스 오염(taint) 없음
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styled from '@emotion/styled';
 import Dialog from '@mui/material/Dialog';
 import Stack from '@mui/material/Stack';
@@ -34,9 +34,19 @@ type DragState =
 export default function DetailCropModal({ open, images, onClose, onCrop }: DetailCropModalProps) {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const imageRefs = useRef<(HTMLImageElement | null)[]>([]);
-  const [box, setBox] = useState({ x: 40, y: 40, size: 240 });
+  const [box, setBox] = useState({ x: 0, y: 0, size: 240 });
   const dragRef = useRef<DragState | null>(null);
   const [isCropping, setIsCropping] = useState(false);
+
+  ////////// 열릴 때 기본 박스 = 콘텐츠 최대 너비 × 1:1 (좌상단)
+  useEffect(() => {
+    if (!open) return;
+    const frame = requestAnimationFrame(() => {
+      const width = contentRef.current?.clientWidth;
+      if (width) setBox({ x: 0, y: 0, size: width });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open]);
 
   ////////// 박스 좌표 클램프 (콘텐츠 범위 안)
   const clampBox = (next: { x: number; y: number; size: number }) => {

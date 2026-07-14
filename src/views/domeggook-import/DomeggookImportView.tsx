@@ -71,6 +71,8 @@ export default function DomeggookImportView() {
   const cropSequenceRef = useRef(0);
   const [downloadProgress, setDownloadProgress] = useState<string | null>(null);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null); // 자세히 보기 (item.images 인덱스 — 0=대표)
+  // 슬롯 이미지 미리보기 (1000×1000 기준) — context에 따라 [대표로 사용]/[제거] 제공
+  const [slotPreview, setSlotPreview] = useState<{ picked: PickedImage; context: 'main' | 'extra' } | null>(null);
 
   const detailImages = item ? item.images.filter((image) => image.kind === 'detail') : [];
 
@@ -138,23 +140,7 @@ export default function DomeggookImportView() {
   };
 
   ////////// 대표/추가 슬롯 조작
-  const pickMainOriginal = (image: DomeggookItemImage) => {
-    setMainImage(pickedFromOriginal(image));
-  };
-
-  const toggleExtraOriginal = (image: DomeggookItemImage) => {
-    const picked = pickedFromOriginal(image);
-    setExtraImages((previous) => {
-      if (previous.some((entry) => entry.id === picked.id)) {
-        return previous.filter((entry) => entry.id !== picked.id);
-      }
-      if (previous.length >= MAX_EXTRA_IMAGES) {
-        enqueueSnackbar(`추가이미지는 최대 ${MAX_EXTRA_IMAGES}장입니다.`, { variant: 'info' });
-        return previous;
-      }
-      return [...previous, picked];
-    });
-  };
+  const thumbImage = item?.images.find((image) => image.kind === 'thumb') ?? null;
 
   const removeExtra = (id: string) => {
     setExtraImages((previous) => previous.filter((entry) => entry.id !== id));
@@ -413,23 +399,30 @@ export default function DomeggookImportView() {
                       <Alert severity="info">이 상품에서 가져올 수 있는 이미지를 찾지 못했습니다.</Alert>
                     ) : (
                       <>
-                        {/* 대표이미지 — 원본 클릭 선택(1장) 또는 상세에서 크롭 */}
+                        {/* 대표이미지 — 기본 = 도매꾹 대표, 크롭으로 교체 가능. 클릭 = 1000×1000 미리보기 */}
                         <Stack spacing={0.75}>
                           <Typography variant="subtitle2">대표이미지 · 1장</Typography>
                           <PickStrip>
-                            {item.images.map((image) => (
+                            {thumbImage && (
                               <PickThumb
-                                key={`main-${image.url}`}
+                                key="main-original"
                                 type="button"
-                                $isSelected={mainImage?.id === `org-${image.url}`}
-                                onClick={() => pickMainOriginal(image)}
+                                $isSelected={mainImage?.source === 'original'}
+                                onClick={() =>
+                                  setSlotPreview({ picked: pickedFromOriginal(thumbImage), context: 'main' })
+                                }
                               >
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={image.proxyUrl} alt="" loading="lazy" />
+                                <img src={thumbImage.proxyUrl} alt="도매꾹 대표" loading="lazy" />
                               </PickThumb>
-                            ))}
+                            )}
                             {mainImage?.source === 'crop' && (
-                              <PickThumb key={mainImage.id} type="button" $isSelected>
+                              <PickThumb
+                                key={mainImage.id}
+                                type="button"
+                                $isSelected
+                                onClick={() => setSlotPreview({ picked: mainImage, context: 'main' })}
+                              >
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={mainImage.previewUrl} alt="크롭 대표" />
                               </PickThumb>
@@ -446,36 +439,23 @@ export default function DomeggookImportView() {
                           </PickStrip>
                         </Stack>
 
-                        {/* 추가이미지 — 원본 다중 선택 + 크롭 (최대 9장) */}
+                        {/* 추가이미지 — 기본 없음, 상세에서 잘라와 채움 (최대 9장). 클릭 = 미리보기 */}
                         <Stack spacing={0.75}>
                           <Typography variant="subtitle2">
                             추가이미지 · {extraImages.length}/{MAX_EXTRA_IMAGES}장
                           </Typography>
                           <PickStrip>
-                            {item.images.map((image) => (
+                            {extraImages.map((entry) => (
                               <PickThumb
-                                key={`extra-${image.url}`}
+                                key={entry.id}
                                 type="button"
-                                $isSelected={extraImages.some((entry) => entry.id === `org-${image.url}`)}
-                                onClick={() => toggleExtraOriginal(image)}
+                                $isSelected
+                                onClick={() => setSlotPreview({ picked: entry, context: 'extra' })}
                               >
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={image.proxyUrl} alt="" loading="lazy" />
+                                <img src={entry.previewUrl} alt="크롭 추가" />
                               </PickThumb>
                             ))}
-                            {extraImages
-                              .filter((entry) => entry.source === 'crop')
-                              .map((entry) => (
-                                <PickThumb
-                                  key={entry.id}
-                                  type="button"
-                                  $isSelected
-                                  onClick={() => removeExtra(entry.id)}
-                                >
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img src={entry.previewUrl} alt="크롭 추가" />
-                                </PickThumb>
-                              ))}
                             <CropAddTile
                               type="button"
                               disabled={detailImages.length === 0}
@@ -528,6 +508,58 @@ export default function DomeggookImportView() {
           </>
         )}
       </Stack>
+
+      {/* 슬롯 이미지 미리보기 — 1000×1000(권장 규격) 기준 프레임에 표시 */}
+      <Dialog open={slotPreview !== null} onClose={() => setSlotPreview(null)} maxWidth={false} disableScrollLock>
+        {slotPreview && (
+          <Stack spacing={1.5} sx={{ p: 2.5 }}>
+            <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                {slotPreview.context === 'main' ? '대표이미지 미리보기' : '추가이미지 미리보기'}
+              </Typography>
+              <IconButton size="small" onClick={() => setSlotPreview(null)} aria-label="닫기">
+                <CloseIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+            </Stack>
+            <SlotPreviewFrame>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={slotPreview.picked.previewUrl} alt="미리보기" />
+            </SlotPreviewFrame>
+            <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography variant="caption" color="text.secondary">
+                권장 규격 1000×1000 기준 미리보기
+              </Typography>
+              {slotPreview.context === 'main' &&
+                (mainImage?.id === slotPreview.picked.id ? (
+                  <Chip size="small" color="primary" variant="outlined" label="현재 대표이미지" />
+                ) : (
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => {
+                      setMainImage(slotPreview.picked);
+                      setSlotPreview(null);
+                    }}
+                  >
+                    대표로 사용
+                  </Button>
+                ))}
+              {slotPreview.context === 'extra' && (
+                <Button
+                  size="small"
+                  color="error"
+                  onClick={() => {
+                    removeExtra(slotPreview.picked.id);
+                    setSlotPreview(null);
+                  }}
+                >
+                  제거
+                </Button>
+              )}
+            </Stack>
+          </Stack>
+        )}
+      </Dialog>
 
       {/* 상세에서 잘라오기 — 대표/추가 소섹션 공용 크롭 모달 */}
       <DetailCropModal
@@ -676,6 +708,24 @@ const DetailThumb = styled.button(({ theme }) => ({
     height: '100%',
     objectFit: 'cover',
     display: 'block',
+  },
+}));
+
+// 슬롯 미리보기 프레임 — 1000×1000 권장 규격 비율(정사각) 흰 배경, 이미지 contain
+const SlotPreviewFrame = styled.div(({ theme }) => ({
+  width: 'min(80vw, 520px)',
+  aspectRatio: '1 / 1',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  overflow: 'hidden',
+  borderRadius: theme.shape.borderRadius,
+  border: `1px solid ${theme.palette.divider}`,
+  backgroundColor: '#ffffff',
+  '& img': {
+    maxWidth: '100%',
+    maxHeight: '100%',
+    objectFit: 'contain',
   },
 }));
 
