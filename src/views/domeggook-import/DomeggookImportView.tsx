@@ -40,6 +40,7 @@ import DetailCropModal from './_components/DetailCropModal';
 import RegistrationSheet from './_components/RegistrationSheet';
 import type { DomeggookItemImage } from '@/shared/types/domeggook';
 import CropOutlinedIcon from '@mui/icons-material/CropOutlined';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 
 // 대표/추가 이미지 슬롯 항목 — 원본(도매꾹 이미지) 또는 크롭(상세에서 잘라옴)
 type PickedImage = {
@@ -166,6 +167,59 @@ export default function DomeggookImportView() {
         }
         return [...previous, picked];
       });
+    }
+  };
+
+  ////////// 상품이미지 전체 다운로드 — zip 안에 대표이미지/추가이미지/동영상 3폴더
+  const handleDownloadAllImages = async () => {
+    if (!item) return;
+    if (!mainImage && extraImages.length === 0) return;
+
+    try {
+      const files: { name: string; blob: Blob }[] = [];
+
+      // 대표이미지 폴더
+      if (mainImage) {
+        setDownloadProgress('대표이미지 준비 중…');
+        if (mainImage.source === 'original' && mainImage.original) {
+          const [file] = await downloadDomeggookImages([mainImage.original], item.no);
+          files.push({ name: `대표이미지/${file.name}`, blob: file.blob });
+        } else if (mainImage.blob) {
+          files.push({ name: `대표이미지/대표이미지_크롭.jpg`, blob: mainImage.blob });
+        }
+      }
+
+      // 추가이미지 폴더
+      for (let index = 0; index < extraImages.length; index += 1) {
+        const entry = extraImages[index];
+        setDownloadProgress(`추가이미지 준비 중… ${index + 1}/${extraImages.length}`);
+        const paddedNumber = String(index + 1).padStart(2, '0');
+        if (entry.source === 'original' && entry.original) {
+          const [file] = await downloadDomeggookImages([entry.original], item.no);
+          files.push({ name: `추가이미지/추가이미지_${paddedNumber}_${file.name}`, blob: file.blob });
+        } else if (entry.blob) {
+          files.push({ name: `추가이미지/추가이미지_${paddedNumber}.jpg`, blob: entry.blob });
+        }
+      }
+
+      // 동영상 폴더 — 도매꾹 미제공 안내
+      files.push({
+        name: '동영상/안내.txt',
+        blob: new Blob(['도매꾹은 상품 동영상을 제공하지 않습니다. 직접 촬영·제작한 영상을 사용하세요.'], {
+          type: 'text/plain;charset=utf-8',
+        }),
+      });
+
+      setDownloadProgress('압축 중…');
+      const zipBlob = await buildZipWithNames(files);
+      downloadBlob(zipBlob, `상품이미지_${item.no}.zip`);
+      trackEvent('zip_download', { tool: 'image-slots' });
+      enqueueSnackbar('상품이미지를 압축해 내려받았습니다.', { variant: 'success' });
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar(error instanceof Error ? error.message : '다운로드에 실패했습니다.', { variant: 'error' });
+    } finally {
+      setDownloadProgress(null);
     }
   };
 
@@ -505,6 +559,23 @@ export default function DomeggookImportView() {
                             업로드하세요.
                           </Typography>
                         </Stack>
+
+                        {/* 전체 다운로드 — 대표이미지/추가이미지/동영상 3폴더 zip */}
+                        <ActionRow>
+                          <Button
+                            variant="contained"
+                            startIcon={<FileDownloadOutlinedIcon />}
+                            disabled={(!mainImage && extraImages.length === 0) || isBusy}
+                            onClick={handleDownloadAllImages}
+                          >
+                            이미지 전체 다운로드
+                          </Button>
+                          {downloadProgress && (
+                            <Typography variant="body2" color="text.secondary">
+                              {downloadProgress}
+                            </Typography>
+                          )}
+                        </ActionRow>
                       </>
                     )
                   }
