@@ -430,9 +430,21 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         action={
           <Tooltip
             title={
-              nameScore.hasSearchPart
-                ? '규칙 검사(길이·홍보 문구·특수문자·중복 등) 70점 + 검색량 키워드(많이 검색되는 단어 포함·앞배치) 30점을 합쳐 100점 만점으로 환산한 점수입니다.'
-                : '지금은 규칙 검사(길이·홍보 문구·특수문자·중복 등)만 반영된 점수입니다. 검색량 데이터가 도착하면 키워드 점수까지 합산됩니다.'
+              <Typography variant="caption" component="div" sx={{ whiteSpace: 'pre-line' }}>
+                {[
+                  '상품명 점수 계산 (100점)',
+                  '',
+                  '규칙 검사 70점',
+                  '· 길이 20 — 35자 초과 −12, 100자 초과 −20',
+                  '· 홍보 문구 15 · 특수문자 10 · 지재권 위험 10',
+                  '· 중복 단어 8 · 동의어 반복 7',
+                  '',
+                  '검색량 30점',
+                  '· 검색되는 키워드 포함 비율 20',
+                  '· 최다 검색 키워드 앞배치 10',
+                  ...(nameScore.hasSearchPart ? [] : ['', '검색량 수집 전 — 지금은 70점 만점을 100점으로 환산']),
+                ].join('\n')}
+              </Typography>
             }
           >
             <ScoreRing>
@@ -513,6 +525,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                   height: '1.43em',
                   fontSize: 'body2.fontSize',
                   lineHeight: 1,
+                  borderRadius: '4px', // 테마 라운드(10px)가 작은 높이에서 알약처럼 보임 — 사각으로
                 }}
               >
                 적용
