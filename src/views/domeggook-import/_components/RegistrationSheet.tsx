@@ -20,6 +20,7 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import QueryStatsOutlinedIcon from '@mui/icons-material/QueryStatsOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
@@ -1068,13 +1069,17 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       {recommendedTags.length > 0 && (
         <SectionBlock
           number={11}
-         
           title="검색설정"
           action={
-            <Stack direction="row" spacing={1}>
-              <Button size="small" onClick={handleLoadTagStats} disabled={isLoadingStats}>
-                {isLoadingStats ? '조회 중…' : '검색량 확인'}
-              </Button>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+              {/* 검색량은 마운트 시 자동 조회 — 아이콘은 재조회(실패 재시도·갱신)용 */}
+              <Tooltip title="검색량 다시 조회">
+                <span>
+                  <IconButton size="small" onClick={handleLoadTagStats} disabled={isLoadingStats} aria-label="검색량 다시 조회">
+                    {isLoadingStats ? <CircularProgress size={16} /> : <RefreshIcon sx={{ fontSize: 18 }} />}
+                  </IconButton>
+                </span>
+              </Tooltip>
               <Button
                 size="small"
                 startIcon={<ContentCopyIcon />}
