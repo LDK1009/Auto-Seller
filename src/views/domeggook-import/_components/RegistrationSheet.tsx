@@ -251,6 +251,9 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           .join(' / ')
       : null;
   const safetyCertNo = safetyCerts.find((cert) => cert.no !== null)?.no ?? null;
+
+  // 공급사가 "해당없음"이라고 써넣은 모델명은 값 없음 취급
+  const modelName = item.model && item.model.replace(/\s/g, '') !== '해당없음' ? item.model : null;
   const infoDutyText = [
     item.infoDuty.type ? `유형: ${item.infoDuty.type}` : null,
     ...item.infoDuty.items.map((entry) => `${entry.name}: ${entry.desc}`),
@@ -1019,8 +1022,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       <SectionBlock number={8} done={copiedSections.has(8)} title="상품 주요정보">
         <SheetRow
           label="모델명"
-          value={item.model ?? '—'}
-          onCopy={item.model ? () => copyText('모델명', item.model as string, 8) : undefined}
+          value={modelName ?? '—'}
+          onCopy={modelName ? () => copyText('모델명', modelName, 8) : undefined}
         />
         <SheetRow
           label="품번"
