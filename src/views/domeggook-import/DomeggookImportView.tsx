@@ -189,7 +189,7 @@ export default function DomeggookImportView() {
     setSlotPreview(null);
   };
 
-  ////////// 상품이미지 전체 다운로드 — zip 안에 대표이미지/추가이미지/동영상 3폴더
+  ////////// 상품이미지 전체 다운로드 — zip 안에 대표이미지/추가이미지 2폴더
   const handleDownloadAllImages = async () => {
     if (!item) return;
     if (!mainImage && extraImages.length === 0) return;
@@ -220,14 +220,6 @@ export default function DomeggookImportView() {
           files.push({ name: `추가이미지/추가이미지_${paddedNumber}.jpg`, blob: entry.blob });
         }
       }
-
-      // 동영상 폴더 — 도매꾹 미제공 안내
-      files.push({
-        name: '동영상/안내.txt',
-        blob: new Blob(['도매꾹은 상품 동영상을 제공하지 않습니다. 직접 촬영·제작한 영상을 사용하세요.'], {
-          type: 'text/plain;charset=utf-8',
-        }),
-      });
 
       setDownloadProgress('압축 중…');
       const zipBlob = await buildZipWithNames(files);
@@ -570,16 +562,18 @@ export default function DomeggookImportView() {
                           </PickStrip>
                         </Stack>
 
-                        {/* 동영상 */}
+                        {/* 동영상 — 준비 중 */}
                         <Stack spacing={0.75}>
-                          <Typography variant="subtitle2">동영상</Typography>
+                          <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
+                            <Typography variant="subtitle2">동영상</Typography>
+                            <Chip size="small" variant="outlined" label="준비 중인 기능" />
+                          </Stack>
                           <Typography variant="body2" color="text.secondary">
-                            도매꾹은 상품 동영상을 제공하지 않습니다 — 직접 촬영·제작한 영상을 등록 화면에서
-                            업로드하세요.
+                            상품 동영상 기능을 준비하고 있어요.
                           </Typography>
                         </Stack>
 
-                        {/* 전체 다운로드 — 대표이미지/추가이미지/동영상 3폴더 zip */}
+                        {/* 전체 다운로드 — 대표이미지/추가이미지 2폴더 zip */}
                         <ActionRow>
                           <Button
                             variant="contained"
