@@ -268,8 +268,8 @@ export default function DomeggookImportView() {
         <HelpPanel storageKey="domeggook-import">
           <Stack spacing={0.75}>
             <Typography variant="body2">① 도매꾹 링크를 붙여넣거나, 검색으로 상품을 고르세요</Typography>
-            <Typography variant="body2">② 필요한 이미지를 골라 누끼·규격 변환으로 보내세요</Typography>
-            <Typography variant="body2">③ 등록 정보를 스마트스토어에 그대로 붙여넣으세요</Typography>
+            <Typography variant="body2">② 이미지를 클릭해 편집(누끼·워터마크)하고 내려받으세요</Typography>
+            <Typography variant="body2">③ 등록 정보를 위에서 아래로 스마트스토어에 붙여넣으세요</Typography>
             <Typography variant="caption" color="text.secondary">
               상품 이미지는 공급사 소유입니다. 사용 조건은 상품마다 다르니 반드시 확인하세요.
             </Typography>
