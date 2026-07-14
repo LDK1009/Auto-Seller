@@ -33,9 +33,9 @@ import { validateProductName, PROMO_WORDS, type NameCheckLevel } from '../_utils
 import { detectComplianceRisk } from '../_utils/detectComplianceRisk';
 import { buildNameTokenPool, composeWithinLength } from '../_utils/buildSuggestedProductName';
 import { scoreProductName, type ProductNameGrade } from '../_utils/scoreProductName';
-import { fetchKeywordStats, fetchCategorySuggest, fetchKeywordDetail, type CategoryCandidate } from '@/shared/services/keywordStatsService';
+import { fetchKeywordStats, fetchCategorySuggest, fetchKeywordDetail, type CategoryCandidate, type TitleToken } from '@/shared/services/keywordStatsService';
 import type { KeywordDetail } from '@/shared/types/keywordDetail';
-import type { KeywordStat } from '@/shared/types/keywordStats';
+import type { KeywordStat, RelatedKeyword } from '@/shared/types/keywordStats';
 
 const SMARTSTORE_FEE_RATE = FEE_PRESETS[0].rate; // 5.6% (스마트스토어)
 // 할인율 표시 프리셋 (%) — 최종 결제가는 유지하고 정가만 역산 (스스 관행: 정가+할인 표기)
@@ -87,6 +87,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   const [tagStats, setTagStats] = useState<Map<string, KeywordStat> | null>(null); // null = 미조회
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [categoryCandidates, setCategoryCandidates] = useState<CategoryCandidate[] | null>(null); // null = 미조회
+  const [titleTokens, setTitleTokens] = useState<TitleToken[]>([]); // 경쟁 상품 제목 빈출 단어 (A)
+  const [relatedKeywords, setRelatedKeywords] = useState<RelatedKeyword[]>([]); // 검색광고 연관 키워드 (B)
   const [isLoadingCategory, setIsLoadingCategory] = useState(false);
   const [marketDetail, setMarketDetail] = useState<KeywordDetail | null>(null); // 시장 분석
   const [isLoadingMarket, setIsLoadingMarket] = useState(false);
@@ -113,6 +115,24 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   const nameTokenPool = buildNameTokenPool(item.title, item.keywords, originalNameTokens, tagStats);
   // 추천 상품명 — 풀을 권장 길이 안에서 순서대로 조합
   const suggestedName = composeWithinLength(nameTokenPool);
+
+  ////////// 네이버 인기 키워드 — A(경쟁 상품 제목 빈출) + B(연관 키워드) 합산, 내 상품 풀과 중복 제거
+  const naverKeywordInfo = new Map<string, string>(); // keyword → 출처 툴팁
+  for (const entry of titleTokens) {
+    naverKeywordInfo.set(entry.token, `경쟁 상품 ${entry.count}개가 제목에 사용`);
+  }
+  for (const related of relatedKeywords.slice(0, 10)) {
+    if (!naverKeywordInfo.has(related.keyword)) {
+      naverKeywordInfo.set(related.keyword, `연관 검색어 — 월 ${related.monthlySearches.toLocaleString()}회 검색`);
+    }
+  }
+  const naverKeywords = Array.from(naverKeywordInfo.keys())
+    .filter(
+      (keyword) =>
+        !nameTokenPool.some((token) => token === keyword) &&
+        !PROMO_WORDS.some((word) => keyword.toLowerCase().includes(word.toLowerCase())),
+    )
+    .slice(0, 12);
 
   ////////// 키워드 칩 토글 — 클릭으로 상품명에 넣고 빼기
   const productNameTokens = productName.split(/\s+/).filter(Boolean);
@@ -219,6 +239,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         return;
       }
       setTagStats(new Map(response.stats.map((stat) => [stat.keyword, stat])));
+      setRelatedKeywords(response.related ?? []); // 연관 키워드 — 네이버 인기 키워드 칩 재료 (B)
     } catch (error) {
       console.error(error);
       enqueueSnackbar(error instanceof Error ? error.message : '검색량 조회에 실패했습니다.', {
@@ -259,6 +280,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         return;
       }
       setCategoryCandidates(response.candidates);
+      setTitleTokens(response.titleTokens); // 경쟁 상품 제목 빈출 단어 — 네이버 인기 키워드 칩 재료 (A)
       if (response.candidates.length === 0) {
         enqueueSnackbar('이 상품명으로는 카테고리 후보를 찾지 못했습니다. 상품명을 다듬어보세요.', {
           variant: 'info',
@@ -441,23 +463,53 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
 
         {/* 키워드 직접 조합 — 칩 클릭으로 넣고 빼기, 랜덤 조합 */}
         {nameTokenPool.length > 0 && (
-          <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-            {nameTokenPool.map((token) => {
-              const isUsed = productNameTokens.includes(token);
-              return (
-                <Chip
-                  key={token}
-                  size="small"
-                  label={token}
-                  color={isUsed ? 'primary' : 'default'}
-                  variant={isUsed ? 'filled' : 'outlined'}
-                  onClick={() => toggleNameToken(token)}
-                />
-              );
-            })}
-            <Button size="small" onClick={shuffleName}>
-              랜덤 조합
-            </Button>
+          <Stack spacing={0.5}>
+            <Typography variant="caption" color="text.secondary">
+              내 상품 키워드
+            </Typography>
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+              {nameTokenPool.map((token) => {
+                const isUsed = productNameTokens.includes(token);
+                return (
+                  <Chip
+                    key={token}
+                    size="small"
+                    label={token}
+                    color={isUsed ? 'primary' : 'default'}
+                    variant={isUsed ? 'filled' : 'outlined'}
+                    onClick={() => toggleNameToken(token)}
+                  />
+                );
+              })}
+              <Button size="small" onClick={shuffleName}>
+                랜덤 조합
+              </Button>
+            </Stack>
+          </Stack>
+        )}
+
+        {/* 네이버 인기 키워드 — 경쟁 상품 제목 빈출(자동) + 연관 검색어([검색량 확인] 후) */}
+        {naverKeywords.length > 0 && (
+          <Stack spacing={0.5}>
+            <Typography variant="caption" color="text.secondary">
+              네이버 인기 키워드
+            </Typography>
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+              {naverKeywords.map((keyword) => {
+                const isUsed = productNameTokens.includes(keyword);
+                return (
+                  <Tooltip key={keyword} title={naverKeywordInfo.get(keyword) ?? ''}>
+                    <Chip
+                      size="small"
+                      label={keyword}
+                      color={isUsed ? 'primary' : 'success'}
+                      variant={isUsed ? 'filled' : 'outlined'}
+                      onClick={() => toggleNameToken(keyword)}
+                    />
+                  </Tooltip>
+                );
+              })}
+            </Stack>
           </Stack>
         )}
 

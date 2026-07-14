@@ -100,16 +100,17 @@ export async function fetchAiVerdict(params: {
   return body as AiVerdictResponse;
 }
 
-////////// 스스 카테고리 후보 (상품명 → 네이버쇼핑 상위 상품 카테고리 최빈값)
+////////// 스스 카테고리 후보 (상품명 → 네이버쇼핑 상위 상품 카테고리 최빈값 + 제목 토큰)
 export type CategoryCandidate = { path: string; count: number; sampleSize: number };
+export type TitleToken = { token: string; count: number }; // 경쟁 상품 제목 빈출 단어
 
 export async function fetchCategorySuggest(
   query: string,
-): Promise<{ configured: boolean; candidates: CategoryCandidate[] }> {
+): Promise<{ configured: boolean; candidates: CategoryCandidate[]; titleTokens: TitleToken[] }> {
   const response = await fetch(`/api/category-suggest?q=${encodeURIComponent(query)}`);
   const body = await response.json();
   if (!response.ok) {
     throw new Error(body?.error ?? '카테고리 후보 조회에 실패했습니다.');
   }
-  return body;
+  return { ...body, titleTokens: body?.titleTokens ?? [] };
 }
