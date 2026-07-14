@@ -21,6 +21,7 @@ import AlignHorizontalCenterIcon from '@mui/icons-material/AlignHorizontalCenter
 import AlignHorizontalRightIcon from '@mui/icons-material/AlignHorizontalRight';
 import WidthFullOutlinedIcon from '@mui/icons-material/WidthFullOutlined';
 import type { DomeggookItemImage } from '@/shared/types/domeggook';
+import { transientOptions } from '@/shared/utils/emotionTransientProps';
 
 const OUTPUT_SIZE = 1000; // 스마트스토어 권장 1000×1000
 const MIN_BOX_SIZE = 60;
@@ -32,15 +33,27 @@ type DetailCropModalProps = {
   onCrop: (blob: Blob) => void;
 };
 
-type DragState =
-  | { mode: 'move'; startX: number; startY: number; boxX: number; boxY: number }
-  | { mode: 'resize'; startX: number; startY: number; boxSize: number };
+type ResizeCorner = 'nw' | 'ne' | 'sw' | 'se';
+
+type DragState = {
+  mode: 'move' | ResizeCorner;
+  startX: number;
+  startY: number;
+  startScrollTop: number;
+  startBox: { x: number; y: number; size: number };
+};
+
+const AUTO_SCROLL_FACTOR = 0.18; // 경계 초과 px당 프레임 스크롤량
+const AUTO_SCROLL_MAX = 24; // 프레임당 최대 스크롤 px
 
 export default function DetailCropModal({ open, images, onClose, onCrop }: DetailCropModalProps) {
   const contentRef = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const imageRefs = useRef<(HTMLImageElement | null)[]>([]);
   const [box, setBox] = useState({ x: 0, y: 0, size: 240 });
   const dragRef = useRef<DragState | null>(null);
+  const lastPointerRef = useRef({ x: 0, y: 0 });
+  const autoScrollSpeedRef = useRef(0);
   const [isCropping, setIsCropping] = useState(false);
 
   ////////// 열릴 때 기본 박스 = 콘텐츠 최대 너비 × 1:1 (좌상단)
@@ -66,28 +79,83 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
     };
   };
 
-  ////////// 드래그 (이동·리사이즈 공용 — window 리스너는 시작 시 1회 부착)
-  const beginDrag = (event: React.PointerEvent, mode: 'move' | 'resize') => {
+  ////////// 포인터 → 박스 갱신 (스크롤 이동분 포함 — 자동 스크롤 중에도 재계산)
+  const applyPointer = (clientX: number, clientY: number) => {
+    const drag = dragRef.current;
+    const scrollElement = scrollRef.current;
+    if (!drag || !scrollElement) return;
+    const deltaX = clientX - drag.startX;
+    const deltaY = clientY - drag.startY + (scrollElement.scrollTop - drag.startScrollTop);
+    const start = drag.startBox;
+
+    if (drag.mode === 'move') {
+      setBox(clampBox({ ...start, x: start.x + deltaX, y: start.y + deltaY }));
+      return;
+    }
+    // 코너 리사이즈 — 반대 꼭지점 고정, 정사각 유지
+    let size = start.size;
+    if (drag.mode === 'se') size = start.size + Math.max(deltaX, deltaY);
+    if (drag.mode === 'nw') size = start.size + Math.max(-deltaX, -deltaY);
+    if (drag.mode === 'ne') size = start.size + Math.max(deltaX, -deltaY);
+    if (drag.mode === 'sw') size = start.size + Math.max(-deltaX, deltaY);
+    size = Math.max(size, MIN_BOX_SIZE);
+    const anchorX = drag.mode === 'nw' || drag.mode === 'sw' ? start.x + start.size : start.x;
+    const anchorY = drag.mode === 'nw' || drag.mode === 'ne' ? start.y + start.size : start.y;
+    setBox(
+      clampBox({
+        size,
+        x: drag.mode === 'nw' || drag.mode === 'sw' ? anchorX - size : anchorX,
+        y: drag.mode === 'nw' || drag.mode === 'ne' ? anchorY - size : anchorY,
+      }),
+    );
+  };
+
+  ////////// 드래그 (이동·코너 리사이즈 공용) — 경계 밖으로 끌면 초과 거리 비례 자동 스크롤
+  const beginDrag = (event: React.PointerEvent, mode: DragState['mode']) => {
     event.preventDefault();
     event.stopPropagation();
-    dragRef.current =
-      mode === 'move'
-        ? { mode, startX: event.clientX, startY: event.clientY, boxX: box.x, boxY: box.y }
-        : { mode, startX: event.clientX, startY: event.clientY, boxSize: box.size };
+    const scrollElement = scrollRef.current;
+    if (!scrollElement) return;
+    dragRef.current = {
+      mode,
+      startX: event.clientX,
+      startY: event.clientY,
+      startScrollTop: scrollElement.scrollTop,
+      startBox: { ...box },
+    };
+    lastPointerRef.current = { x: event.clientX, y: event.clientY };
+    autoScrollSpeedRef.current = 0;
+
+    // 자동 스크롤 루프 — 포인터가 멈춰 있어도 스크롤·박스 갱신 지속
+    let frame = 0;
+    const tick = () => {
+      if (!dragRef.current) return;
+      if (autoScrollSpeedRef.current !== 0) {
+        scrollElement.scrollTop += autoScrollSpeedRef.current;
+        applyPointer(lastPointerRef.current.x, lastPointerRef.current.y);
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
 
     const handleMove = (moveEvent: PointerEvent) => {
-      const drag = dragRef.current;
-      if (!drag) return;
-      const deltaX = moveEvent.clientX - drag.startX;
-      const deltaY = moveEvent.clientY - drag.startY;
-      if (drag.mode === 'move') {
-        setBox((current) => clampBox({ ...current, x: drag.boxX + deltaX, y: drag.boxY + deltaY }));
-      } else {
-        setBox((current) => clampBox({ ...current, size: drag.boxSize + Math.max(deltaX, deltaY) }));
-      }
+      lastPointerRef.current = { x: moveEvent.clientX, y: moveEvent.clientY };
+      // 경계 초과량 → 스크롤 속도 (위 음수·아래 양수)
+      const rect = scrollElement.getBoundingClientRect();
+      const overflowTop = rect.top - moveEvent.clientY;
+      const overflowBottom = moveEvent.clientY - rect.bottom;
+      autoScrollSpeedRef.current =
+        overflowTop > 0
+          ? -Math.min(overflowTop * AUTO_SCROLL_FACTOR, AUTO_SCROLL_MAX)
+          : overflowBottom > 0
+            ? Math.min(overflowBottom * AUTO_SCROLL_FACTOR, AUTO_SCROLL_MAX)
+            : 0;
+      applyPointer(moveEvent.clientX, moveEvent.clientY);
     };
     const handleUp = () => {
       dragRef.current = null;
+      autoScrollSpeedRef.current = 0;
+      cancelAnimationFrame(frame);
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerup', handleUp);
     };
@@ -175,7 +243,7 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
         </Stack>
 
         {/* 박스 정렬 퀵버튼 */}
-        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', justifyContent: 'center' }}>
           <Tooltip title="왼쪽 정렬">
             <IconButton size="small" onClick={() => alignBox('left')}>
               <AlignHorizontalLeftIcon sx={{ fontSize: 18 }} />
@@ -199,7 +267,7 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
         </Stack>
 
         {/* 이어붙인 상세 + 크롭 박스 */}
-        <ScrollArea>
+        <ScrollArea ref={scrollRef}>
           <CropContent ref={contentRef}>
             {images.map((image, index) => (
               // eslint-disable-next-line @next/next/no-img-element
@@ -217,7 +285,13 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
               style={{ left: box.x, top: box.y, width: box.size, height: box.size }}
               onPointerDown={(event) => beginDrag(event, 'move')}
             >
-              <ResizeHandle onPointerDown={(event) => beginDrag(event, 'resize')} />
+              {(['nw', 'ne', 'sw', 'se'] as const).map((corner) => (
+                <ResizeHandle
+                  key={corner}
+                  $corner={corner}
+                  onPointerDown={(event) => beginDrag(event, corner)}
+                />
+              ))}
             </CropBox>
           </CropContent>
         </ScrollArea>
@@ -263,15 +337,19 @@ const CropBox = styled.div(({ theme }) => ({
   touchAction: 'none',
 }));
 
-const ResizeHandle = styled.div(({ theme }) => ({
-  position: 'absolute',
-  right: -8,
-  bottom: -8,
-  width: 16,
-  height: 16,
-  borderRadius: '50%',
-  backgroundColor: theme.palette.primary.main,
-  border: `2px solid ${theme.palette.background.paper}`,
-  cursor: 'nwse-resize',
-  touchAction: 'none',
-}));
+const ResizeHandle = styled('div', transientOptions)<{ $corner: 'nw' | 'ne' | 'sw' | 'se' }>(
+  ({ theme, $corner }) => ({
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    borderRadius: '50%',
+    backgroundColor: theme.palette.primary.main,
+    border: `2px solid ${theme.palette.background.paper}`,
+    touchAction: 'none',
+    cursor: $corner === 'nw' || $corner === 'se' ? 'nwse-resize' : 'nesw-resize',
+    top: $corner === 'nw' || $corner === 'ne' ? -8 : undefined,
+    bottom: $corner === 'sw' || $corner === 'se' ? -8 : undefined,
+    left: $corner === 'nw' || $corner === 'sw' ? -8 : undefined,
+    right: $corner === 'ne' || $corner === 'se' ? -8 : undefined,
+  }),
+);
