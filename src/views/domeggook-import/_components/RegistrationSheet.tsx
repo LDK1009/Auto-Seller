@@ -566,48 +566,90 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         )}
       </SectionBlock>
 
-      {/* 3. 판매가 */}
-      <SectionBlock
-        number={3}
-        done={copiedSections.has(3)}
-        title="판매가"
-        action={
-          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
-            {TARGET_MARGIN_PRESETS.map((rate) => (
-              <Chip
-                key={rate}
-                size="small"
-                label={`마진 ${rate}%`}
-                color={targetMarginRate === rate ? 'primary' : 'default'}
-                variant={targetMarginRate === rate ? 'filled' : 'outlined'}
-                onClick={() => setTargetMarginRate(rate)}
-              />
-            ))}
-          </Stack>
-        }
-      >
+      {/* 3. 판매가 — 결과(3스탯) → 조작(마진 칩) → 근거(원가 캡션+면책 툴팁) → 보조(할인·시장) */}
+      <SectionBlock number={3} done={copiedSections.has(3)} title="판매가" contentSpacing={2}>
         {recommendedPrice !== null ? (
-          <Stack spacing={1}>
-            <Stack direction="row" spacing={1.5} sx={{ alignItems: 'baseline', flexWrap: 'wrap' }} useFlexGap>
-              <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 700 }}>
-                {KRW(recommendedPrice)}
-              </Typography>
-              {/* 순이익 = 셀러의 최종 관심사 — 캡션이 아닌 본문 강조 */}
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                개당 순이익 {profitAtPrice !== null ? KRW(profitAtPrice) : '—'}
-                {marginRateAtPrice !== null && ` (실마진 ${Math.round(marginRateAtPrice)}%)`}
-              </Typography>
-              <CopyButton
-                aria-label="판매가 복사"
-                onClick={() => copyText('판매가', String(recommendedPrice), 3)}
-              >
-                <ContentCopyIcon fontSize="small" />
-              </CopyButton>
+          <>
+            {/* 결과 스탯 — 큰 숫자 + 작은 단위 */}
+            <Stack direction="row" spacing={4} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <Stack spacing={0.25}>
+                <Typography variant="caption" color="text.secondary">
+                  추천 판매가
+                </Typography>
+                <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+                  <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 700, lineHeight: 1.1 }}>
+                    {recommendedPrice.toLocaleString()}
+                    <Typography component="span" variant="body2" color="text.secondary">
+                      원
+                    </Typography>
+                  </Typography>
+                  <CopyButton
+                    aria-label="판매가 복사"
+                    onClick={() => copyText('판매가', String(recommendedPrice), 3)}
+                  >
+                    <ContentCopyIcon fontSize="small" />
+                  </CopyButton>
+                </Stack>
+              </Stack>
+              <Stack spacing={0.25}>
+                <Typography variant="caption" color="text.secondary">
+                  개당 순이익
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  {profitAtPrice !== null ? (
+                    <>
+                      {Math.round(profitAtPrice).toLocaleString()}
+                      <Typography component="span" variant="body2" color="text.secondary">
+                        원
+                      </Typography>
+                    </>
+                  ) : (
+                    '—'
+                  )}
+                </Typography>
+              </Stack>
+              <Stack spacing={0.25}>
+                <Typography variant="caption" color="text.secondary">
+                  실마진
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  {marginRateAtPrice !== null ? (
+                    <>
+                      {Math.round(marginRateAtPrice)}
+                      <Typography component="span" variant="body2" color="text.secondary">
+                        %
+                      </Typography>
+                    </>
+                  ) : (
+                    '—'
+                  )}
+                </Typography>
+              </Stack>
             </Stack>
-            <Typography variant="caption" color="text.secondary">
-              원가 {KRW(costPrice)}
-              {bundleUnits > 1 && ` (${KRW(unitPrice)}×${bundleUnits})`} · 수수료 {SMARTSTORE_FEE_RATE}%
-            </Typography>
+
+            {/* 조작 — 목표 마진 (결과 바로 아래, 인과 인접) */}
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+              <Typography variant="caption" color="text.secondary">
+                목표 마진
+              </Typography>
+              {TARGET_MARGIN_PRESETS.map((rate) => (
+                <Chip
+                  key={rate}
+                  size="small"
+                  label={`${rate}%`}
+                  color={targetMarginRate === rate ? 'primary' : 'default'}
+                  variant={targetMarginRate === rate ? 'filled' : 'outlined'}
+                  onClick={() => setTargetMarginRate(rate)}
+                />
+              ))}
+              {/* 근거 + 면책(툴팁으로 격하 — 상시 노출 제거) */}
+              <Tooltip title={FEE_DISCLAIMER}>
+                <Typography variant="caption" color="text.secondary" sx={{ cursor: 'help' }}>
+                  · 원가 {KRW(costPrice)}
+                  {bundleUnits > 1 && ` (${KRW(unitPrice)}×${bundleUnits})`} · 수수료 {SMARTSTORE_FEE_RATE}% ⓘ
+                </Typography>
+              </Tooltip>
+            </Stack>
             {isFlooredByResale && item.resaleMinimum !== null && (
               <Alert severity="info">
                 공급사 최소 재판매가 <b>{KRW(item.resaleMinimum)}</b> 규정에 맞춰 추천가를 올렸습니다 —
@@ -615,7 +657,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               </Alert>
             )}
 
-            {/* 할인율 표시 분해 — 최종 결제가는 유지, 정가만 역산 */}
+            {/* 보조 — 할인율 표시 분해 (최종 결제가는 유지, 정가만 역산) */}
             <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', alignItems: 'center' }} useFlexGap>
               <Typography variant="caption" color="text.secondary">
                 할인 표시
@@ -641,7 +683,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 </>
               )}
             </Stack>
-          </Stack>
+          </>
         ) : (
           <Alert severity="warning">
             {reverseResult.achievable === false ? reverseResult.reason : '가격 정보를 불러오지 못했습니다.'}
@@ -686,9 +728,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             )}
           </Stack>
         )}
-        <Typography variant="caption" color="text.secondary">
-          {FEE_DISCLAIMER}
-        </Typography>
       </SectionBlock>
 
       {/* 4. 재고수량 */}
