@@ -433,7 +433,7 @@ export default function DomeggookImportView() {
                               onClick={() => setCropTarget('main')}
                             >
                               <CropOutlinedIcon sx={{ fontSize: 18 }} />
-                              <Typography variant="caption">상세에서
+                              <Typography variant="caption">상세이미지
                                 잘라오기</Typography>
                             </CropAddTile>
                           </PickStrip>
@@ -462,7 +462,7 @@ export default function DomeggookImportView() {
                               onClick={() => setCropTarget('extra')}
                             >
                               <CropOutlinedIcon sx={{ fontSize: 18 }} />
-                              <Typography variant="caption">상세에서
+                              <Typography variant="caption">상세이미지
                                 잘라오기</Typography>
                             </CropAddTile>
                           </PickStrip>
@@ -561,7 +561,7 @@ export default function DomeggookImportView() {
         )}
       </Dialog>
 
-      {/* 상세에서 잘라오기 — 대표/추가 소섹션 공용 크롭 모달 */}
+      {/* 상세이미지 잘라오기 — 대표/추가 소섹션 공용 크롭 모달 */}
       <DetailCropModal
         open={cropTarget !== null}
         images={detailImages}
