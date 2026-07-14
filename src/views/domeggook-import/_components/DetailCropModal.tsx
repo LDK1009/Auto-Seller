@@ -56,21 +56,10 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
   const lastPointerRef = useRef({ x: 0, y: 0 });
   const autoScrollSpeedRef = useRef(0);
   const [isCropping, setIsCropping] = useState(false);
-  const [zoom, setZoom] = useState(1); // 표시 배율 — 축소하면 넓은 영역과 박스 전체가 한눈에
-
-  const changeZoom = (next: number) => {
-    if (next === zoom) return;
-    const ratio = next / zoom;
-    setBox((current) => ({ x: current.x * ratio, y: current.y * ratio, size: current.size * ratio }));
-    const scrollElement = scrollRef.current;
-    if (scrollElement) scrollElement.scrollTop *= ratio; // 보던 위치 유지
-    setZoom(next);
-  };
 
   ////////// 열릴 때 기본 박스 = 보이는 영역보다 작게 (뷰포트 높이 80%와 콘텐츠 폭 중 작은 값, 가로 중앙)
   useEffect(() => {
     if (!open) return;
-    setZoom(1);
     const frame = requestAnimationFrame(() => {
       const width = contentRef.current?.clientWidth;
       const viewHeight = scrollRef.current?.clientHeight;
@@ -259,7 +248,7 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth={false} disableScrollLock>
-      <Stack spacing={1.5} sx={{ p: 2.5, width: 'min(88vw, 760px)' }}>
+      <Stack spacing={1.5} sx={{ p: 2.5, width: 'min(88vw, 612px)', maxHeight: 'calc(100vh - 64px)' }}>
         {/* 헤더 */}
         <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
           <Stack spacing={0.25}>
@@ -276,47 +265,35 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
         {/* 박스 정렬 퀵버튼 */}
         <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', justifyContent: 'center' }}>
           <Tooltip title="왼쪽 정렬">
-            <IconButton size="small" onClick={() => alignBox('left')}>
+            <IconButton size="small" color="primary" onClick={() => alignBox('left')}>
               <AlignHorizontalLeftIcon sx={{ fontSize: 18 }} />
             </IconButton>
           </Tooltip>
           <Tooltip title="가운데 정렬">
-            <IconButton size="small" onClick={() => alignBox('center')}>
+            <IconButton size="small" color="primary" onClick={() => alignBox('center')}>
               <AlignHorizontalCenterIcon sx={{ fontSize: 18 }} />
             </IconButton>
           </Tooltip>
           <Tooltip title="오른쪽 정렬">
-            <IconButton size="small" onClick={() => alignBox('right')}>
+            <IconButton size="small" color="primary" onClick={() => alignBox('right')}>
               <AlignHorizontalRightIcon sx={{ fontSize: 18 }} />
             </IconButton>
           </Tooltip>
           <Tooltip title="전체 너비로">
-            <IconButton size="small" onClick={expandFullWidth}>
+            <IconButton size="small" color="primary" onClick={expandFullWidth}>
               <WidthFullOutlinedIcon sx={{ fontSize: 18 }} />
             </IconButton>
           </Tooltip>
           <Tooltip title="보고 있는 위치로 가져오기">
-            <IconButton size="small" onClick={bringToViewport}>
+            <IconButton size="small" color="primary" onClick={bringToViewport}>
               <CenterFocusStrongOutlinedIcon sx={{ fontSize: 18 }} />
             </IconButton>
           </Tooltip>
-          {/* 표시 배율 — 축소하면 박스 전체와 주변이 한눈에 */}
-          {[1, 0.75, 0.5].map((scale) => (
-            <Button
-              key={scale}
-              size="small"
-              variant={zoom === scale ? 'contained' : 'text'}
-              onClick={() => changeZoom(scale)}
-              sx={{ minWidth: 0, px: 1, py: 0.25 }}
-            >
-              {Math.round(scale * 100)}%
-            </Button>
-          ))}
         </Stack>
 
         {/* 이어붙인 상세 + 크롭 박스 */}
         <ScrollArea ref={scrollRef}>
-          <CropContent ref={contentRef} style={{ width: `${zoom * 100}%` }}>
+          <CropContent ref={contentRef}>
             {images.map((image, index) => (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -358,13 +335,13 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
 
 //////////////////////////////////////// 스타일 ////////////////////////////////////////
 const ScrollArea = styled.div(({ theme }) => ({
-  maxHeight: 'calc(100vh - 260px)', // 모달 헤더·툴바·푸터 제외 최대
+  flex: 1,
+  minHeight: 0, // 플렉스 안에서 남는 높이만 차지 — Paper에 2차 스크롤바 생기는 것 방지
   overflowY: 'auto',
   borderRadius: theme.shape.borderRadius,
   border: `1px solid ${theme.palette.divider}`,
-  scrollbarWidth: 'thin',
-  '&::-webkit-scrollbar': { width: 6 },
-  '&::-webkit-scrollbar-thumb': { backgroundColor: theme.palette.divider, borderRadius: 3 },
+  scrollbarWidth: 'none', // 스크롤바 비표시 (스크롤 동작은 유지)
+  '&::-webkit-scrollbar': { display: 'none' },
 }));
 
 const CropContent = styled.div({
