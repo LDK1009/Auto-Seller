@@ -28,7 +28,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import type { BackgroundOption } from '@/shared/constants/backgroundRemoval';
 import type { ImageJob } from '../_store/backgroundRemovalStore';
 import { useBackgroundImageSearch } from '../_hooks/useBackgroundImageSearch';
-import ColorPickerPopover, { getPatternPreviewCss } from './ColorPickerPopover';
+import ColorPickerPopover, { getPatternPreviewCss } from '@/shared/components/ColorPickerPopover';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
 
 type BackgroundOptionModalProps = {
