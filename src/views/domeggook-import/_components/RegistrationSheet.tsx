@@ -1035,14 +1035,45 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         />
       </SectionBlock>
 
-      {/* 9. 배송 */}
+      {/* 9. 배송 — 돈 직결 값 3개 (배송비·제주/도서산간 추가·평균 발송일) */}
       <SectionBlock number={9} done={copiedSections.has(9)} title="배송">
         <SheetRow
+          label="상품별 배송비"
           value={shippingFee > 0 ? KRW(shippingFee) : item.delivery.feeType ?? '—'}
-          caption={[item.delivery.feeType, item.delivery.pay, item.delivery.jejuExtra !== null && `제주 +${KRW(item.delivery.jejuExtra)}`]
-            .filter(Boolean)
-            .join(' · ')}
-          onCopy={() => copyText('배송비', String(shippingFee), 10)}
+          caption={[item.delivery.feeType, item.delivery.pay].filter(Boolean).join(' · ')}
+          onCopy={() => copyText('배송비', String(shippingFee), 9)}
+        />
+        <SheetRow
+          label="제주/도서산간 추가배송비"
+          value={
+            item.delivery.jejuExtra !== null || item.delivery.islandsExtra !== null
+              ? [
+                  item.delivery.jejuExtra !== null && `제주 +${KRW(item.delivery.jejuExtra)}`,
+                  item.delivery.islandsExtra !== null && `도서산간 +${KRW(item.delivery.islandsExtra)}`,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')
+              : '—'
+          }
+          caption={
+            item.delivery.jejuExtra !== null || item.delivery.islandsExtra !== null
+              ? '입력하지 않으면 제주 주문마다 추가 배송비를 떠안게 됩니다'
+              : undefined
+          }
+          onCopy={
+            item.delivery.jejuExtra !== null
+              ? () => copyText('제주 추가배송비', String(item.delivery.jejuExtra), 9)
+              : undefined
+          }
+        />
+        <SheetRow
+          label="평균 발송일"
+          value={item.delivery.sendAvgDays !== null ? `${item.delivery.sendAvgDays}일` : '—'}
+          caption={
+            item.delivery.sendAvgDays !== null
+              ? '오늘출발 설정 여부 판단 기준 — 길면 배송 지연 CS를 감안하세요'
+              : undefined
+          }
         />
       </SectionBlock>
 
@@ -1055,7 +1086,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               : '—'
           }
           caption={item.returnInfo.exchangeDouble ? '교환비 = 반품비 × 2 (왕복)' : undefined}
-          onCopy={item.returnInfo.fee !== null ? () => copyText('반품비', String(item.returnInfo.fee), 11) : undefined}
+          onCopy={item.returnInfo.fee !== null ? () => copyText('반품비', String(item.returnInfo.fee), 10) : undefined}
         />
       </SectionBlock>
 
