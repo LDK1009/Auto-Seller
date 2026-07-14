@@ -22,13 +22,10 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
-import AspectRatioIcon from '@mui/icons-material/AspectRatio';
 import VerticalSplitIcon from '@mui/icons-material/VerticalSplit';
 import { useSnackbar } from 'notistack';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
-import { useImageHandoffStore } from '@/shared/store/imageHandoffStore';
 import { trackEvent } from '@/shared/utils/analytics';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
 import { downloadDomeggookImages } from '@/shared/services/domeggookItemService';
@@ -61,24 +58,6 @@ const pickedFromOriginal = (image: DomeggookItemImage): PickedImage => ({
   previewUrl: image.proxyUrl,
   original: image,
 });
-
-// 핸드오프 대상 도구 — autoStart: 도착 즉시 작업 자동 시작 (원클릭 이어달리기)
-const HANDOFF_TARGETS = [
-  {
-    key: 'background-removal',
-    label: '누끼 바로 시작',
-    path: '/background-removal',
-    icon: <AutoFixHighIcon />,
-    autoStart: true,
-  },
-  {
-    key: 'image-resize',
-    label: '규격 변환으로 보내기',
-    path: '/image-resize',
-    icon: <AspectRatioIcon />,
-    autoStart: false, // 규격 변환은 프리셋 선택이 먼저라 자동 시작하지 않음
-  },
-];
 
 export default function DomeggookImportView() {
   const router = useRouter();
@@ -203,36 +182,6 @@ export default function DomeggookImportView() {
     }
   };
 
-  ////////// 선택 이미지(대표 + 추가) → 도구 핸드오프 (원본은 다운로드, 크롭은 Blob 그대로)
-  const handleSendTo = async (path: string, autoStart: boolean) => {
-    if (!item) return;
-    const picked = [...(mainImage ? [mainImage] : []), ...extraImages];
-    if (picked.length === 0) return;
-
-    try {
-      const files: { name: string; blob: Blob }[] = [];
-      for (let index = 0; index < picked.length; index += 1) {
-        const entry = picked[index];
-        setDownloadProgress(`이미지 준비 중… ${index + 1}/${picked.length}`);
-        if (entry.source === 'original' && entry.original) {
-          const [file] = await downloadDomeggookImages([entry.original], item.no);
-          files.push(file);
-        } else if (entry.blob) {
-          files.push({ name: `crop-${item.no}-${entry.id}.jpg`, blob: entry.blob });
-        }
-      }
-      useImageHandoffStore.getState().setImages(files, autoStart);
-      trackEvent('handoff', { from: 'domeggook-import', to: path.replace('/', '') });
-      router.push(path);
-    } catch (error) {
-      console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '이미지를 불러오지 못했습니다.', {
-        variant: 'error',
-      });
-      setDownloadProgress(null);
-    }
-  };
-
   ////////// 상세 통이미지 조립 — 상세 이미지 전체를 세로 병합해 다운로드
   const handleMergeDetail = async () => {
     if (!item) return;
@@ -273,7 +222,6 @@ export default function DomeggookImportView() {
     }
   };
 
-  const pickedCount = (mainImage ? 1 : 0) + extraImages.length;
   const isBusy = status === 'loading' || downloadProgress !== null;
 
   return (
@@ -467,9 +415,7 @@ export default function DomeggookImportView() {
                       <>
                         {/* 대표이미지 — 원본 클릭 선택(1장) 또는 상세에서 크롭 */}
                         <Stack spacing={0.75}>
-                          <Typography variant="caption" color="text.secondary">
-                            대표이미지 · 1장
-                          </Typography>
+                          <Typography variant="subtitle2">대표이미지 · 1장</Typography>
                           <PickStrip>
                             {item.images.map((image) => (
                               <PickThumb
@@ -502,7 +448,7 @@ export default function DomeggookImportView() {
 
                         {/* 추가이미지 — 원본 다중 선택 + 크롭 (최대 9장) */}
                         <Stack spacing={0.75}>
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography variant="subtitle2">
                             추가이미지 · {extraImages.length}/{MAX_EXTRA_IMAGES}장
                           </Typography>
                           <PickStrip>
@@ -542,31 +488,9 @@ export default function DomeggookImportView() {
                           </PickStrip>
                         </Stack>
 
-                        {/* 누끼·규격 변환 핸드오프 — 대표+추가 선택본 */}
-                        <ActionRow>
-                          {HANDOFF_TARGETS.map((target) => (
-                            <Button
-                              key={target.key}
-                              variant="contained"
-                              startIcon={target.icon}
-                              disabled={pickedCount === 0 || isBusy}
-                              onClick={() => handleSendTo(target.path, target.autoStart)}
-                            >
-                              {target.label}
-                            </Button>
-                          ))}
-                          {downloadProgress && (
-                            <Typography variant="body2" color="text.secondary">
-                              {downloadProgress}
-                            </Typography>
-                          )}
-                        </ActionRow>
-
                         {/* 동영상 */}
-                        <Stack spacing={0.5}>
-                          <Typography variant="caption" color="text.secondary">
-                            동영상
-                          </Typography>
+                        <Stack spacing={0.75}>
+                          <Typography variant="subtitle2">동영상</Typography>
                           <Typography variant="body2" color="text.secondary">
                             도매꾹은 상품 동영상을 제공하지 않습니다 — 직접 촬영·제작한 영상을 등록 화면에서
                             업로드하세요.

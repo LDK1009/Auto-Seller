@@ -985,7 +985,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       </SectionBlock>
 
       {/* 6. 상품이미지/동영상 — 이미지 선택 + 누끼/규격 핸드오프 (뷰에서 주입) */}
-      <SectionBlock number={6} done={copiedSections.has(6)} title="상품이미지 / 동영상">
+      <SectionBlock number={6} done={copiedSections.has(6)} title="상품이미지 / 동영상" contentSpacing={3}>
         {imageSection ?? (
           <Typography variant="body2" color="text.secondary">
             대표이미지 1장 + 추가이미지 최대 9장을 업로드하세요.
