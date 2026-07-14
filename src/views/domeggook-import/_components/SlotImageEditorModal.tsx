@@ -232,7 +232,7 @@ export default function SlotImageEditorModal({
             )}
           </PreviewFrame>
 
-          <Stack spacing={2.5} sx={{ flex: 1, minWidth: 260, overflowY: 'auto' }}>
+          <Stack spacing={3.5} sx={{ flex: 1, minWidth: 260, overflowY: 'auto' }}>
             {/* 배경 — 토글 on 시 즉시 누끼(모델 로드), 툴버튼은 기존 누끼 도구와 동일 구성 */}
             <Stack spacing={1}>
               <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
