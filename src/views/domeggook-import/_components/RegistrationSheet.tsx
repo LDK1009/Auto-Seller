@@ -75,6 +75,10 @@ const KRW = (value: number) => `${Math.round(value).toLocaleString()}원`;
 // 카테고리 복사 형식 — "A > B > C" → "A>B>C" (스마트스토어 검색창 형식)
 const compactCategoryPath = (path: string) => path.split('>').map((part) => part.trim()).filter(Boolean).join('>');
 
+// 검색량 축약 표기 (140,300 → 14만 / 38,150 → 3.8만 / 2,470 → 2,470)
+const compactCount = (value: number) =>
+  value >= 10_000 ? `${(value / 10_000).toFixed(value >= 100_000 ? 0 : 1).replace(/\.0$/, '')}만` : value.toLocaleString();
+
 
 export default function RegistrationSheet({ item, imageSection, detailSection }: RegistrationSheetProps) {
   const { enqueueSnackbar } = useSnackbar();
@@ -445,6 +449,37 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           </Tooltip>
         }
       >
+        {/* 주인공 = 상품명 인풋 (목적 먼저, 재료는 아래 보조) */}
+        <Stack spacing={1}>
+          <FieldRow>
+            <TextField
+              fullWidth
+              size="medium"
+              label="상품명"
+              value={productName}
+              onChange={(event) => setProductName(event.target.value)}
+              slotProps={{
+                input: {
+                  endAdornment: <InputAdornment position="end">{productName.length}/100</InputAdornment>,
+                },
+              }}
+            />
+            <CopyButton aria-label="상품명 복사" onClick={() => copyText('상품명', productName, 2)}>
+              <ContentCopyIcon fontSize="small" />
+            </CopyButton>
+          </FieldRow>
+          {/* 검사 결과 — 문제 항목만 간략 칩, 상세는 툴팁 */}
+          {issueChecks.length > 0 && (
+            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+              {issueChecks.map((check) => (
+                <Tooltip key={check.label} title={check.message}>
+                  <Chip size="small" variant="filled" color={CHECK_CHIP_COLORS[check.level]} label={check.label} />
+                </Tooltip>
+              ))}
+            </Stack>
+          )}
+        </Stack>
+
         {/* 추천 상품명 — 시드 풀 조합 (검색량 확인 후엔 검색량순) */}
         {suggestedName && suggestedName !== productName && (
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
@@ -459,24 +494,26 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           </Stack>
         )}
 
-        {/* 추천 키워드 — 시드 풀 + 대표 연관 키워드 통합 (검색량 내림차순), 칩 클릭 = 넣고 빼기 */}
+        {/* 추천 키워드 — 검색량 상위 3개만 강조 + 검색량 병기, 나머지 저채도 (훑기 가능한 위계) */}
         {recommendedKeywords.length > 0 && (
           <Stack spacing={0.75}>
             <Typography variant="caption" color="text.secondary">
               추천 키워드
             </Typography>
             <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-              {recommendedKeywords.map((keyword) => {
+              {recommendedKeywords.map((keyword, index) => {
                 const isUsed = productNameTokens.includes(keyword);
                 const searches = keywordSearches.get(keyword) ?? 0;
+                const isTop = index < 3 && searches > 0;
                 return (
                   <Tooltip key={keyword} title={searches > 0 ? `월 ${searches.toLocaleString()}회 검색` : ''}>
                     <Chip
                       size="small"
-                      label={keyword}
-                      color={isUsed ? 'primary' : 'default'}
+                      label={isTop ? `${keyword} ${compactCount(searches)}` : keyword}
+                      color={isUsed ? 'primary' : isTop ? 'primary' : 'default'}
                       variant={isUsed ? 'filled' : 'outlined'}
                       onClick={() => toggleNameToken(keyword)}
+                      sx={isUsed || isTop ? { fontWeight: 600 } : { color: 'text.secondary' }}
                     />
                   </Tooltip>
                 );
@@ -485,35 +522,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 랜덤 조합
               </Button>
             </Stack>
-          </Stack>
-        )}
-
-        {/* 상품명 인풋 + 채점 링 */}
-        <FieldRow>
-          <TextField
-            fullWidth
-            size="medium"
-            label="상품명"
-            value={productName}
-            onChange={(event) => setProductName(event.target.value)}
-            slotProps={{
-              input: {
-                endAdornment: <InputAdornment position="end">{productName.length}/100</InputAdornment>,
-              },
-            }}
-          />
-          <CopyButton aria-label="상품명 복사" onClick={() => copyText('상품명', productName, 2)}>
-            <ContentCopyIcon fontSize="small" />
-          </CopyButton>
-        </FieldRow>
-        {/* 검사 결과 — 문제 항목만 간략 칩, 상세는 툴팁 */}
-        {issueChecks.length > 0 && (
-          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
-            {issueChecks.map((check) => (
-              <Tooltip key={check.label} title={check.message}>
-                <Chip size="small" variant="filled" color={CHECK_CHIP_COLORS[check.level]} label={check.label} />
-              </Tooltip>
-            ))}
           </Stack>
         )}
       </SectionBlock>
