@@ -1015,7 +1015,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         )}
       </SectionBlock>
 
-      {/* 8. 상품 주요정보 — 스마트스토어 폼 필드와 1:1, 데이터 없으면 '—' (텍스트는 있을 때만) */}
+      {/* 8. 상품 주요정보 — 도매꾹 API로 확정 가능한 6개 필드만 (모델명·품번·제조사·KC인증·원산지·미성년자) */}
       <SectionBlock number={8} done={copiedSections.has(8)} title="상품 주요정보">
         <SheetRow
           label="모델명"
@@ -1028,13 +1028,11 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           caption={item.itemCustomCode ? '공급사 상품코드 기준' : undefined}
           onCopy={item.itemCustomCode ? () => copyText('품번', item.itemCustomCode as string, 8) : undefined}
         />
-        <SheetRow label="브랜드" value="—" />
         <SheetRow
           label="제조사"
           value={item.manufacturer ?? '—'}
           onCopy={item.manufacturer ? () => copyText('제조사', item.manufacturer as string, 8) : undefined}
         />
-        <SheetRow label="상품속성" value="—" />
         <SheetRow
           label="KC인증"
           value={safetyCertText ?? '—'}
@@ -1042,16 +1040,11 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           onCopy={safetyCertNo ? () => copyText('KC 인증번호', safetyCertNo, 8) : undefined}
         />
         <SheetRow label="원산지" value={item.origin ?? '—'} onCopy={item.origin ? () => copyText('원산지', item.origin as string, 8) : undefined} />
-        <SheetRow label="상품상태" value="신상품" />
-        <SheetRow label="맞춤제작" value="해당 없음" />
-        <SheetRow label="제조일자" value="—" />
-        <SheetRow label="유효일자" value="—" />
         <SheetRow
           label="미성년자 구매"
           value={item.adult ? '불가 (성인용품)' : '가능'}
           caption={item.adult ? '성인 인증 상품 — 등록 시 미성년자 구매 불가로 설정하세요' : undefined}
         />
-        <SheetRow label="과세 구분" value={taxLabel ?? '—'} onCopy={taxLabel ? () => copyText('과세 구분', taxLabel, 8) : undefined} />
       </SectionBlock>
 
       {/* 9. 상품정보제공고시 — 전 항목 값이 같으면 한 줄로 압축, 다르면 줄바꿈 목록 */}
