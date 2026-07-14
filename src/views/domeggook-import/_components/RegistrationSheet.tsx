@@ -144,11 +144,24 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     }
   };
 
-  ////////// 랜덤 조합 — 풀을 섞어 권장 길이 안에서 재조합
+  ////////// 랜덤 조합 — 추천 키워드에서 부분집합·순서를 무작위로 24회 생성해 채점,
+  ////////// 상위 점수군(최고점 −5 이내)에서 무작위 1개 채택 (키워드 구성 자체가 매번 달라짐)
   const shuffleName = () => {
-    const shuffled = [...nameTokenPool].sort(() => Math.random() - 0.5);
-    const composed = composeWithinLength(shuffled);
-    if (composed) setProductName(composed);
+    if (recommendedKeywords.length < 2) return;
+    const attempts = new Map<string, number>(); // 조합 → 점수
+    for (let trial = 0; trial < 24; trial += 1) {
+      const subset = recommendedKeywords.filter(() => Math.random() < 0.55);
+      if (subset.length < 2) continue;
+      const composed = composeWithinLength([...subset].sort(() => Math.random() - 0.5));
+      if (!composed || composed === productName || attempts.has(composed)) continue;
+      attempts.set(composed, scoreProductName(composed, validateProductName(composed), tagStats).normalized);
+    }
+    if (attempts.size === 0) return;
+    const bestScore = Math.max(...attempts.values());
+    const topGroup = Array.from(attempts.entries())
+      .filter(([, score]) => score >= bestScore - 5)
+      .map(([name]) => name);
+    setProductName(topGroup[Math.floor(Math.random() * topGroup.length)]);
   };
 
   ////////// 원가·판매가 계산 (MOQ 반영)
@@ -480,8 +493,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           )}
         </Stack>
 
-        {/* 추천 상품명 — 시드 풀 조합 (검색량 확인 후엔 검색량순), 추천 키워드와 동일한 라벨 패턴 */}
-        {suggestedName && suggestedName !== productName && (
+        {/* 추천 상품명 — 시드 풀 조합 (검색량 확인 후엔 검색량순), 적용 후에도 항상 표시 */}
+        {suggestedName && (
           <Stack spacing={0.75}>
             <Typography variant="caption" color="text.secondary">
               추천 상품명
@@ -492,6 +505,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               <Button
                 size="small"
                 onClick={() => setProductName(suggestedName)}
+                disabled={suggestedName === productName}
                 sx={{
                   minHeight: 0,
                   minWidth: 0,
