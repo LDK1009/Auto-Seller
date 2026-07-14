@@ -1,7 +1,6 @@
 //////////////////////////////////////// 스마트스토어 카테고리 후보 추천 프록시 ////////////////////////////////////////
 // 상품명으로 네이버쇼핑을 검색해 상위 상품들의 카테고리 경로(category1~4) 최빈값을 후보로 돌려준다.
 // leafCategoryId(등록용 코드)까지는 못 주지만, "등록 화면에서 어느 경로를 고를지"의 답은 충분히 된다.
-// + titleTokens: 상위 상품 제목에서 자주 쓰는 토큰 (스마트스토어 기준 키워드 추천 재료 — 같은 응답 재활용, 추가 콜 없음)
 // 24시간 캐시 · 키 미설정 시 configured:false.
 
 import { NextResponse } from 'next/server';
@@ -19,26 +18,18 @@ export type CategoryCandidate = {
   sampleSize: number;
 };
 
-export type TitleToken = {
-  token: string;
-  count: number; // 표본 제목 중 사용 상품 수
-};
-
 type CategorySuggestResponse = {
   configured: boolean;
   candidates: CategoryCandidate[];
-  titleTokens: TitleToken[];
 };
 
-const MAX_TITLE_TOKENS = 12;
-
-const cache = new Map<string, { candidates: CategoryCandidate[]; titleTokens: TitleToken[]; expiresAt: number }>();
+const cache = new Map<string, { candidates: CategoryCandidate[]; expiresAt: number }>();
 
 export async function GET(request: Request) {
   const clientId = process.env.NAVER_OPENAPI_CLIENT_ID;
   const clientSecret = process.env.NAVER_OPENAPI_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
-    return NextResponse.json({ configured: false, candidates: [], titleTokens: [] } satisfies CategorySuggestResponse);
+    return NextResponse.json({ configured: false, candidates: [] } satisfies CategorySuggestResponse);
   }
 
   const { searchParams } = new URL(request.url);
@@ -50,11 +41,7 @@ export async function GET(request: Request) {
   ////////// 캐시
   const cached = cache.get(query);
   if (cached && cached.expiresAt > Date.now()) {
-    return NextResponse.json({
-      configured: true,
-      candidates: cached.candidates,
-      titleTokens: cached.titleTokens,
-    } satisfies CategorySuggestResponse);
+    return NextResponse.json({ configured: true, candidates: cached.candidates } satisfies CategorySuggestResponse);
   }
 
   try {
@@ -79,41 +66,13 @@ export async function GET(request: Request) {
       .slice(0, MAX_CANDIDATES)
       .map(([path, count]) => ({ path, count, sampleSize: items.length }));
 
-    ////////// 제목 토큰 빈도 — 1순위 카테고리 리프명으로 2차 검색해 추출
-    // 상품명 검색 결과는 같은 도매꾹 상품을 복제한 위탁셀러 제목이 대부분(순환) —
-    // 카테고리 대표 검색어의 상위 상품(브랜드·잘 파는 셀러)에서 뽑아야 실제 시장 어휘가 나온다.
-    const leafName = candidates[0]?.path.split('>').map((part) => part.trim()).filter(Boolean).pop();
-    const tokenSourceItems = leafName ? ((await searchShop(leafName, clientId, clientSecret)) ?? items) : items;
-
-    const tokenCounts = new Map<string, number>();
-    for (const item of tokenSourceItems) {
-      const plainTitle = String(item.title ?? '')
-        .replace(/<[^>]+>/g, '') // <b> 강조 태그 제거
-        .replace(/&amp;/g, '&')
-        .replace(/&quot;|&#39;|&lt;|&gt;/g, ' ');
-      const tokens = new Set(
-        plainTitle
-          .split(/\s+/)
-          .map((raw) => raw.replace(/[^가-힣a-zA-Z0-9]/g, ''))
-          .filter((token) => token.length >= 2 && !/^\d+$/.test(token)),
-      );
-      for (const token of tokens) {
-        tokenCounts.set(token, (tokenCounts.get(token) ?? 0) + 1);
-      }
-    }
-    const titleTokens: TitleToken[] = Array.from(tokenCounts.entries())
-      .filter(([, count]) => count >= 2) // 한 상품만 쓴 단어 제외
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, MAX_TITLE_TOKENS)
-      .map(([token, count]) => ({ token, count }));
-
     if (cache.size >= CACHE_MAX_ENTRIES) {
       const oldestKey = cache.keys().next().value;
       if (oldestKey) cache.delete(oldestKey);
     }
-    cache.set(query, { candidates, titleTokens, expiresAt: Date.now() + CACHE_TTL_MS });
+    cache.set(query, { candidates, expiresAt: Date.now() + CACHE_TTL_MS });
 
-    return NextResponse.json({ configured: true, candidates, titleTokens } satisfies CategorySuggestResponse, {
+    return NextResponse.json({ configured: true, candidates } satisfies CategorySuggestResponse, {
       headers: { 'Cache-Control': 'public, max-age=3600' },
     });
   } catch (error) {

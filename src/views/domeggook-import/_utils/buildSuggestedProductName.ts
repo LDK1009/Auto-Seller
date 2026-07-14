@@ -1,30 +1,23 @@
 //////////////////////////////////////// 추천 상품명 조합 ////////////////////////////////////////
-// 규칙 기반 조합 (AI 미사용):
-// 1) 공급사 키워드 교차 검증 — 원 상품명에 등장하는 키워드만 채택 (무관 키워드로 거짓 상품명 방지)
+// 규칙 기반 조합 (AI 미사용). 소스 = 도매꾹 공급사 키워드만 (2026-07-14 결정 —
+// 상품명 토큰은 상호·판촉 문구 등 노이즈가 많아 폐기).
+// 1) 홍보어 제거
 // 2) 동의어 정리 — 부분 포함 관계 토큰은 대표 1개만 (검색량 조회 시 검색량, 미조회 시 더 구체적인 쪽)
-// 3) 정렬 — 검색량 내림차순 (미조회 시 공급사 키워드 → 상품명 순서 유지), 숫자 속성(150cm 등)은 뒤로
+// 3) 정렬 — 검색량 내림차순 (미조회 시 공급사 등록 순서), 숫자 속성 토큰은 뒤로
 // 4) 권장 길이(35자) 안에서 순서대로 연결, 초과 토큰은 건너뜀
 
 import type { KeywordStat } from '@/shared/types/keywordStats';
 import { NAME_RECOMMENDED_LENGTH, PROMO_WORDS } from './validateProductName';
 
-////////// 키워드 풀 — 교차 검증·동의어 정리·정렬까지 (직접 조합 UI에서 재사용)
+////////// 키워드 풀 — 정제·동의어 정리·정렬까지 (직접 조합 UI에서 재사용)
 export function buildNameTokenPool(
-  originalTitle: string,
   supplierKeywords: string[],
-  nameTokens: string[],
   tagStats: Map<string, KeywordStat> | null,
 ): string[] {
-  const normalizedTitle = originalTitle.replace(/\s+/g, '').toLowerCase();
   const searchesOf = (token: string) => tagStats?.get(token.replace(/\s+/g, ''))?.monthlySearches ?? 0;
 
-  // 1) 공급사 키워드 교차 검증 — 원 상품명에 실제로 등장하는 것만
-  const validKeywords = supplierKeywords.filter((keyword) =>
-    normalizedTitle.includes(keyword.replace(/\s+/g, '').toLowerCase()),
-  );
-
-  // 합침 + 중복 제거 + 홍보어 제거
-  const pool = Array.from(new Set([...validKeywords, ...nameTokens])).filter(
+  // 1) 중복 + 홍보어 제거
+  const pool = Array.from(new Set(supplierKeywords.map((keyword) => keyword.trim()).filter(Boolean))).filter(
     (token) => !PROMO_WORDS.some((word) => token.toLowerCase().includes(word.toLowerCase())),
   );
 
@@ -41,7 +34,7 @@ export function buildNameTokenPool(
     });
   });
 
-  // 3) 정렬 — 검색량순 (미조회 시 원 순서), 숫자 속성 토큰은 뒤로
+  // 3) 정렬 — 검색량순 (미조회 시 공급사 등록 순서), 숫자 속성 토큰은 뒤로
   const ordered = tagStats ? [...deduped].sort((a, b) => searchesOf(b) - searchesOf(a)) : deduped;
   const textTokens = ordered.filter((token) => !/\d/.test(token));
   const numericTokens = ordered.filter((token) => /\d/.test(token));
@@ -59,13 +52,4 @@ export function composeWithinLength(tokens: string[]): string | null {
     length = nextLength;
   }
   return parts.length >= 2 ? parts.join(' ') : null;
-}
-
-export function buildSuggestedProductName(
-  originalTitle: string,
-  supplierKeywords: string[],
-  nameTokens: string[],
-  tagStats: Map<string, KeywordStat> | null,
-): string | null {
-  return composeWithinLength(buildNameTokenPool(originalTitle, supplierKeywords, nameTokens, tagStats));
 }

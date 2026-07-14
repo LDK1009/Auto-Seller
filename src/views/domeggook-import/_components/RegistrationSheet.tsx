@@ -33,7 +33,7 @@ import { validateProductName, PROMO_WORDS, type NameCheckLevel } from '../_utils
 import { detectComplianceRisk } from '../_utils/detectComplianceRisk';
 import { buildNameTokenPool, composeWithinLength } from '../_utils/buildSuggestedProductName';
 import { scoreProductName, type ProductNameGrade } from '../_utils/scoreProductName';
-import { fetchKeywordStats, fetchCategorySuggest, fetchKeywordDetail, type CategoryCandidate, type TitleToken } from '@/shared/services/keywordStatsService';
+import { fetchKeywordStats, fetchCategorySuggest, fetchKeywordDetail, type CategoryCandidate } from '@/shared/services/keywordStatsService';
 import type { KeywordDetail } from '@/shared/types/keywordDetail';
 import type { KeywordStat, RelatedKeyword } from '@/shared/types/keywordStats';
 
@@ -87,8 +87,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   const [tagStats, setTagStats] = useState<Map<string, KeywordStat> | null>(null); // null = 미조회
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [categoryCandidates, setCategoryCandidates] = useState<CategoryCandidate[] | null>(null); // null = 미조회
-  const [titleTokens, setTitleTokens] = useState<TitleToken[]>([]); // 경쟁 상품 제목 빈출 단어 (A)
-  const [relatedKeywords, setRelatedKeywords] = useState<RelatedKeyword[]>([]); // 검색광고 연관 키워드 (B)
+  const [relatedKeywords, setRelatedKeywords] = useState<RelatedKeyword[]>([]); // 검색광고 연관 키워드 (공급사 키워드 시드)
   const [isLoadingCategory, setIsLoadingCategory] = useState(false);
   const [marketDetail, setMarketDetail] = useState<KeywordDetail | null>(null); // 시장 분석
   const [isLoadingMarket, setIsLoadingMarket] = useState(false);
@@ -107,24 +106,15 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     .filter((tag) => !PROMO_WORDS.some((word) => tag.toLowerCase().includes(word.toLowerCase())))
     .slice(0, 10);
 
-  // 키워드 풀 — 원 상품명 기준(편집과 무관하게 안정) 교차 검증·동의어 정리·정렬 완료 토큰
-  const originalNameTokens = item.title
-    .split(/\s+/)
-    .map((token) => token.replace(/[^가-힣a-zA-Z0-9]/g, ''))
-    .filter((token) => token.length >= 2);
-  const nameTokenPool = buildNameTokenPool(item.title, item.keywords, originalNameTokens, tagStats);
+  // 키워드 풀 — 도매꾹 공급사 키워드만 (상품명 토큰은 상호·판촉 노이즈가 많아 폐기, 2026-07-14)
+  const nameTokenPool = buildNameTokenPool(item.keywords, tagStats);
   // 추천 상품명 — 풀을 권장 길이 안에서 순서대로 조합
   const suggestedName = composeWithinLength(nameTokenPool);
 
-  ////////// 네이버 인기 키워드 — A(경쟁 상품 제목 빈출) + B(연관 키워드) 합산, 내 상품 풀과 중복 제거
+  ////////// 네이버 인기 키워드 — 공급사 키워드를 시드로 받은 검색광고 연관 키워드 (검색량 내림차순)
   const naverKeywordInfo = new Map<string, string>(); // keyword → 출처 툴팁
-  for (const entry of titleTokens) {
-    naverKeywordInfo.set(entry.token, `경쟁 상품 ${entry.count}개가 제목에 사용`);
-  }
-  for (const related of relatedKeywords.slice(0, 10)) {
-    if (!naverKeywordInfo.has(related.keyword)) {
-      naverKeywordInfo.set(related.keyword, `연관 검색어 — 월 ${related.monthlySearches.toLocaleString()}회 검색`);
-    }
+  for (const related of relatedKeywords.slice(0, 20)) {
+    naverKeywordInfo.set(related.keyword, `월 ${related.monthlySearches.toLocaleString()}회 검색`);
   }
   const naverKeywords = Array.from(naverKeywordInfo.keys())
     .filter(
@@ -228,18 +218,19 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     .map((option) => `${option.name}\t${option.priceAdd}\t${option.stock}`)
     .join('\n');
 
-  ////////// 태그 검색량 조회 (버튼 트리거 — 호출량 절약)
+  ////////// 검색량·연관 키워드 조회 — 시드 = 공급사 키워드 (상품명 토큰 노이즈 배제)
   const handleLoadTagStats = async () => {
-    if (tagCandidates.length === 0) return;
+    const seeds = nameTokenPool.length > 0 ? nameTokenPool : tagCandidates;
+    if (seeds.length === 0) return;
     setIsLoadingStats(true);
     try {
-      const response = await fetchKeywordStats(tagCandidates);
+      const response = await fetchKeywordStats(seeds);
       if (!response.configured) {
         enqueueSnackbar('검색량 기능이 아직 준비되지 않았습니다. (API 키 미설정)', { variant: 'info' });
         return;
       }
       setTagStats(new Map(response.stats.map((stat) => [stat.keyword, stat])));
-      setRelatedKeywords(response.related ?? []); // 연관 키워드 — 네이버 인기 키워드 칩 재료 (B)
+      setRelatedKeywords(response.related ?? []); // 연관 키워드 — 네이버 인기 키워드 칩 재료
     } catch (error) {
       console.error(error);
       enqueueSnackbar(error instanceof Error ? error.message : '검색량 조회에 실패했습니다.', {
@@ -280,7 +271,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         return;
       }
       setCategoryCandidates(response.candidates);
-      setTitleTokens(response.titleTokens); // 경쟁 상품 제목 빈출 단어 — 네이버 인기 키워드 칩 재료 (A)
       if (response.candidates.length === 0) {
         enqueueSnackbar('이 상품명으로는 카테고리 후보를 찾지 못했습니다. 상품명을 다듬어보세요.', {
           variant: 'info',
@@ -296,12 +286,13 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     }
   };
 
-  ////////// 추천 카테고리 자동 조회 (마운트 1회 — 버튼 없이 기본 표시)
+  ////////// 추천 카테고리 + 검색량·연관 키워드 자동 조회 (마운트 1회 — 버튼 없이 기본 표시)
   const hasAutoSuggestedRef = useRef(false);
   useEffect(() => {
     if (hasAutoSuggestedRef.current) return;
     hasAutoSuggestedRef.current = true;
     handleLoadCategorySuggest();
+    handleLoadTagStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
