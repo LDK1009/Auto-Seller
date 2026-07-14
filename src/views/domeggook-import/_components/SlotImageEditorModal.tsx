@@ -69,6 +69,7 @@ export default function SlotImageEditorModal({
   // processed = 누끼+배경 결과 / final = 워터마크까지 합성한 최종 (표시 우선순위: final > processed > 원본)
   const [processed, setProcessed] = useState<EditLayer | null>(null);
   const [final, setFinal] = useState<EditLayer | null>(null);
+  const [isBackgroundOn, setIsBackgroundOn] = useState(false);
   const [bgOption, setBgOption] = useState<BackgroundOption | null>(null); // null = 배경 미편집(원본)
   const [customColor, setCustomColor] = useState(DEFAULT_CUSTOM_COLOR);
   const [colorAnchorEl, setColorAnchorEl] = useState<HTMLElement | null>(null); // 색상 팝오버 앵커
@@ -167,8 +168,24 @@ export default function SlotImageEditorModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isWatermarkOn, watermark, processed]);
 
+  ////////// 배경 토글 — 켜면 즉시 모델 로드(누끼) 후 투명 배경, 끄면 배경 레이어 제거
+  const handleBackgroundToggle = (checked: boolean) => {
+    setIsBackgroundOn(checked);
+    if (checked) {
+      changeBackground({ kind: 'transparent' });
+    } else {
+      setColorAnchorEl(null);
+      setBgOption(null);
+      setProcessed((previous) => {
+        if (previous) URL.revokeObjectURL(previous.url);
+        return null;
+      });
+    }
+  };
+
   ////////// 원본 복귀
   const resetEdits = () => {
+    setIsBackgroundOn(false);
     setProcessed((previous) => {
       if (previous) URL.revokeObjectURL(previous.url);
       return null;
@@ -216,39 +233,50 @@ export default function SlotImageEditorModal({
           </PreviewFrame>
 
           <Stack spacing={2.5} sx={{ flex: 1, minWidth: 260, overflowY: 'auto' }}>
-            {/* 배경 — 기존 누끼 도구와 동일한 툴버튼 구성 */}
+            {/* 배경 — 토글 on 시 즉시 누끼(모델 로드), 툴버튼은 기존 누끼 도구와 동일 구성 */}
             <Stack spacing={1}>
-              <Typography variant="subtitle2">배경</Typography>
-              <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                <Tooltip title="배경 제거 (투명)">
-                  <ToolButton
-                    $isActive={bgOption?.kind === 'transparent'}
-                    onClick={() => changeBackground({ kind: 'transparent' })}
-                    disabled={isBusy}
-                    aria-label="배경 제거"
-                  >
-                    <FormatColorResetIcon />
-                  </ToolButton>
-                </Tooltip>
-                <Tooltip title="배경 색상">
-                  <ToolButton
-                    $isActive={bgOption?.kind === 'color'}
-                    onClick={(event) => setColorAnchorEl(event.currentTarget)}
-                    disabled={isBusy}
-                    aria-label="배경 색상"
-                  >
-                    <PaletteIcon />
-                  </ToolButton>
-                </Tooltip>
-                {/* 현재 색상/패턴 표시 */}
-                {bgOption?.kind === 'color' && (
-                  <ColorSwatch
-                    style={{
-                      background: getPatternPreviewCss(bgOption.hex, bgOption.pattern ?? 'solid', bgOption.gradientDirection),
-                    }}
-                  />
-                )}
+              <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography variant="subtitle2">배경</Typography>
+                <Switch
+                  size="small"
+                  checked={isBackgroundOn}
+                  disabled={isBusy}
+                  onChange={(_event, checked) => handleBackgroundToggle(checked)}
+                  slotProps={{ input: { 'aria-label': '배경 편집 사용' } }}
+                />
               </Stack>
+              <Collapse in={isBackgroundOn}>
+                <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                  <Tooltip title="배경 제거 (투명)">
+                    <ToolButton
+                      $isActive={bgOption?.kind === 'transparent'}
+                      onClick={() => changeBackground({ kind: 'transparent' })}
+                      disabled={isBusy}
+                      aria-label="배경 제거"
+                    >
+                      <FormatColorResetIcon />
+                    </ToolButton>
+                  </Tooltip>
+                  <Tooltip title="배경 색상">
+                    <ToolButton
+                      $isActive={bgOption?.kind === 'color'}
+                      onClick={(event) => setColorAnchorEl(event.currentTarget)}
+                      disabled={isBusy}
+                      aria-label="배경 색상"
+                    >
+                      <PaletteIcon />
+                    </ToolButton>
+                  </Tooltip>
+                  {/* 현재 색상/패턴 표시 */}
+                  {bgOption?.kind === 'color' && (
+                    <ColorSwatch
+                      style={{
+                        background: getPatternPreviewCss(bgOption.hex, bgOption.pattern ?? 'solid', bgOption.gradientDirection),
+                      }}
+                    />
+                  )}
+                </Stack>
+              </Collapse>
             </Stack>
 
             {/* 워터마크 — 스위치 켜면 설정 패널, 속성 변경마다 자동 합성 */}
