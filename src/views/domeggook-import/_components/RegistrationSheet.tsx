@@ -733,7 +733,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       {/* 4. 재고수량 */}
       <SectionBlock number={4} done={copiedSections.has(4)} title="재고수량">
         <SheetRow
-          label="재고 수량"
           value={bundleStock !== null ? `${bundleStock.toLocaleString()}개` : '—'}
           caption={
             bundleStock === 0
@@ -842,7 +841,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       {/* 10. 배송 */}
       <SectionBlock number={10} done={copiedSections.has(10)} title="배송">
         <SheetRow
-          label="배송비"
           value={shippingFee > 0 ? KRW(shippingFee) : item.delivery.feeType ?? '—'}
           caption={[item.delivery.feeType, item.delivery.pay, item.delivery.jejuExtra !== null && `제주 +${KRW(item.delivery.jejuExtra)}`]
             .filter(Boolean)
@@ -854,7 +852,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       {/* 11. 반품/교환 */}
       <SectionBlock number={11} done={copiedSections.has(11)} title="반품/교환">
         <SheetRow
-          label="반품 / 교환비"
           value={
             item.returnInfo.fee !== null
               ? `반품 ${KRW(item.returnInfo.fee)} · 교환 ${exchangeFee !== null ? KRW(exchangeFee) : '—'}`
@@ -930,8 +927,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           ))}
         </PresetBox>
         <Typography variant="caption" color="text.secondary">
-          리뷰 적립은 초기 리뷰 확보 비용 중 가장 싼 투자입니다. 리뷰가 쌓이기 전까지는 다른 혜택은 켜지
-          않는 것을 권장합니다.
+          리뷰가 쌓이기 전에는 리뷰 적립만 켜는 것을 권장합니다.
         </Typography>
       </SectionBlock>
 
@@ -970,8 +966,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             })}
           </Stack>
           <Typography variant="caption" color="text.secondary">
-            공급사 키워드 + 상품명에서 추출 — 경쟁강도(상품수÷검색수)는 낮을수록 틈새입니다. 페이지
-            타이틀·메타 디스크립션은 기본값 유지를 권장합니다.
+            경쟁강도(상품수÷검색수)는 낮을수록 틈새 — 페이지 타이틀·메타 디스크립션은 기본값 유지를
+            권장합니다.
           </Typography>
         </SectionBlock>
       )}
@@ -979,9 +975,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       {/* 15. 판매자 코드 */}
       <SectionBlock number={15} done={copiedSections.has(15)} title="판매자 코드">
         <SheetRow
-          label="판매자 상품코드 (권장)"
           value={`DG-${item.no}`}
-          caption="도매꾹 상품번호 — 주문이 들어오면 이 코드로 도매꾹에서 바로 찾아 발주할 수 있습니다"
+          caption="주문이 들어오면 이 번호로 도매꾹에서 바로 찾아 발주하세요"
           onCopy={() => copyText('판매자 상품코드', `DG-${item.no}`, 15)}
         />
       </SectionBlock>
@@ -1022,7 +1017,7 @@ function SectionBlock({ number, title, caption, action, done = false, contentSpa
 
 //////////////////// 시트 행 (라벨 + 값 + 복사) ////////////////////
 type SheetRowProps = {
-  label: string;
+  label?: string; // 섹션 제목과 겹치는 단일 값 행은 생략 (라벨 중복 제거)
   value: string;
   caption?: string;
   onCopy?: () => void;
@@ -1031,9 +1026,11 @@ type SheetRowProps = {
 function SheetRow({ label, value, caption, onCopy }: SheetRowProps) {
   return (
     <RowBox>
-      <Typography variant="body2" color="text.secondary" sx={{ width: 150, flexShrink: 0 }}>
-        {label}
-      </Typography>
+      {label && (
+        <Typography variant="body2" color="text.secondary" sx={{ width: 150, flexShrink: 0 }}>
+          {label}
+        </Typography>
+      )}
       <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
         <Typography variant="body2" sx={{ fontWeight: 600, wordBreak: 'break-all' }}>
           {value}
@@ -1045,7 +1042,7 @@ function SheetRow({ label, value, caption, onCopy }: SheetRowProps) {
         )}
       </Stack>
       {onCopy && (
-        <CopyButton aria-label={`${label} 복사`} onClick={onCopy}>
+        <CopyButton aria-label={`${label ?? '값'} 복사`} onClick={onCopy}>
           <ContentCopyIcon fontSize="small" />
         </CopyButton>
       )}
