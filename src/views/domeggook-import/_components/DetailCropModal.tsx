@@ -13,8 +13,13 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import CloseIcon from '@mui/icons-material/Close';
 import CropOutlinedIcon from '@mui/icons-material/CropOutlined';
+import AlignHorizontalLeftIcon from '@mui/icons-material/AlignHorizontalLeft';
+import AlignHorizontalCenterIcon from '@mui/icons-material/AlignHorizontalCenter';
+import AlignHorizontalRightIcon from '@mui/icons-material/AlignHorizontalRight';
+import WidthFullOutlinedIcon from '@mui/icons-material/WidthFullOutlined';
 import type { DomeggookItemImage } from '@/shared/types/domeggook';
 
 const OUTPUT_SIZE = 1000; // 스마트스토어 권장 1000×1000
@@ -90,6 +95,24 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
     window.addEventListener('pointerup', handleUp);
   };
 
+  ////////// 정렬 퀵버튼 — 가로 위치·전체 너비 (세로 위치는 유지)
+  const alignBox = (position: 'left' | 'center' | 'right') => {
+    const width = contentRef.current?.clientWidth;
+    if (!width) return;
+    setBox((current) =>
+      clampBox({
+        ...current,
+        x: position === 'left' ? 0 : position === 'center' ? (width - current.size) / 2 : width - current.size,
+      }),
+    );
+  };
+
+  const expandFullWidth = () => {
+    const width = contentRef.current?.clientWidth;
+    if (!width) return;
+    setBox((current) => clampBox({ x: 0, y: current.y, size: width }));
+  };
+
   ////////// 크롭 — 표시 좌표를 각 이미지 natural 좌표로 환산해 캔버스 합성
   const handleCrop = async () => {
     const content = contentRef.current;
@@ -149,6 +172,30 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
           <IconButton size="small" onClick={onClose} aria-label="닫기">
             <CloseIcon sx={{ fontSize: 20 }} />
           </IconButton>
+        </Stack>
+
+        {/* 박스 정렬 퀵버튼 */}
+        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+          <Tooltip title="왼쪽 정렬">
+            <IconButton size="small" onClick={() => alignBox('left')}>
+              <AlignHorizontalLeftIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="가운데 정렬">
+            <IconButton size="small" onClick={() => alignBox('center')}>
+              <AlignHorizontalCenterIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="오른쪽 정렬">
+            <IconButton size="small" onClick={() => alignBox('right')}>
+              <AlignHorizontalRightIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="전체 너비로">
+            <IconButton size="small" onClick={expandFullWidth}>
+              <WidthFullOutlinedIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
         </Stack>
 
         {/* 이어붙인 상세 + 크롭 박스 */}
