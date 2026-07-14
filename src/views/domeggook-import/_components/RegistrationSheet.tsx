@@ -787,25 +787,35 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             {isLoadingMarket ? '분석 중…' : marketDetail === null ? '시장 가격 비교' : '다시 분석'}
           </Button>
           {marketDetail?.priceBand && recommendedPrice !== null && (
-            <Stack spacing={0.75}>
-              <Tooltip title={`"${marketDetail.keyword}" 네이버쇼핑 상위 40개 상품의 가격비교 최저가 기준입니다`}>
-                <Typography variant="body2" sx={{ cursor: 'help', alignSelf: 'flex-start' }}>
-                  &quot;{marketDetail.keyword}&quot; 시장가 —{' '}
-                  <b>
-                    {recommendedPrice <= marketDetail.priceBand.median
-                      ? '내 가격이 시장 중앙 이하 (가격 경쟁력 있음)'
-                      : recommendedPrice <= marketDetail.priceBand.max
-                        ? '내 가격이 시장 범위 내'
-                        : '내 가격이 시장 상단 초과 — 마진율 조정 검토'}
-                  </b>
-                </Typography>
-              </Tooltip>
+            <Stack spacing={0.5}>
+              {/* 슬라이드가 첫 시선 — 판정·근거는 아래 강약 배치 */}
               <MarketPriceBand
                 min={marketDetail.priceBand.min}
                 median={marketDetail.priceBand.median}
                 max={marketDetail.priceBand.max}
                 myPrice={recommendedPrice}
               />
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 700,
+                  color:
+                    recommendedPrice <= marketDetail.priceBand.median
+                      ? 'success.main'
+                      : recommendedPrice <= marketDetail.priceBand.max
+                        ? 'text.primary'
+                        : 'error.main',
+                }}
+              >
+                {recommendedPrice <= marketDetail.priceBand.median
+                  ? '내 가격이 시장 중앙 이하 — 가격 경쟁력 있음'
+                  : recommendedPrice <= marketDetail.priceBand.max
+                    ? '내 가격이 시장 범위 내'
+                    : '내 가격이 시장 상단 초과 — 마진율 조정 검토'}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                &quot;{marketDetail.keyword}&quot; 네이버쇼핑 상위 40개 상품의 가격비교 최저가 기준
+              </Typography>
             </Stack>
           )}
         </Stack>
@@ -1147,11 +1157,16 @@ function MarketPriceBand({ min, median, max, myPrice }: MarketPriceBandProps) {
 
   return (
     <BandWrap>
-      {/* 내 가격 라벨 (트랙 위) */}
+      {/* 내 가격 말풍선 (트랙 위 — 마커를 꼬리로 가리킴) */}
       <BandMyLabel style={{ left: `${myPosition}%` }}>
-        <Typography variant="caption" sx={{ fontWeight: 700, color: isOverMax ? 'error.main' : 'primary.main' }}>
-          내 가격 {KRW(myPrice)}
-        </Typography>
+        <BandBubble $isOver={isOverMax}>
+          <Typography variant="caption" sx={{ display: 'block', lineHeight: 1.2, opacity: 0.85 }}>
+            내 가격
+          </Typography>
+          <Typography variant="caption" sx={{ display: 'block', fontWeight: 700, lineHeight: 1.3 }}>
+            {KRW(myPrice)}
+          </Typography>
+        </BandBubble>
       </BandMyLabel>
       <BandTrack>
         <BandMedianTick style={{ left: `${medianPosition}%` }} />
@@ -1373,9 +1388,32 @@ const BandWrap = styled.div(({ theme }) => ({
   position: 'relative',
   maxWidth: 560,
   width: '100%',
-  paddingTop: theme.spacing(3), // 내 가격 라벨 공간
+  paddingTop: theme.spacing(7), // 내 가격 말풍선 공간
   paddingBottom: theme.spacing(3.5), // 눈금 라벨 공간
 }));
+
+// 내 가격 말풍선 — 아래 꼬리가 마커를 가리킴
+const BandBubble = styled('div', transientOptions)<{ $isOver: boolean }>(({ theme, $isOver }) => {
+  const background = $isOver ? theme.palette.error.main : theme.palette.primary.main;
+  return {
+    position: 'relative',
+    padding: theme.spacing(0.5, 1.25),
+    borderRadius: theme.shape.borderRadius,
+    backgroundColor: background,
+    color: theme.palette.common.white,
+    textAlign: 'center',
+    boxShadow: theme.shadows[2],
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      top: '100%',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      border: '5px solid transparent',
+      borderTopColor: background,
+    },
+  };
+});
 
 const BandTrack = styled.div(({ theme }) => ({
   position: 'relative',
@@ -1406,12 +1444,12 @@ const BandMyMarker = styled('div', transientOptions)<{ $isOver: boolean }>(({ th
   boxShadow: theme.shadows[1],
 }));
 
-const BandMyLabel = styled.div({
+const BandMyLabel = styled.div(({ theme }) => ({
   position: 'absolute',
-  top: 0,
+  top: theme.spacing(0.5),
   transform: 'translateX(-50%)',
   whiteSpace: 'nowrap',
-});
+}));
 
 const BandScale = styled.div({
   position: 'relative',
