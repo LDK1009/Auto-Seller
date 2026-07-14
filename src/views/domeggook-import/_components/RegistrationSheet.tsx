@@ -63,6 +63,9 @@ type RegistrationSheetProps = {
 
 const KRW = (value: number) => `${Math.round(value).toLocaleString()}원`;
 
+// 카테고리 복사 형식 — "A > B > C" → "A>B>C" (스마트스토어 검색창 형식)
+const compactCategoryPath = (path: string) => path.split('>').map((part) => part.trim()).filter(Boolean).join('>');
+
 
 export default function RegistrationSheet({ item, imageSection, detailSection }: RegistrationSheetProps) {
   const { enqueueSnackbar } = useSnackbar();
@@ -261,7 +264,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   // 전체 복사도 시트(=스마트스토어 폼) 순서 그대로
   const copyAll = async () => {
     const lines = [
-      categoryCandidates?.[0] && `카테고리: ${categoryCandidates[0].path}`,
+      categoryCandidates?.[0] && `카테고리: ${compactCategoryPath(categoryCandidates[0].path)}`,
       `상품명: ${productName}`,
       recommendedPrice !== null &&
         `판매가: ${recommendedPrice}${bundleUnits > 1 ? ` (${bundleUnits}개 묶음 기준)` : ''}`,
@@ -335,7 +338,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 </Typography>
                 <CopyButton
                   aria-label="카테고리 복사"
-                  onClick={() => copyText('카테고리', candidate.path, 1)}
+                  onClick={() => copyText('카테고리', compactCategoryPath(candidate.path), 1)}
                 >
                   <ContentCopyIcon fontSize="small" />
                 </CopyButton>
