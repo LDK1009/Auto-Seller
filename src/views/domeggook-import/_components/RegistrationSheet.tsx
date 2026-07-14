@@ -1007,7 +1007,6 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         <SheetRow
           label="품번"
           value={item.itemCustomCode ?? '—'}
-          caption={item.itemCustomCode ? '공급사 상품코드 기준' : undefined}
           onCopy={item.itemCustomCode ? () => copyText('품번', item.itemCustomCode as string, 8) : undefined}
         />
         <SheetRow
@@ -1018,14 +1017,14 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         <SheetRow
           label="KC인증"
           value={safetyCertText ?? '—'}
-          caption={safetyCertText ? '공급사가 등록한 인증정보 — 등록 전 번호 유효성을 확인하세요' : undefined}
+          caption={safetyCertText ? '공급사가 등록한 값 — 인증번호 확인 후 입력하세요' : undefined}
           onCopy={safetyCertNo ? () => copyText('KC 인증번호', safetyCertNo, 8) : undefined}
         />
         <SheetRow label="원산지" value={item.origin ?? '—'} onCopy={item.origin ? () => copyText('원산지', item.origin as string, 8) : undefined} />
         <SheetRow
           label="미성년자 구매"
           value={item.adult ? '불가 (성인용품)' : '가능'}
-          caption={item.adult ? '성인 인증 상품 — 등록 시 미성년자 구매 불가로 설정하세요' : undefined}
+          caption={item.adult ? '성인 인증 상품 — 미성년자 구매 불가로 설정하세요' : undefined}
         />
       </SectionBlock>
 
@@ -1051,7 +1050,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           }
           caption={
             item.delivery.jejuExtra !== null || item.delivery.islandsExtra !== null
-              ? '입력하지 않으면 제주 주문마다 추가 배송비를 떠안게 됩니다'
+              ? '스마트스토어 폼에도 그대로 입력하세요 — 빠뜨리면 셀러 부담입니다'
               : undefined
           }
           onCopy={
@@ -1063,11 +1062,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         <SheetRow
           label="평균 발송일"
           value={item.delivery.sendAvgDays !== null ? `${item.delivery.sendAvgDays}일` : '—'}
-          caption={
-            item.delivery.sendAvgDays !== null
-              ? '오늘출발 설정 여부 판단 기준 — 길면 배송 지연 CS를 감안하세요'
-              : undefined
-          }
+          caption={item.delivery.sendAvgDays !== null ? '오늘출발 설정 판단 기준입니다' : undefined}
         />
       </SectionBlock>
 
@@ -1076,7 +1071,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
         <SheetRow
           label="반품배송비 (편도)"
           value={item.returnInfo.fee !== null ? KRW(item.returnInfo.fee) : '—'}
-          caption={item.returnInfo.fee !== null ? '공급사 반품비 — 이보다 낮게 설정하면 반품마다 차액 손해' : undefined}
+          caption={item.returnInfo.fee !== null ? '공급사 반품비 — 이 금액 이상으로 설정하세요' : undefined}
           onCopy={item.returnInfo.fee !== null ? () => copyText('반품배송비', String(item.returnInfo.fee), 10) : undefined}
         />
         <SheetRow
@@ -1122,9 +1117,9 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             })}
           </Stack>
           <Typography variant="caption" color="text.secondary">
-            상품명에 이미 들어간 키워드는 태그 효과가 없어 제외했습니다 — [검색량 확인] 후 검색량 순으로
-            재정렬됩니다. 경쟁강도(상품수÷검색수)는 낮을수록 틈새 · Page Title/Meta description은 기본값
-            유지를 권장합니다.
+            {tagStats
+              ? '경쟁강도(상품수÷검색수)는 낮을수록 틈새입니다 · Page Title/Meta는 기본값 유지'
+              : '상품명에 있는 키워드는 태그 효과가 없어 뺐습니다 · Page Title/Meta는 기본값 유지'}
           </Typography>
         </SectionBlock>
       )}
@@ -1306,20 +1301,23 @@ function SheetRow({ label, value, caption, onCopy }: SheetRowProps) {
         </Typography>
       )}
       <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="body2" sx={{ fontWeight: 600, wordBreak: 'break-all' }}>
-          {value}
-        </Typography>
+        {/* 값 + 복사 아이콘 밀착 — 값과 액션의 시선 왕복 제거 */}
+        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', minWidth: 0 }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, wordBreak: 'break-all' }}>
+            {value}
+          </Typography>
+          {onCopy && (
+            <InlineCopyButton aria-label={`${label ?? '값'} 복사`} onClick={onCopy}>
+              <ContentCopyIcon sx={{ fontSize: 14 }} />
+            </InlineCopyButton>
+          )}
+        </Stack>
         {caption && (
           <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
             {caption}
           </Typography>
         )}
       </Stack>
-      {onCopy && (
-        <CopyButton aria-label={`${label ?? '값'} 복사`} onClick={onCopy}>
-          <ContentCopyIcon fontSize="small" />
-        </CopyButton>
-      )}
     </RowBox>
   );
 }
@@ -1403,6 +1401,12 @@ const RowBox = styled.div(({ theme }) => ({
 }));
 
 const CopyButton = styled(IconButton)({
+  flexShrink: 0,
+});
+
+// 값 텍스트 높이에 맞춘 인라인 복사 버튼 (SheetRow 전용)
+const InlineCopyButton = styled(IconButton)({
+  padding: 2,
   flexShrink: 0,
 });
 
