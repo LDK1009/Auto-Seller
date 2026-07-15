@@ -65,7 +65,7 @@ export async function POST(request: Request) {
       .eq('user_id', userData.user.id)
       .gte('created_at', kstDayStartUtc);
     if (countError) {
-      console.error('사용량 조회 실패 (테이블 미생성 가능성 — docs/launch/ai-verdict-setup.md):', countError);
+      console.error('사용량 조회 실패 (테이블 미생성 가능성 — docs/개발/ROADMAP.md "AI 판단 가동 절차"):', countError);
       return NextResponse.json({ error: 'AI 판단 준비 중입니다. 잠시 후 다시 시도해주세요.' }, { status: 503 });
     }
     const usedToday = count ?? 0;

@@ -329,7 +329,7 @@ export default function KeywordStatsView() {
         {!isConfigured && (
           <Alert severity="info">
             아직 준비 중인 기능입니다. (운영자: 네이버 API 키 발급 후 환경변수 설정 —
-            docs/launch/naver-keys-guide.md)
+            docs/개발/ROADMAP.md 운영 메모)
           </Alert>
         )}
 

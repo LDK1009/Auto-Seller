@@ -86,7 +86,7 @@ export default function AiVerdictCard({ keyword, stat, detail }: PropsType) {
       {/* 키·인증 인프라 미설정 (운영자 안내) */}
       {(!isConfigured || !isAuthConfigured) && (
         <Typography variant="caption" color="text.secondary">
-          AI 판단은 준비 중입니다. (운영자: docs/launch/ai-verdict-setup.md)
+          AI 판단은 준비 중입니다. (운영자: docs/개발/ROADMAP.md의 AI 판단 가동 절차)
         </Typography>
       )}
 
