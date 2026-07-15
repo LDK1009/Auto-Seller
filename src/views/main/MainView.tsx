@@ -29,6 +29,7 @@ import NoAccountsIcon from '@mui/icons-material/NoAccounts';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import { APP_NAME, APP_NAME_EN, APP_DESCRIPTION, SLOGAN_LINES } from '@/shared/constants/app';
+import BestProductsSection from './_components/BestProductsSection';
 import { TOOLS, TOOL_GROUPS, FLAGSHIP_TOOL } from '@/shared/constants/tools';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
 import { trackEvent } from '@/shared/utils/analytics';
@@ -117,6 +118,13 @@ export default function MainView() {
           </Stack>
         </Container>
       </HeroBand>
+
+      {/* 베스트 상품 후킹 — 링크 없이 온 방문자를 클릭 한 번으로 원링크 체험에 태운다 */}
+      <Band $tone="default">
+        <Container maxWidth="md">
+          <BestProductsSection />
+        </Container>
+      </Band>
 
       {/* 진행 3단계 — 타임라인 (흰 밴드) */}
       <Band $tone="paper">
