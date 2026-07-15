@@ -38,17 +38,17 @@ const JOURNEY_STEPS = [
   {
     step: '1',
     title: '도매꾹 링크 붙여넣기',
-    description: '팔 상품의 링크 하나면 준비 끝. 대표·상세 이미지를 모아옵니다.',
+    description: '팔 상품의 링크 하나면 준비 끝. 이미지·가격·옵션·배송 정보를 모아옵니다.',
   },
   {
     step: '2',
-    title: '브라우저에서 이미지 가공',
-    description: '누끼, 배경 교체, 규격 변환, 워터마크까지 — 포토샵 없이.',
+    title: '이미지 클릭해서 편집',
+    description: '누끼, 배경 교체, 워터마크, 상세 잘라오기까지 — 포토샵 없이 브라우저에서.',
   },
   {
     step: '3',
-    title: 'ZIP으로 한 번에 다운로드',
-    description: '등록용 이미지 세트가 완성됩니다. 남은 건 등록뿐.',
+    title: '등록 정보 그대로 붙여넣기',
+    description: '카테고리부터 상품명·판매가·태그까지, 스마트스토어 폼 순서 그대로 복사해 넣으면 끝.',
   },
 ];
 
@@ -111,7 +111,7 @@ export default function MainView() {
               ))}
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400, maxWidth: 560 }}>
-              도매꾹 링크 하나로 — 이미지 가공부터 다운로드까지.
+              {APP_DESCRIPTION}
             </Typography>
             <HeroActions />
           </Stack>
