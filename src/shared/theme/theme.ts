@@ -2,7 +2,7 @@
 // 디자인 토큰(색상·타이포·간격·모양)을 이 파일에서 중앙 관리한다.
 // 컴포넌트에서 sx/인라인으로 값을 하드코딩하지 말고 테마 토큰을 사용할 것.
 //
-// 토큰 출처: docs/design/toss-skin-tokens.css (Toss 스킨)를 MUI로 번역 — BRAND.md 7장.
+// 토큰 출처: docs/개발/design/toss-skin-tokens.css (Toss 스킨)를 MUI로 번역 — docs/개발/design/README.md 디자인 원칙.
 // 브랜드 컬러는 인디고 유지 (Toss 퍼플 ❌). 가져온 것: 텍스트 위계·서피스·그림자·상태색·라운드 체계.
 
 import { createTheme, type Theme } from '@mui/material/styles';
