@@ -5,7 +5,7 @@
 // 레이아웃 원칙:
 // - 세로 리스트, 항목 = [왼쪽 순번/아이콘 + 오른쪽 제목·설명] 한 덩어리
 // - 흰/회색 밴드 교차로 섹션 호흡 (토스식 리듬)
-// - 문구는 docs/기획/PLAN.md 10장(브랜드) 준수 (검증 안 된 수치·과장 금지)
+// - 문구는 docs/기획/PLAN.md 9장(브랜드·마케팅) + docs/개발/design/README.md UX 라이팅 준수 (검증 안 된 수치·과장 금지)
 
 import { Fragment, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
