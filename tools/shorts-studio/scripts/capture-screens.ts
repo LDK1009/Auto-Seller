@@ -5,19 +5,25 @@
 import { chromium, type Page } from "playwright";
 import { mkdirSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
+import sharp from "sharp";
 
 const OUT = resolve(__dirname, "../../../public/marketing");
 const ASSETS = resolve(__dirname, "../assets");
 const BASE = process.env.SHORTS_BASE_URL ?? "https://www.auto-seller.co.kr";
 const VIEWPORT = { width: 1440, height: 900 };
 
-// main 콘텐츠 영역만 저장 (사이드바·헤더 제외). 없으면 전체
+// main 콘텐츠 영역만 저장 (사이드바·헤더 제외). 너무 길면 상단 크롭 (블로그·쓰레드용)
+const MAX_H = 2800; // 픽셀(deviceScale 2 → CSS 1400) — 초과분 상단만
 const shot = async (page: Page, name: string) => {
+  const path = join(OUT, `${name}.png`);
   const main = page.locator("main").first();
-  if (await main.count()) {
-    await main.screenshot({ path: join(OUT, `${name}.png`) });
-  } else {
-    await page.screenshot({ path: join(OUT, `${name}.png`) });
+  if (await main.count()) await main.screenshot({ path });
+  else await page.screenshot({ path });
+  // 세로 초과분 상단 크롭
+  const meta = await sharp(path).metadata();
+  if ((meta.height ?? 0) > MAX_H) {
+    const buf = await sharp(path).extract({ left: 0, top: 0, width: meta.width!, height: MAX_H }).png().toBuffer();
+    require("node:fs").writeFileSync(path, buf);
   }
   console.log(`📸 ${name}.png`);
 };
