@@ -1,9 +1,11 @@
 //////////////////////////////////////// 시연 영상 (모바일 세로 녹화) ////////////////////////////////////////
-// 폰 카드 안에 세로 녹화를 cover로 채움. 정차역(focus)마다 부드러운 줌인 → 전체 복귀.
+// 폰 카드 안에 세로 녹화를 cover로 채움 (줌 없음 — 모바일 뷰라 판독 가능).
+// 정차역(focus)마다 해당 섹션에 강조 테두리 링이 스르륵 나타났다 사라진다.
 import React from "react";
-import { AbsoluteFill, Freeze, OffthreadVideo, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Freeze, OffthreadVideo, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { COLOR, FONT_STACK } from "../theme";
 import type { TimerShortProps } from "../schema";
+import { PHONE_CARD } from "./SafeArea";
 
 type PropsType = {
   videoSrc: string | null;
@@ -13,67 +15,59 @@ type PropsType = {
   focuses: TimerShortProps["focuses"];
 };
 
-const TRANS = 0.8; // 줌 전환 (스르륵)
+// 녹화 원본 뷰포트 — scripts/lib/recorder.ts VIEWPORT와 동일해야 좌표 매핑이 맞음
+const SOURCE = { width: 414, height: 896 };
+const RING_FADE = 0.35; // 링 등장/퇴장 (초)
+const RING_PAD = 10; // 박스 주변 여백 (px)
 
-// 카메라 키프레임 — 정차역이 가까우면(줌아웃+줌인 시간 부족) 줌 유지한 채 다음 지점으로 팬
-// 기존 방식은 앞 정차역 줌아웃이 끝나는 순간 다음 정차역 구간으로 넘어가며 k가 0→1로 점프(뚜둑 끊김)
-type CamKey = { t: number; k: number; x: number; y: number; scale: number };
+////////// 정차역 강조 링 — 녹화 좌표(0~1) → 카드 px 로 cover 매핑
+const HighlightRing = ({ focus, nowSec }: { focus: TimerShortProps["focuses"][number]; nowSec: number }) => {
+  const { fps } = useVideoConfig();
+  const start = focus.at;
+  const end = focus.at + focus.holdSec;
+  if (nowSec < start - RING_FADE || nowSec > end + RING_FADE) return null;
 
-const buildKeys = (focuses: PropsType["focuses"]): CamKey[] => {
-  const keys: CamKey[] = [];
-  focuses.forEach((f, i) => {
-    const prev = focuses[i - 1];
-    const next = focuses[i + 1];
-    const end = f.at + f.holdSec;
-    const prevLinked = prev !== undefined && f.at - (prev.at + prev.holdSec) < TRANS * 2;
-    const nextLinked = next !== undefined && next.at - end < TRANS * 2;
-    if (!prevLinked) {
-      keys.push({ t: f.at - TRANS, k: 0, x: f.x, y: f.y, scale: f.scale });
-      keys.push({ t: f.at, k: 1, x: f.x, y: f.y, scale: f.scale });
-    }
-    if (nextLinked) {
-      // 팬 연결 — 머묾 후 다음 정차역 도착 시각까지 0.8초 이동 (줌 유지)
-      const panStart = Math.max(f.at + 0.2, next!.at - TRANS);
-      keys.push({ t: panStart, k: 1, x: f.x, y: f.y, scale: f.scale });
-      keys.push({ t: next!.at, k: 1, x: next!.x, y: next!.y, scale: next!.scale });
-    } else {
-      keys.push({ t: end, k: 1, x: f.x, y: f.y, scale: f.scale });
-      keys.push({ t: end + TRANS, k: 0, x: f.x, y: f.y, scale: f.scale });
-    }
-  });
-  return keys;
-};
+  // cover 배치 — 가로가 꽉 차고(414→560) 세로는 넘친 만큼 위아래 크롭
+  const coverScale = PHONE_CARD.width / SOURCE.width;
+  const dispHeight = SOURCE.height * coverScale;
+  const cropTop = (dispHeight - PHONE_CARD.height) / 2;
 
-const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+  // 박스 크기 없으면(클릭 폴백) 기본 링
+  const boxW = (focus.w || 0.7) * PHONE_CARD.width;
+  const boxH = (focus.h || 0.12) * dispHeight;
+  const centerX = focus.x * PHONE_CARD.width;
+  const centerY = focus.y * dispHeight - cropTop;
 
-const zoomAt = (focuses: PropsType["focuses"], nowSec: number) => {
-  const keys = buildKeys(focuses);
-  if (keys.length === 0 || nowSec <= keys[0].t) return { k: 0, x: 0.5, y: 0.5, scale: 1 };
-  const last = keys[keys.length - 1];
-  if (nowSec >= last.t) return { k: last.k, x: last.x, y: last.y, scale: last.scale };
-  let a = keys[0];
-  let b = keys[keys.length - 1];
-  for (let i = 0; i < keys.length - 1; i++) {
-    if (nowSec >= keys[i].t && nowSec < keys[i + 1].t) {
-      a = keys[i];
-      b = keys[i + 1];
-      break;
-    }
-  }
-  const p = easeInOut(interpolate(nowSec, [a.t, b.t], [0, 1]));
-  return {
-    k: a.k + (b.k - a.k) * p,
-    x: a.x + (b.x - a.x) * p,
-    y: a.y + (b.y - a.y) * p,
-    scale: a.scale + (b.scale - a.scale) * p,
-  };
+  // 등장: 살짝 크게 → 정착 (스프링) / 퇴장: 페이드
+  const inSpring = spring({ frame: Math.round((nowSec - start + RING_FADE) * fps), fps, config: { damping: 13 } });
+  const fadeIn = interpolate(nowSec, [start - RING_FADE, start], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const fadeOut = interpolate(nowSec, [end, end + RING_FADE], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const opacity = Math.min(fadeIn, fadeOut);
+  const settle = 1.08 - inSpring * 0.08; // 1.08 → 1.0
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: centerX - boxW / 2 - RING_PAD,
+        top: centerY - boxH / 2 - RING_PAD,
+        width: boxW + RING_PAD * 2,
+        height: boxH + RING_PAD * 2,
+        border: `5px solid ${COLOR.brand}`,
+        borderRadius: 18,
+        boxShadow: `0 0 0 4px rgba(99,102,241,0.18), 0 6px 20px rgba(99,102,241,0.25)`,
+        opacity,
+        transform: `scale(${settle})`,
+        pointerEvents: "none",
+      }}
+    />
+  );
 };
 
 export const ZoomVideo = ({ videoSrc, videoTrimSec = 0, videoAvailSec, focuses }: PropsType) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const nowSec = frame / fps;
-  const z = zoomAt(focuses, nowSec);
   const availFrames = videoAvailSec ? Math.round(videoAvailSec * fps) - 2 : null;
 
   if (!videoSrc) {
@@ -93,10 +87,6 @@ export const ZoomVideo = ({ videoSrc, videoTrimSec = 0, videoAvailSec, focuses }
     );
   }
 
-  const scale = 1 + (z.scale - 1) * z.k;
-  const originX = 50 + (z.x * 100 - 50) * z.k;
-  const originY = 50 + (z.y * 100 - 50) * z.k;
-
   const video = (
     <OffthreadVideo
       src={videoSrc.startsWith("http") ? videoSrc : staticFile(videoSrc)}
@@ -106,18 +96,15 @@ export const ZoomVideo = ({ videoSrc, videoTrimSec = 0, videoAvailSec, focuses }
   );
 
   return (
-    <AbsoluteFill
-      style={{
-        transform: `scale(${scale})`,
-        transformOrigin: `${originX}% ${originY}%`,
-        backgroundColor: "#FFFFFF",
-      }}
-    >
+    <AbsoluteFill style={{ backgroundColor: "#FFFFFF" }}>
       {availFrames !== null && frame >= availFrames ? (
         <Freeze frame={availFrames}>{video}</Freeze>
       ) : (
         video
       )}
+      {focuses.map((f, i) => (
+        <HighlightRing key={i} focus={f} nowSec={nowSec} />
+      ))}
     </AbsoluteFill>
   );
 };

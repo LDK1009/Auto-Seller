@@ -9,12 +9,14 @@ export const captionSchema = z.object({
   text: z.string(),
 });
 
-////////// 줌 포커스 (플레이라이트 이벤트 로그 기반 — Phase B에서 채움, 없으면 전체 화면)
+////////// 강조 포커스 (플레이라이트 정차역 이벤트 기반 — 해당 섹션에 강조 테두리 링 표시)
 export const focusSchema = z.object({
   at: z.number(), // 초
-  x: z.number(), // 0~1 (영상 내 상대 좌표)
+  x: z.number(), // 0~1 (영상 내 상대 좌표, 박스 중심)
   y: z.number(),
-  scale: z.number().default(2), // 줌 배율
+  w: z.number().default(0), // 0~1 박스 크기 — 0이면 기본 링 크기
+  h: z.number().default(0),
+  scale: z.number().default(1), // (구 줌 배율 — 테두리 방식 전환 후 미사용, 호환 유지)
   holdSec: z.number().default(2),
 });
 

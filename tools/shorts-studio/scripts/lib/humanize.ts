@@ -6,8 +6,10 @@ import { CURSOR_INIT_SCRIPT } from "./cursor";
 export type DemoEvent = {
   t: number; // 녹화 시작 기준 초
   type: "click" | "type" | "scroll" | "hold" | "focus"; // focus = 정차역 (강조 구간)
-  x?: number; // 0~1 뷰포트 상대 좌표
+  x?: number; // 0~1 뷰포트 상대 좌표 (박스 중심)
   y?: number;
+  w?: number; // 0~1 정차역 박스 크기 — 강조 테두리 링 사이즈용
+  h?: number;
   holdSec?: number; // focus 머묾 시간
 };
 
@@ -57,13 +59,30 @@ export class HumanPage {
     await target.evaluate((el) => el.scrollIntoView({ behavior: "smooth", block: "center" }));
     await this.page.evaluate(() => (window as any).__dimCursor?.(true)); // 읽는 동안 커서 숨김 (라벨 가림 방지)
     await this.page.waitForTimeout(800); // 스무스 스크롤 완료 + 정착
-    const box = await target.boundingBox();
+    // 타겟(보통 섹션 라벨 텍스트)의 조상 중 섹션 카드(뷰포트 60% 이상 폭)를 찾아 그 박스를 강조 링 영역으로 사용
+    const box = await target.evaluate((el) => {
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      let node: HTMLElement | null = el as HTMLElement;
+      while (node) {
+        const rect = node.getBoundingClientRect();
+        // 섹션 카드 판정: 폭 60% 이상 + 높이 7% 이상 (라벨 행 래퍼는 높이 미달로 스킵)
+        if (rect.width >= viewportWidth * 0.6 && rect.height >= viewportHeight * 0.07) {
+          return { x: rect.x, y: rect.y, width: rect.width, height: Math.min(rect.height, viewportHeight * 0.45) };
+        }
+        node = node.parentElement;
+      }
+      const rect = (el as HTMLElement).getBoundingClientRect();
+      return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+    });
     if (box) {
       this.events.push({
         t: this.now(),
         type: "focus",
         x: (box.x + box.width / 2) / this.viewport.width,
         y: (box.y + box.height / 2) / this.viewport.height,
+        w: box.width / this.viewport.width,
+        h: box.height / this.viewport.height,
         holdSec,
       });
     }

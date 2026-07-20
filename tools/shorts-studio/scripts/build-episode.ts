@@ -62,7 +62,7 @@ const main = async () => {
   const clicks = rec.events.filter((e) => e.type === "click" && e.x !== undefined);
   const sources = stations.length > 0 ? stations : clicks;
   const isStationMode = stations.length > 0;
-  const focuses: { at: number; x: number; y: number; scale: number; holdSec: number }[] = [];
+  const focuses: { at: number; x: number; y: number; w: number; h: number; scale: number; holdSec: number }[] = [];
   for (const e of sources) {
     const t = e.t - trimSec; // 트림 반영한 영상 시각
     // 정차역은 시나리오가 의도한 강조 지점 — 전부 유지. 간격 필터는 클릭 폴백에만
@@ -71,7 +71,15 @@ const main = async () => {
       const last = focuses[focuses.length - 1];
       if (last && t - (last.at - videoStartSec) < last.holdSec + 2.5) continue;
     }
-    focuses.push({ at: videoStartSec + t, x: e.x!, y: e.y!, scale: 1.9, holdSec: e.holdSec ?? 2.2 });
+    focuses.push({
+      at: videoStartSec + t,
+      x: e.x!,
+      y: e.y!,
+      w: e.w ?? 0,
+      h: e.h ?? 0,
+      scale: 1, // 테두리 방식 — 줌 미사용
+      holdSec: e.holdSec ?? 2.2,
+    });
   }
   props.focuses = focuses;
   // 엔딩 리캡 (에피소드별 커스텀은 파서 확장 예정 — 기본값)
