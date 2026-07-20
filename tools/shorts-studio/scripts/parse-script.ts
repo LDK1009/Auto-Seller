@@ -32,12 +32,12 @@ const parseResult = (md: string) => {
 };
 
 const main = () => {
-  const [month, day] = process.argv.slice(2);
+  const [month, day, scriptName = "숏츠"] = process.argv.slice(2);
   if (!month || !day) {
-    console.error("사용법: npm run parse -- 2026-07 16");
+    console.error("사용법: npm run parse -- 2026-07 20 [숏츠2]");
     process.exit(1);
   }
-  const mdPath = join(CONTENT_ROOT, month, day, "숏츠.md");
+  const mdPath = join(CONTENT_ROOT, month, day, `${scriptName}.md`);
   const md = readFileSync(mdPath, "utf-8");
 
   const props = {
@@ -55,7 +55,7 @@ const main = () => {
   };
 
   mkdirSync(OUT_DIR, { recursive: true });
-  const outPath = join(OUT_DIR, `${month}-${day}.json`);
+  const outPath = join(OUT_DIR, `${month}-${day}-${scriptName}.json`);
   writeFileSync(outPath, JSON.stringify(props, null, 2), "utf-8");
   console.log(`✅ ${outPath}`);
   console.log(`   훅: ${props.hook}`);

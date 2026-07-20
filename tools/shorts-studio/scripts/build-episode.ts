@@ -18,25 +18,31 @@ const fmt = (sec: number) => {
 };
 
 const main = async () => {
-  const [day, month = "2026-07"] = process.argv.slice(2);
-  if (!day) {
-    console.error("사용법: npm run episode -- 16 [2026-07]");
+  // 에피소드 ID: "20" (1편차) 또는 "20-2"/"20-3" (2·3편차) — 대본 숏츠N.md, 출력 숏츠N.mp4 매칭
+  const [episodeId, month = "2026-07"] = process.argv.slice(2);
+  if (!episodeId) {
+    console.error("사용법: npm run episode -- 20 [2026-07] | npm run episode -- 20-2");
     process.exit(1);
   }
+  const [day, edition] = episodeId.split("-");
+  const scriptName = edition ? `숏츠${edition}` : "숏츠";
 
   ////////// 1) 시나리오 로드 + 녹화
   const scenarioPath = join(STUDIO_ROOT, "scenarios");
   const files = require("node:fs").readdirSync(scenarioPath) as string[];
-  const file = files.find((f) => f.startsWith(`${day}-`));
-  if (!file) throw new Error(`시나리오 없음: scenarios/${day}-*.ts`);
+  // "20"은 20-image-check.ts 매칭하되 20-2-*.ts는 제외 (편차 접두가 숫자면 다른 에피소드)
+  const file = files.find(
+    (f) => f.startsWith(`${episodeId}-`) && (edition !== undefined || !/^\d/.test(f.slice(`${episodeId}-`.length))),
+  );
+  if (!file) throw new Error(`시나리오 없음: scenarios/${episodeId}-*.ts`);
   const { scenario } = await import(pathToFileURL(join(scenarioPath, file)).href);
   console.log(`🎬 녹화 시작: ${file} (${process.env.SHORTS_BASE_URL ?? "production"})`);
   const rec = await record(scenario);
   console.log(`   완료 — ${rec.durationSec.toFixed(1)}초, 이벤트 ${rec.events.length}개`);
 
   ////////// 2) 대본 파싱 — 항상 재파싱 (대본 md가 단일 소스, 캐시 금지)
-  const propsPath = join(PROPS_DIR, `${month}-${day}.json`);
-  execSync(`npx tsx scripts/parse-script.ts ${month} ${day}`, { cwd: STUDIO_ROOT, stdio: "inherit" });
+  const propsPath = join(PROPS_DIR, `${month}-${day}-${scriptName}.json`);
+  execSync(`npx tsx scripts/parse-script.ts ${month} ${day} ${scriptName}`, { cwd: STUDIO_ROOT, stdio: "inherit" });
   const props = JSON.parse(readFileSync(propsPath, "utf-8"));
 
   ////////// 3) 병합 — 녹화 실측값 주입
@@ -111,7 +117,7 @@ const main = async () => {
   ////////// 4) 렌더 — 완성본은 컨텐츠 폴더(원고 옆)에 저장, 대표는 폴더에서 바로 예약 업로드
   const contentDir = resolve(STUDIO_ROOT, `../../docs/마케팅/컨텐츠/${month}/${day}`);
   mkdirSync(contentDir, { recursive: true });
-  const outPath = join(contentDir, "숏츠.mp4");
+  const outPath = join(contentDir, `${scriptName}.mp4`);
   console.log(`🎞 렌더: ${outPath}`);
   execSync(
     `npx remotion render TimerShort "${outPath}" --props="${propsPath}" --browser-executable="${CHROME}"`,
