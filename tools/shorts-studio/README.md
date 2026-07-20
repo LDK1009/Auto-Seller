@@ -45,12 +45,27 @@ scripts/
 └ parse-script.ts   숏츠.md → props JSON (훅·자막 표·결과 라벨 추출)
 ```
 
-## Phase B (예정) — 녹화 자동화
+## Phase B — 녹화 자동화 (코어 검증 완료)
 
-- `scripts/lib/humanize.ts` 인간 페이싱 (타이핑 딜레이·스무스 스크롤·대기)
-- `scripts/lib/cursor.ts` 가짜 커서 오버레이 + 클릭 리플
-- `scripts/lib/recorder.ts` 세로 뷰포트 녹화 + 클릭 좌표 이벤트 로그 → focuses 자동 생성
-- `scenarios/01~16` 기능별 시연 시나리오
-- `scripts/build-episode.ts` 녹화→파싱→렌더 원커맨드
-- `scripts/capture-screens.ts` 블로그 [사진] 슬롯 캡처
+```bash
+# 원커맨드: 녹화(프로덕션 실조작) → 파싱 → 렌더
+npm run episode -- 16        # → out/2026-07-16-숏츠.mp4 (실측 시간 자동 기입)
+
+# 로컬 대상 녹화 (API 예산 절약)
+$env:SHORTS_BASE_URL="http://localhost:3000"; npm run episode -- 16
+```
+
+- `scripts/lib/humanize.ts` 인간 페이싱 (타이핑 딜레이·스무스 스크롤·대기·이벤트 로그)
+- `scripts/lib/cursor.ts` 가짜 커서 오버레이 + 클릭 리플 (DOM 주입)
+- `scripts/lib/recorder.ts` 세로 뷰포트(414×896) 녹화 → `public/rec/` + 이벤트 로그
+- `scenarios/16-onelink.ts` 시나리오 1호 (검색→카드→시트 훑기) — **나머지 15개 추가 필요**
+- `scripts/build-episode.ts` 오케스트레이터 — 실측 시간·줌 포커스 자동 주입
+
+### 남은 개선 (다음 작업)
+
+1. 시나리오 2~16 작성 (에피소드별)
+2. **자막-장면 싱크 마커** — 현재는 대본 자막을 실측 길이에 비율 배치라 장면과 어긋날 수 있음 → 시나리오가 단계별 마커 시각을 로그하고 자막을 마커에 스냅
+3. `capture-screens.ts` 블로그 [사진] 슬롯 캡처 (Phase B 잔여)
+4. `report-data.ts` C⑦ 리포트 수치 수집 (Phase C)
+5. 화질 — 녹화가 뷰포트 CSS 픽셀(414px) 기준이라 업스케일됨. 필요 시 CDP 스크린캐스트로 교체 검토
 ```

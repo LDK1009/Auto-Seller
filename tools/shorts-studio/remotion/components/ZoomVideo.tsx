@@ -2,7 +2,7 @@
 // 녹화 파일 재생 + 포커스 좌표(플레이라이트 이벤트 로그)로 줌인·복귀 애니메이션.
 // videoSrc 없으면 플레이스홀더 (A단계 검증용).
 import React from "react";
-import { AbsoluteFill, OffthreadVideo, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, OffthreadVideo, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { COLOR, FONT_STACK } from "../theme";
 import type { TimerShortProps } from "../schema";
 
@@ -70,7 +70,7 @@ export const ZoomVideo = ({ videoSrc, videoStartSec, focuses }: PropsType) => {
       }}
     >
       <OffthreadVideo
-        src={videoSrc}
+        src={videoSrc.startsWith("http") ? videoSrc : staticFile(videoSrc)}
         startFrom={0}
         style={{ width: "100%", height: "100%", objectFit: "cover" }}
         // 컴포지션 videoStartSec 이전엔 Sequence로 감싸서 등장 (TimerShort에서 처리)
