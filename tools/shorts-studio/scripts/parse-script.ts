@@ -24,6 +24,13 @@ const parseHook = (md: string) => {
   return m ? m[1].replace(/"$/, "") : "타이머 켜고 재봤습니다";
 };
 
+////////// 영상 제목 — "## 영상 제목" 다음 내용 (유튜브 제목 = 출력 파일명)
+const parseTitle = (md: string, day: string, scriptName: string) => {
+  const section = md.split("## 영상 제목")[1] ?? "";
+  const line = section.split("\n").map((l) => l.trim()).find((l) => l && !l.startsWith("#"));
+  return line || `${day}-${scriptName}`;
+};
+
 ////////// 결과 카드 — **"라벨, [실측: mm:ss]"** 형태에서 라벨 추출
 const parseResult = (md: string) => {
   const section = md.split("## 결과 카드")[1] ?? "";
@@ -37,12 +44,14 @@ const main = () => {
     console.error("사용법: npm run parse -- 2026-07 20 [숏츠2]");
     process.exit(1);
   }
-  const mdPath = join(CONTENT_ROOT, month, day, `${scriptName}.md`);
+  // 폴더 재편(2026-07-20): 대본은 DD/숏츠/ 하위
+  const mdPath = join(CONTENT_ROOT, month, day, "숏츠", `${scriptName}.md`);
   const md = readFileSync(mdPath, "utf-8");
 
   const props = {
     hook: parseHook(md),
     captions: parseCaptions(md),
+    videoTitle: parseTitle(md, day, scriptName), // 유튜브 제목 = 출력 mp4 파일명
     resultLabel: parseResult(md),
     resultTime: "0:00", // ⚠️ 촬영 실측값으로 교체 필수 (금지 체크 — 창작 금지)
     ctaLine: "링크는 프로필에 있어요", // 크리에이터 톤 (STYLE.md — 광고체 금지)

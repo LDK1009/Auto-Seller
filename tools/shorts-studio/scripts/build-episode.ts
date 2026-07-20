@@ -116,9 +116,11 @@ const main = async () => {
   writeFileSync(propsPath, JSON.stringify(props, null, 2), "utf-8");
 
   ////////// 4) 렌더 — 완성본은 컨텐츠 폴더(원고 옆)에 저장, 대표는 폴더에서 바로 예약 업로드
-  const contentDir = resolve(STUDIO_ROOT, `../../docs/마케팅/컨텐츠/${month}/${day}`);
+  // 폴더 재편(2026-07-20): 완성본은 DD/숏츠/{유튜브 제목}.mp4 (유튜브가 파일명을 제목으로 자동 설정)
+  const contentDir = resolve(STUDIO_ROOT, `../../docs/마케팅/컨텐츠/${month}/${day}/숏츠`);
   mkdirSync(contentDir, { recursive: true });
-  const outPath = join(contentDir, `${scriptName}.mp4`);
+  const sanitize = (s: string) => s.replace(/[?/:*"<>|]/g, "").trim();
+  const outPath = join(contentDir, `${sanitize(props.videoTitle ?? scriptName)}.mp4`);
   console.log(`🎞 렌더: ${outPath}`);
   execSync(
     `npx remotion render TimerShort "${outPath}" --props="${propsPath}" --browser-executable="${CHROME}"`,
