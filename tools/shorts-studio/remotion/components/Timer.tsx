@@ -1,7 +1,7 @@
 //////////////////////////////////////// 스톱워치 (중앙·대형·벨 애니메이션) ////////////////////////////////////////
 // 표시 시간 = 실경과 (프레임 동기). 아이콘이 좌우로 따릉따릉 흔들려 시선 유도.
 import React from "react";
-import { useCurrentFrame, useVideoConfig } from "remotion";
+import { spring, useCurrentFrame, useVideoConfig } from "remotion";
 import { COLOR, FONT_STACK } from "../theme";
 
 type PropsType = {
@@ -38,12 +38,18 @@ export const Timer = ({ startSec, frozenAtSec, scale = 1 }: PropsType) => {
   const { fps } = useVideoConfig();
   const nowSec = frame / fps;
   const raw = Math.max(0, nowSec - startSec);
+  const isFrozen = frozenAtSec !== undefined && raw >= frozenAtSec - startSec;
   const elapsed = frozenAtSec !== undefined ? Math.min(raw, frozenAtSec - startSec) : raw;
-  const running = nowSec >= startSec && elapsed === raw;
+  const running = nowSec >= startSec && !isFrozen;
 
   // 따릉따릉 — 진행 중일 때 좌우 ±12° 진동 (2회 흔들고 잠깐 쉼)
   const cycle = (frame % 45) / 45;
   const wiggle = running && cycle < 0.5 ? Math.sin(cycle * Math.PI * 8) * 12 : 0;
+
+  // 정지 순간 — 형광펜 플래시 + 펌프 (클라이맥스 강조)
+  const freezeFrame = frozenAtSec !== undefined ? Math.round((frozenAtSec - startSec + startSec) * fps) : 0;
+  const stopPulse = isFrozen ? spring({ frame: frame - freezeFrame, fps, config: { damping: 8, mass: 0.5 } }) : 0;
+  const pulseScale = isFrozen ? 1 + (1 - Math.min(1, stopPulse)) * 0.18 : 1;
 
   return (
     <div
@@ -54,10 +60,11 @@ export const Timer = ({ startSec, frozenAtSec, scale = 1 }: PropsType) => {
         gap: 18 * scale,
         padding: `${18 * scale}px ${40 * scale}px`,
         borderRadius: 24,
-        backgroundColor: COLOR.card,
-        border: `2px solid ${COLOR.cardBorder}`,
+        backgroundColor: isFrozen ? COLOR.highlight : COLOR.card,
+        border: `2px solid ${isFrozen ? COLOR.ink : COLOR.cardBorder}`,
         boxShadow: "0 8px 28px rgba(17,19,24,0.10)",
         fontFamily: FONT_STACK,
+        transform: `scale(${pulseScale})`,
       }}
     >
       <StopwatchIcon size={64 * scale} wiggleDeg={wiggle} />

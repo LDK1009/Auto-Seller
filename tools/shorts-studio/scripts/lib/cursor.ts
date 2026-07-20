@@ -14,7 +14,7 @@ export const CURSOR_INIT_SCRIPT = `
     border: '3px solid #fff', boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
     zIndex: '2147483647', pointerEvents: 'none',
     transform: 'translate(-50%, -50%)',
-    transition: 'left 0s, top 0s',
+    transition: 'left 0s, top 0s, opacity 0.35s ease',
   });
   const attach = () => document.body && document.body.appendChild(cursor);
   document.body ? attach() : document.addEventListener('DOMContentLoaded', attach);
@@ -38,6 +38,9 @@ export const CURSOR_INIT_SCRIPT = `
     };
     requestAnimationFrame(step);
   });
+
+  // 읽기 모드 디밍 — 정차역에서 커서가 콘텐츠(라벨 등)를 가리지 않게
+  window.__dimCursor = (on) => { cursor.style.opacity = on ? '0.12' : '1'; };
 
   // 클릭 리플
   window.__clickRipple = (x, y) => {

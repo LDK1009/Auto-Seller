@@ -31,6 +31,33 @@ const renderLine = (line: string, popScale: number) => {
   });
 };
 
+////////// 미니 스톱워치 (훅 → 시연 타이머로 이어지는 연결 고리)
+const MiniStopwatch = ({ shake }: { shake: number }) => (
+  <div
+    style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 14,
+      padding: "12px 30px",
+      borderRadius: 20,
+      backgroundColor: COLOR.card,
+      border: `2px solid ${COLOR.cardBorder}`,
+      boxShadow: "0 8px 24px rgba(17,19,24,0.10)",
+      transform: `rotate(${shake}deg)`,
+    }}
+  >
+    <svg width={48} height={48} viewBox="0 0 48 48">
+      <line x1="24" y1="4" x2="24" y2="10" stroke={COLOR.ink} strokeWidth="5" strokeLinecap="round" />
+      <line x1="18" y1="4" x2="30" y2="4" stroke={COLOR.ink} strokeWidth="5" strokeLinecap="round" />
+      <circle cx="24" cy="28" r="16" fill="none" stroke={COLOR.ink} strokeWidth="5" />
+      <line x1="24" y1="28" x2="24" y2="18" stroke={COLOR.brand} strokeWidth="4.5" strokeLinecap="round" />
+    </svg>
+    <span style={{ fontSize: 52, fontWeight: 800, color: COLOR.ink, fontVariantNumeric: "tabular-nums" }}>
+      00:00.00
+    </span>
+  </div>
+);
+
 export const HookIntro = ({ hook }: PropsType) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -38,7 +65,11 @@ export const HookIntro = ({ hook }: PropsType) => {
   const lines = hook.split("|").map((l) => l.trim());
   const slideIn = spring({ frame, fps, config: { damping: 14, mass: 0.7 } });
   const pop = spring({ frame: frame - Math.round(fps * 0.5), fps, config: { damping: 9, mass: 0.5 } });
-  const fadeOut = interpolate(frame / fps, [2.6, 3], [1, 0], {
+  // 스톱워치 등장(1.2초) → 스타트 직전 부르르(2.3초~)
+  const watchIn = spring({ frame: frame - Math.round(fps * 1.2), fps, config: { damping: 12 } });
+  const shakePhase = frame / fps - 2.3;
+  const shake = shakePhase > 0 ? Math.sin(shakePhase * 40) * 6 * Math.max(0, 0.6 - shakePhase) : 0;
+  const fadeOut = interpolate(frame / fps, [2.7, 3], [1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -59,7 +90,7 @@ export const HookIntro = ({ hook }: PropsType) => {
     >
       <div
         style={{
-          fontSize: 88,
+          fontSize: 84,
           lineHeight: 1.28,
           fontWeight: 900,
           color: COLOR.ink,
@@ -72,6 +103,9 @@ export const HookIntro = ({ hook }: PropsType) => {
         {lines.map((line, i) => (
           <div key={i}>{renderLine(line, 0.9 + pop * 0.1)}</div>
         ))}
+      </div>
+      <div style={{ marginTop: 60, opacity: watchIn, transform: `scale(${0.7 + watchIn * 0.3})` }}>
+        <MiniStopwatch shake={shake} />
       </div>
     </AbsoluteFill>
   );

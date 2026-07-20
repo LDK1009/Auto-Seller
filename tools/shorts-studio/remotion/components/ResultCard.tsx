@@ -110,7 +110,16 @@ export const ResultCard = ({ resultLabel, resultTime, ctaLine, commentLine, logo
           {logoSrc ? <Img src={staticFile(logoSrc)} style={{ height: 44, objectFit: "contain" }} /> : null}
           <span style={{ fontSize: 38, fontWeight: 700, color: COLOR.ink }}>{ctaLine}</span>
         </div>
-        <div style={{ marginTop: 18, fontSize: 32, color: COLOR.inkDim }}>{commentLine}</div>
+        <div
+          style={{
+            marginTop: 18,
+            fontSize: 32,
+            color: COLOR.inkDim,
+            opacity: spring({ frame: frame - 50, fps, config: { damping: 14 } }),
+          }}
+        >
+          {commentLine}
+        </div>
       </AbsoluteFill>
     </AbsoluteFill>
   );

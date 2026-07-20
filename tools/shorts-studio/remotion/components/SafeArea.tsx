@@ -54,7 +54,7 @@ export const SafeArea = ({ header, children, caption }: PropsType) => {
         <div
           style={{
             position: "absolute",
-            bottom: SAFE.bottom + 40,
+            bottom: SAFE.bottom + 16,
             left: 60,
             right: SAFE.right,
             display: "flex",

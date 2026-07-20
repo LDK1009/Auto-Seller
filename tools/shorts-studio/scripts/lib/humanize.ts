@@ -33,8 +33,8 @@ export class HumanPage {
     await this.page.addInitScript(CURSOR_INIT_SCRIPT);
     await this.page.goto(url, { waitUntil: "networkidle" });
     this.loadedSec = this.now();
-    // 초기 화면 파악 버퍼 — 전체 화면을 충분히 보여준 뒤 액션 시작
-    await this.hold(2.2);
+    // 초기 화면 파악 버퍼 — 숏츠 초반 이탈 방지 위해 짧게 (훅 직후 바로 액션)
+    await this.hold(1.3);
   }
 
   now() {
@@ -54,6 +54,7 @@ export class HumanPage {
   // 줌 포커스·자막 싱크의 기준점이 되는 핵심 문법
   async showSection(target: Locator, holdSec = 1.8) {
     await target.scrollIntoViewIfNeeded();
+    await this.page.evaluate(() => (window as any).__dimCursor?.(true)); // 읽는 동안 커서 숨김 (라벨 가림 방지)
     await this.page.waitForTimeout(350); // 스크롤 정착
     const box = await target.boundingBox();
     if (box) {
@@ -71,6 +72,7 @@ export class HumanPage {
   ////////// 커서 이동 + 클릭 (리플 포함, 포커스 로그)
   async humanClick(target: Locator, holdAfterSec = 0.8) {
     await target.scrollIntoViewIfNeeded();
+    await this.page.evaluate(() => (window as any).__dimCursor?.(false)); // 조작 재개 — 커서 복원
     const box = await target.boundingBox();
     if (!box) throw new Error("클릭 대상 boundingBox 없음");
     const cx = box.x + box.width / 2;

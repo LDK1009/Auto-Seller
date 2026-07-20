@@ -1,7 +1,7 @@
 //////////////////////////////////////// 메인 컴포지션: 타이머 실측 챌린지 ////////////////////////////////////////
 // 훅(풀스크린) → 시연(폰 카드 + 타이머 + 캡션) → 엔딩 스탬프 오버레이 (화면 흐름 유지)
 import React from "react";
-import { Audio, Sequence, staticFile, useVideoConfig } from "remotion";
+import { Audio, Sequence, interpolate, staticFile, useVideoConfig } from "remotion";
 import type { TimerShortProps } from "./schema";
 import { SafeArea } from "./components/SafeArea";
 import { Timer } from "./components/Timer";
@@ -19,7 +19,17 @@ export const TimerShort = (props: TimerShortProps) => {
 
   return (
     <>
-      {props.bgmSrc ? <Audio src={staticFile(props.bgmSrc)} volume={0.16} /> : null}
+      {props.bgmSrc ? (
+        <Audio
+          src={staticFile(props.bgmSrc)}
+          volume={(f) =>
+            interpolate(f, [0, 15, totalFrames - 40, totalFrames - 5], [0, 0.16, 0.16, 0], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            })
+          }
+        />
+      ) : null}
       {props.sfxDoneSrc ? (
         <Sequence from={totalFrames - resultFrames} layout="none">
           <Audio src={staticFile(props.sfxDoneSrc)} volume={0.8} />

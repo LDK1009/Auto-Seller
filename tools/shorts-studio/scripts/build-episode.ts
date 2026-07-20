@@ -10,10 +10,11 @@ const STUDIO_ROOT = resolve(__dirname, "..");
 const PROPS_DIR = join(STUDIO_ROOT, "out/props");
 const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"; // 이 PC 우회 (README)
 
+// 한국어 직관 표기 — "23초" / "1분 12초"
 const fmt = (sec: number) => {
   const m = Math.floor(sec / 60);
   const s = Math.round(sec % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
+  return m > 0 ? `${m}분 ${s}초` : `${s}초`;
 };
 
 const main = async () => {
@@ -33,11 +34,9 @@ const main = async () => {
   const rec = await record(scenario);
   console.log(`   완료 — ${rec.durationSec.toFixed(1)}초, 이벤트 ${rec.events.length}개`);
 
-  ////////// 2) 대본 파싱 (없으면 실행)
+  ////////// 2) 대본 파싱 — 항상 재파싱 (대본 md가 단일 소스, 캐시 금지)
   const propsPath = join(PROPS_DIR, `${month}-${day}.json`);
-  if (!existsSync(propsPath)) {
-    execSync(`npx tsx scripts/parse-script.ts ${month} ${day}`, { cwd: STUDIO_ROOT, stdio: "inherit" });
-  }
+  execSync(`npx tsx scripts/parse-script.ts ${month} ${day}`, { cwd: STUDIO_ROOT, stdio: "inherit" });
   const props = JSON.parse(readFileSync(propsPath, "utf-8"));
 
   ////////// 3) 병합 — 녹화 실측값 주입
@@ -62,25 +61,43 @@ const main = async () => {
   const stations = rec.events.filter((e) => e.type === "focus" && e.x !== undefined);
   const clicks = rec.events.filter((e) => e.type === "click" && e.x !== undefined);
   const sources = stations.length > 0 ? stations : clicks;
+  const isStationMode = stations.length > 0;
   const focuses: { at: number; x: number; y: number; scale: number; holdSec: number }[] = [];
   for (const e of sources) {
     const t = e.t - trimSec; // 트림 반영한 영상 시각
-    if (stations.length === 0 && t < 3) continue; // 클릭 폴백일 땐 초기 파악 구간 제외
-    const last = focuses[focuses.length - 1];
-    if (last && t - (last.at - videoStartSec) < last.holdSec + 2.5) continue; // 간격 확보
+    // 정차역은 시나리오가 의도한 강조 지점 — 전부 유지. 간격 필터는 클릭 폴백에만
+    if (!isStationMode) {
+      if (t < 3) continue;
+      const last = focuses[focuses.length - 1];
+      if (last && t - (last.at - videoStartSec) < last.holdSec + 2.5) continue;
+    }
     focuses.push({ at: videoStartSec + t, x: e.x!, y: e.y!, scale: 1.9, holdSec: e.holdSec ?? 2.2 });
   }
   props.focuses = focuses;
   // 엔딩 리캡 (에피소드별 커스텀은 파서 확장 예정 — 기본값)
   props.recapItems = ["카테고리 자동 추천", "상품명 검사", "판매가 마진 계산", "태그 후보까지"];
-  // 자막 타임라인을 실측 길이에 맞게 비율 재배치 (대본 기준 24초 → 실제 길이)
-  const scriptDemoEnd = 24;
-  const realDemoEnd = videoStartSec + demoSec;
-  props.captions = props.captions.map((c: { from: number; to: number; text: string }) => ({
-    ...c,
-    from: c.from <= videoStartSec ? c.from : videoStartSec + ((c.from - videoStartSec) / (scriptDemoEnd - videoStartSec)) * (realDemoEnd - videoStartSec),
-    to: videoStartSec + ((c.to - videoStartSec) / (scriptDemoEnd - videoStartSec)) * (realDemoEnd - videoStartSec),
-  }));
+  // 자막 배치 — 1순위: 정차역 스냅 (자막 수 = 정차역 수 + 1일 때 1:1 매칭) / 폴백: 비례 재배치
+  // 마지막 자막은 엔딩 카드 시작 직전에 끝냄 — durationSec 반올림 오차로 카드와 겹치는 것 방지
+  const cardStartSec = props.durationSec - resultCardSec;
+  const realDemoEnd = Math.min(videoStartSec + demoSec, cardStartSec - 0.1);
+  const stationTimes = stations.map((e) => videoStartSec + (e.t - trimSec));
+  type Cap = { from: number; to: number; text: string };
+  if (stationTimes.length > 0 && props.captions.length === stationTimes.length + 1) {
+    props.captions = (props.captions as Cap[]).map((c, i) => ({
+      text: c.text,
+      from: i === 0 ? videoStartSec : stationTimes[i - 1],
+      to: i === 0 ? stationTimes[0] : i < stationTimes.length ? stationTimes[i] : realDemoEnd,
+    }));
+    console.log(`   자막 ${props.captions.length}줄 → 정차역 ${stationTimes.length}곳에 스냅`);
+  } else {
+    const scriptDemoEnd = 24;
+    props.captions = (props.captions as Cap[]).map((c) => ({
+      ...c,
+      from: c.from <= videoStartSec ? c.from : videoStartSec + ((c.from - videoStartSec) / (scriptDemoEnd - videoStartSec)) * (realDemoEnd - videoStartSec),
+      to: videoStartSec + ((c.to - videoStartSec) / (scriptDemoEnd - videoStartSec)) * (realDemoEnd - videoStartSec),
+    }));
+    console.log(`   자막 비례 배치 (정차역 ${stationTimes.length} vs 자막 ${props.captions.length} — 스냅 조건 불일치)`);
+  }
   writeFileSync(propsPath, JSON.stringify(props, null, 2), "utf-8");
 
   ////////// 4) 렌더 — 완성본은 컨텐츠 폴더(원고 옆)에 저장, 대표는 폴더에서 바로 예약 업로드
