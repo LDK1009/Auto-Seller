@@ -58,16 +58,21 @@ const main = async () => {
   props.logoSrc = existsSync(join(STUDIO_ROOT, "public/logo.png")) ? "logo.png" : null;
   // 클릭 이벤트 → 줌 포커스: 줌아웃=전체 화면, 줌인=액션 섹션
   // 규칙: 초기 3초(화면 파악 구간) 줌 금지 · 포커스 간 최소 3초 간격 (스르륵 리듬)
+  // 줌 포커스 — 1순위: 정차역(focus 이벤트, showSection이 남김) / 폴백: 클릭 이벤트
+  const stations = rec.events.filter((e) => e.type === "focus" && e.x !== undefined);
   const clicks = rec.events.filter((e) => e.type === "click" && e.x !== undefined);
+  const sources = stations.length > 0 ? stations : clicks;
   const focuses: { at: number; x: number; y: number; scale: number; holdSec: number }[] = [];
-  for (const e of clicks) {
+  for (const e of sources) {
     const t = e.t - trimSec; // 트림 반영한 영상 시각
-    if (t < 3) continue; // 초기 전체 화면 파악 구간
+    if (stations.length === 0 && t < 3) continue; // 클릭 폴백일 땐 초기 파악 구간 제외
     const last = focuses[focuses.length - 1];
-    if (last && t - (last.at - videoStartSec) < last.holdSec + 3) continue; // 간격 확보
-    focuses.push({ at: videoStartSec + t, x: e.x!, y: e.y!, scale: 2.2, holdSec: 2.4 });
+    if (last && t - (last.at - videoStartSec) < last.holdSec + 2.5) continue; // 간격 확보
+    focuses.push({ at: videoStartSec + t, x: e.x!, y: e.y!, scale: 1.9, holdSec: e.holdSec ?? 2.2 });
   }
   props.focuses = focuses;
+  // 엔딩 리캡 (에피소드별 커스텀은 파서 확장 예정 — 기본값)
+  props.recapItems = ["카테고리 자동 추천", "상품명 검사", "판매가 마진 계산", "태그 후보까지"];
   // 자막 타임라인을 실측 길이에 맞게 비율 재배치 (대본 기준 24초 → 실제 길이)
   const scriptDemoEnd = 24;
   const realDemoEnd = videoStartSec + demoSec;

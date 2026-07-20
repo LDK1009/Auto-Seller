@@ -1,6 +1,5 @@
 //////////////////////////////////////// 메인 컴포지션: 타이머 실측 챌린지 ////////////////////////////////////////
-// 훅(0~3s, 풀스크린 타이포) → 시연(전체↔줌 리듬 + 중앙 타이머) → 결과 카드(끝 5s)
-// 오디오: bgm(전체)·sfx 시작/완료 — 파일이 있을 때만 (build-episode가 주입)
+// 훅(풀스크린) → 시연(폰 카드 + 타이머 + 캡션) → 엔딩 스탬프 오버레이 (화면 흐름 유지)
 import React from "react";
 import { Audio, Sequence, staticFile, useVideoConfig } from "remotion";
 import type { TimerShortProps } from "./schema";
@@ -20,9 +19,7 @@ export const TimerShort = (props: TimerShortProps) => {
 
   return (
     <>
-      {/* BGM — 전체 (은은하게) */}
-      {props.bgmSrc ? <Audio src={staticFile(props.bgmSrc)} volume={0.18} /> : null}
-      {/* 완료 효과음 — 결과 카드 진입 */}
+      {props.bgmSrc ? <Audio src={staticFile(props.bgmSrc)} volume={0.16} /> : null}
       {props.sfxDoneSrc ? (
         <Sequence from={totalFrames - resultFrames} layout="none">
           <Audio src={staticFile(props.sfxDoneSrc)} volume={0.8} />
@@ -34,12 +31,11 @@ export const TimerShort = (props: TimerShortProps) => {
         <HookIntro hook={props.hook} />
       </Sequence>
 
-      {/* 시연 구간 */}
-      <Sequence from={hookFrames} durationInFrames={totalFrames - resultFrames - hookFrames}>
-        {/* Sequence 내부 프레임은 0부터 — 절대 시각 컴포넌트(Timer/Caption/Zoom)는 오프셋 반영 */}
+      {/* 시연 — 엔딩 스탬프가 이 위에 얹히도록 끝까지 유지 (화면 뚝 끊김 방지) */}
+      <Sequence from={hookFrames} durationInFrames={totalFrames - hookFrames}>
         <SafeArea
           header={<Timer startSec={0} frozenAtSec={demoEndSec - props.videoStartSec} />}
-          footer={
+          caption={
             <Caption
               captions={props.captions.map((c) => ({
                 ...c,
@@ -53,12 +49,13 @@ export const TimerShort = (props: TimerShortProps) => {
             videoSrc={props.videoSrc}
             videoStartSec={props.videoStartSec}
             videoTrimSec={props.videoTrimSec}
+            videoAvailSec={demoEndSec - props.videoStartSec}
             focuses={props.focuses.map((f) => ({ ...f, at: f.at - props.videoStartSec }))}
           />
         </SafeArea>
       </Sequence>
 
-      {/* 결과 카드 */}
+      {/* 엔딩 스탬프 오버레이 */}
       <Sequence from={totalFrames - resultFrames} durationInFrames={resultFrames}>
         <ResultCard
           resultLabel={props.resultLabel}
@@ -66,6 +63,7 @@ export const TimerShort = (props: TimerShortProps) => {
           ctaLine={props.ctaLine}
           commentLine={props.commentLine}
           logoSrc={props.logoSrc}
+          recapItems={props.recapItems}
         />
       </Sequence>
     </>

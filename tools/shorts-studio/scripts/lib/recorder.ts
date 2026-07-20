@@ -5,8 +5,9 @@ import { mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { HumanPage, type DemoEvent } from "./humanize";
 
-// PC 화면 녹화 (16:9) — 세로 프레임에서는 전체↔줌인 연출로 소화 (Cursorful 스타일)
-export const VIEWPORT = { width: 1600, height: 900 };
+// 모바일 뷰 녹화 (9:16 근접) — 숏츠 판독성·시청자 화면 재현감 (2026-07-20 확정)
+// 캡처는 뷰포트 동일 크기 (확대 캡처는 좌상단 고정 버그 — 리모션에서 업스케일로 소화)
+export const VIEWPORT = { width: 414, height: 896 };
 const PUBLIC_REC = resolve(__dirname, "../../public/rec");
 const OUT_LOG = resolve(__dirname, "../../out/rec");
 
@@ -32,7 +33,12 @@ export const record = async (scenario: Scenario): Promise<RecordResult> => {
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
     viewport: VIEWPORT,
+    deviceScaleFactor: 2,
+    isMobile: true,
+    hasTouch: true,
     recordVideo: { dir: PUBLIC_REC, size: VIEWPORT },
+    userAgent:
+      "Mozilla/5.0 (Linux; Android 13; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36",
   });
   // 비디오 녹화는 페이지 생성 시점부터 시작 — 이벤트 시각은 이 기준으로 기록해야 영상과 싱크됨
   const recStart = Date.now();

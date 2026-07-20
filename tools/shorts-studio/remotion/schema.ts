@@ -23,8 +23,9 @@ export const timerShortSchema = z.object({
   captions: z.array(captionSchema),
   resultLabel: z.string(), // 결과 카드 라벨 (예: "등록 준비")
   resultTime: z.string(), // 실측 시간 표기 (예: "1:12") — 촬영 실측값
-  ctaLine: z.string().default("무료·무가입 — 오토셀러"),
-  commentLine: z.string().default("재보고 싶은 작업, 댓글로"),
+  ctaLine: z.string().default("링크는 프로필에 있어요"), // 크리에이터 톤 (광고체 금지)
+  commentLine: z.string().default("재보고 싶은 작업은 댓글로 알려주세요"),
+  recapItems: z.array(z.string()).default([]), // 엔딩 리캡 (한 일 체크)
   videoSrc: z.string().nullable().default(null), // 시연 녹화 파일 (public/ 기준 또는 절대 경로). null = 플레이스홀더
   videoStartSec: z.number().default(3), // 시연 영상이 시작되는 컴포지션 시각
   videoTrimSec: z.number().default(0), // 녹화 앞부분 트림 (로딩 공백 제거)

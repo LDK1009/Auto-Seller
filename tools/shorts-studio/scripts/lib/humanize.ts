@@ -5,10 +5,14 @@ import { CURSOR_INIT_SCRIPT } from "./cursor";
 
 export type DemoEvent = {
   t: number; // 녹화 시작 기준 초
-  type: "click" | "type" | "scroll" | "hold";
+  type: "click" | "type" | "scroll" | "hold" | "focus"; // focus = 정차역 (강조 구간)
   x?: number; // 0~1 뷰포트 상대 좌표
   y?: number;
+  holdSec?: number; // focus 머묾 시간
 };
+
+// 사람 느낌 지터 — 기계적 균일함 제거 (±15~30%)
+const jitter = (sec: number) => sec * (0.85 + Math.random() * 0.45);
 
 export class HumanPage {
   readonly events: DemoEvent[] = [];
@@ -41,9 +45,27 @@ export class HumanPage {
     this.events.push({ t: this.now(), ...e });
   }
 
-  ////////// 대기 (화면 머묾)
+  ////////// 대기 (화면 머묾) — 지터 적용
   async hold(sec: number) {
-    await this.page.waitForTimeout(sec * 1000);
+    await this.page.waitForTimeout(jitter(sec) * 1000);
+  }
+
+  ////////// 정차역 — 강조 대상으로 스크롤 → 머물며 보여주기 (통스크롤 금지 원칙)
+  // 줌 포커스·자막 싱크의 기준점이 되는 핵심 문법
+  async showSection(target: Locator, holdSec = 1.8) {
+    await target.scrollIntoViewIfNeeded();
+    await this.page.waitForTimeout(350); // 스크롤 정착
+    const box = await target.boundingBox();
+    if (box) {
+      this.events.push({
+        t: this.now(),
+        type: "focus",
+        x: (box.x + box.width / 2) / this.viewport.width,
+        y: (box.y + box.height / 2) / this.viewport.height,
+        holdSec,
+      });
+    }
+    await this.hold(holdSec);
   }
 
   ////////// 커서 이동 + 클릭 (리플 포함, 포커스 로그)

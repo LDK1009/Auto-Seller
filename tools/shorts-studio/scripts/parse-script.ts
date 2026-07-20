@@ -18,10 +18,10 @@ const parseCaptions = (md: string) => {
   return captions;
 };
 
-////////// 훅 — "자막: **"..."**" 첫 매치
+////////// 훅 — "자막: **"..."**" (내부 **하이라이트** 마크업 보존 위해 탐욕 매치)
 const parseHook = (md: string) => {
-  const m = md.match(/자막:\s*\*\*"?(.+?)"?\*\*/);
-  return m ? m[1] : "타이머 켜고 재봤습니다";
+  const m = md.match(/자막:\s*\*\*"?(.+)"?\*\*/);
+  return m ? m[1].replace(/"$/, "") : "타이머 켜고 재봤습니다";
 };
 
 ////////// 결과 카드 — **"라벨, [실측: mm:ss]"** 형태에서 라벨 추출
@@ -45,8 +45,8 @@ const main = () => {
     captions: parseCaptions(md),
     resultLabel: parseResult(md),
     resultTime: "0:00", // ⚠️ 촬영 실측값으로 교체 필수 (금지 체크 — 창작 금지)
-    ctaLine: "무료·무가입 — 오토셀러",
-    commentLine: "재보고 싶은 작업, 댓글로",
+    ctaLine: "링크는 프로필에 있어요", // 크리에이터 톤 (STYLE.md — 광고체 금지)
+    commentLine: "재보고 싶은 작업은 댓글로 알려주세요",
     videoSrc: null as string | null, // 녹화 파일 경로 연결 (Phase B에서 자동)
     videoStartSec: 3,
     durationSec: 30,

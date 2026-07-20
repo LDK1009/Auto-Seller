@@ -1,23 +1,20 @@
-//////////////////////////////////////// 시연 영상 — 전체 화면 ↔ 줌인 강조 (Cursorful 스타일) ////////////////////////////////////////
-// PC(16:9) 녹화를 세로 카드에 담는다:
-//  - 기본 상태 = 전체 화면 (fit — 페이지 전경 파악)
-//  - 클릭 포커스 = 해당 지점으로 부드러운 줌인 (스케일·팬) → hold 후 다시 전체로
+//////////////////////////////////////// 시연 영상 (모바일 세로 녹화) ////////////////////////////////////////
+// 폰 카드 안에 세로 녹화를 cover로 채움. 정차역(focus)마다 부드러운 줌인 → 전체 복귀.
 import React from "react";
-import { AbsoluteFill, OffthreadVideo, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Freeze, OffthreadVideo, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { COLOR, FONT_STACK } from "../theme";
 import type { TimerShortProps } from "../schema";
 
 type PropsType = {
   videoSrc: string | null;
   videoStartSec: number;
-  videoTrimSec?: number; // 녹화 앞부분(로딩 공백) 건너뛰기
+  videoTrimSec?: number;
+  videoAvailSec?: number; // 사용 가능한 영상 길이 — 초과 구간은 마지막 프레임 프리즈 (엔딩 오버레이 밑)
   focuses: TimerShortProps["focuses"];
-  videoAspect?: number; // 녹화 원본 비율 (기본 16:9)
 };
 
-const TRANS = 0.8; // 줌 전환 시간 (초) — 스르륵 (급전환 방지)
+const TRANS = 0.8; // 줌 전환 (스르륵)
 
-////////// 시각 → 줌 상태 (전체 1배 ↔ 포커스 지점 scale배)
 const zoomAt = (focuses: PropsType["focuses"], nowSec: number) => {
   for (const f of focuses) {
     const start = f.at;
@@ -29,7 +26,6 @@ const zoomAt = (focuses: PropsType["focuses"], nowSec: number) => {
           : nowSec > end
             ? interpolate(nowSec, [end, end + TRANS], [1, 0])
             : 1;
-      // easeInOut
       const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
       return { k: e, x: f.x, y: f.y, scale: f.scale };
     }
@@ -37,11 +33,12 @@ const zoomAt = (focuses: PropsType["focuses"], nowSec: number) => {
   return { k: 0, x: 0.5, y: 0.5, scale: 1 };
 };
 
-export const ZoomVideo = ({ videoSrc, videoStartSec, videoTrimSec = 0, focuses, videoAspect = 16 / 9 }: PropsType) => {
+export const ZoomVideo = ({ videoSrc, videoTrimSec = 0, videoAvailSec, focuses }: PropsType) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const nowSec = frame / fps;
   const z = zoomAt(focuses, nowSec);
+  const availFrames = videoAvailSec ? Math.round(videoAvailSec * fps) - 2 : null;
 
   if (!videoSrc) {
     return (
@@ -52,35 +49,39 @@ export const ZoomVideo = ({ videoSrc, videoStartSec, videoTrimSec = 0, focuses, 
           alignItems: "center",
           fontFamily: FONT_STACK,
           color: COLOR.inkDim,
-          fontSize: 40,
+          fontSize: 36,
         }}
       >
-        시연 녹화 영역 (videoSrc 미지정)
+        시연 녹화 영역
       </AbsoluteFill>
     );
   }
 
   const scale = 1 + (z.scale - 1) * z.k;
-  // 팬: 포커스 지점을 카드 중앙으로 — origin 이동 방식
   const originX = 50 + (z.x * 100 - 50) * z.k;
   const originY = 50 + (z.y * 100 - 50) * z.k;
 
+  const video = (
+    <OffthreadVideo
+      src={videoSrc.startsWith("http") ? videoSrc : staticFile(videoSrc)}
+      startFrom={Math.round(videoTrimSec * fps)}
+      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+    />
+  );
+
   return (
-    <AbsoluteFill style={{ backgroundColor: "#FFFFFF", justifyContent: "center" }}>
-      <div
-        style={{
-          width: "100%",
-          aspectRatio: `${videoAspect}`,
-          transform: `scale(${scale})`,
-          transformOrigin: `${originX}% ${originY}%`,
-        }}
-      >
-        <OffthreadVideo
-          src={videoSrc.startsWith("http") ? videoSrc : staticFile(videoSrc)}
-          startFrom={Math.round(videoTrimSec * fps)}
-          style={{ width: "100%", height: "100%", objectFit: "contain" }}
-        />
-      </div>
+    <AbsoluteFill
+      style={{
+        transform: `scale(${scale})`,
+        transformOrigin: `${originX}% ${originY}%`,
+        backgroundColor: "#FFFFFF",
+      }}
+    >
+      {availFrames !== null && frame >= availFrames ? (
+        <Freeze frame={availFrames}>{video}</Freeze>
+      ) : (
+        video
+      )}
     </AbsoluteFill>
   );
 };
