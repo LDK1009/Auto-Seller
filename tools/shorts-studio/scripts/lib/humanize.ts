@@ -53,9 +53,10 @@ export class HumanPage {
   ////////// 정차역 — 강조 대상으로 스크롤 → 머물며 보여주기 (통스크롤 금지 원칙)
   // 줌 포커스·자막 싱크의 기준점이 되는 핵심 문법
   async showSection(target: Locator, holdSec = 1.8) {
-    await target.scrollIntoViewIfNeeded();
+    // 순간이동 점프 금지 — 부드러운 스크롤로 이동 (녹화 화면 뚜둑 끊김 방지)
+    await target.evaluate((el) => el.scrollIntoView({ behavior: "smooth", block: "center" }));
     await this.page.evaluate(() => (window as any).__dimCursor?.(true)); // 읽는 동안 커서 숨김 (라벨 가림 방지)
-    await this.page.waitForTimeout(350); // 스크롤 정착
+    await this.page.waitForTimeout(800); // 스무스 스크롤 완료 + 정착
     const box = await target.boundingBox();
     if (box) {
       this.events.push({
@@ -71,7 +72,9 @@ export class HumanPage {
 
   ////////// 커서 이동 + 클릭 (리플 포함, 포커스 로그)
   async humanClick(target: Locator, holdAfterSec = 0.8) {
-    await target.scrollIntoViewIfNeeded();
+    // 화면 밖일 때만 부드럽게 스크롤 (nearest = 보이면 이동 없음)
+    await target.evaluate((el) => el.scrollIntoView({ behavior: "smooth", block: "nearest" }));
+    await this.page.waitForTimeout(400);
     await this.page.evaluate(() => (window as any).__dimCursor?.(false)); // 조작 재개 — 커서 복원
     const box = await target.boundingBox();
     if (!box) throw new Error("클릭 대상 boundingBox 없음");
