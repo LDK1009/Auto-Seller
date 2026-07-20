@@ -25,7 +25,8 @@ const main = async () => {
     process.exit(1);
   }
   const [day, edition] = episodeId.split("-");
-  const scriptName = edition ? `숏츠${edition}` : "숏츠";
+  // 1편차 파일명은 "숏츠.md" (숫자 없음) — 2·3편차만 숏츠2·숏츠3
+  const scriptName = edition && edition !== "1" ? `숏츠${edition}` : "숏츠";
 
   ////////// 1) 시나리오 로드 + 녹화
   const scenarioPath = join(STUDIO_ROOT, "scenarios");
