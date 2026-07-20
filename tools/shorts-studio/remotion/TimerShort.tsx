@@ -22,6 +22,7 @@ export const TimerShort = (props: TimerShortProps) => {
       {props.bgmSrc ? (
         <Audio
           src={staticFile(props.bgmSrc)}
+          loop /* 영상이 BGM 길이보다 길어도 끊김 없이 반복 (숏츠 길이 규칙) */
           volume={(f) =>
             interpolate(f, [0, 15, totalFrames - 40, totalFrames - 5], [0, 0.16, 0.16, 0], {
               extrapolateLeft: "clamp",
