@@ -146,7 +146,19 @@ const main = async () => {
   // 첫 카드 클릭 → 시트
   await page.getByText(/최소 \d+개/).first().click();
   await page.getByText("상품 정보").first().waitFor({ state: "visible", timeout: 30000 });
-  await page.waitForTimeout(1500);
+  // 대표이미지 실제 로드 대기 (빈 박스 방지) — 상품 정보 영역 img가 complete 될 때까지
+  await page
+    .waitForFunction(
+      () => {
+        const imgs = Array.from(document.querySelectorAll("img"));
+        return imgs.some((i) => i.naturalWidth > 50 && i.complete);
+      },
+      { timeout: 20000 },
+    )
+    .catch(() => {});
+  // 카테고리 추천 로딩 완료 대기 ("찾는 중" 사라짐)
+  await page.getByText(/추천 카테고리를 찾는 중/).waitFor({ state: "hidden", timeout: 30000 }).catch(() => {});
+  await page.waitForTimeout(2000);
   await shot(page, `domeggook-import-sheet${tag}`);
 
   await page.getByText("판매가").first().scrollIntoViewIfNeeded();
