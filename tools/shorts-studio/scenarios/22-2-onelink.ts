@@ -1,16 +1,4 @@
-//////////////////////////////////////// #22-2 원링크 캠핑용품 (MOQ 묶음) ////////////////////////////////////////
-import { makeOnelink, type Station } from "./_lib/onelink";
-
-const stations: Station[] = [
-  { target: /최소 구매수량|묶음 구성 판매/ },
-  { target: "카테고리" },
-  { target: "판매가", hold: 2.2 },
-  { target: "검색설정" },
-];
-
-export const scenario = makeOnelink("22-2", "캠핑의자", stations, [
-  "MOQ 묶음 안내",
-  "카테고리 자동 추천",
-  "묶음 기준 판매가",
-  "태그 후보까지",
-]);
+//////////////////////////////////////// #22-2 원링크 캠핑용품 ////////////////////////////////////////
+// (MOQ 경고 문구는 상품 따라 유무가 달라 검증된 FULL_FLOW로 통일)
+import { makeOnelink, FULL_FLOW, FULL_RECAP } from "./_lib/onelink";
+export const scenario = makeOnelink("22-2", "캠핑의자", FULL_FLOW, FULL_RECAP);

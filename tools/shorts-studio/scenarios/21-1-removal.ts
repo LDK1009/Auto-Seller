@@ -7,7 +7,7 @@ export const scenario: Scenario = {
   url: "/background-removal",
   recapItems: ["여러 장 동시 업로드", "배경 자동 제거", "ZIP 일괄 저장"],
   run: async (p) => {
-    await uploadAssets(p, "ep20", 8);
+    await uploadAssets(p, "ep20", 4); // AI 모델 처리 시간 고려 — 소량으로 시연 길이 제한
     await p.hold(0.8);
     await p.humanClick(p.page.getByRole("button", { name: "배경 제거" }), 0.5);
 
