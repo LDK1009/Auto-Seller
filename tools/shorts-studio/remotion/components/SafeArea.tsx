@@ -11,7 +11,8 @@ type PropsType = {
 };
 
 // 폰 카드 규격 — 세로 녹화(414:896)에 맞춘 포트레이트 카드
-export const PHONE_CARD = { width: 560, height: 1030 };
+// 높이 950: 카드 하단(1360)과 자막 상단(~1394) 사이 간격 확보 (겹침 방지)
+export const PHONE_CARD = { width: 560, height: 950 };
 
 export const SafeArea = ({ header, children, caption }: PropsType) => {
   const contentCenterX = (SAFE.width - SAFE.right + 40) / 2; // 우측 안전존 감안한 중심
@@ -35,7 +36,7 @@ export const SafeArea = ({ header, children, caption }: PropsType) => {
       <div
         style={{
           position: "absolute",
-          top: SAFE.top + 180,
+          top: SAFE.top + 160,
           left: contentCenterX - PHONE_CARD.width / 2,
           width: PHONE_CARD.width,
           height: PHONE_CARD.height,
