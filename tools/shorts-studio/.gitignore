@@ -1,3 +1,5 @@
 node_modules/
 out/
 public/rec/
+# 데모 업로드 이미지 (picsum 고정 시드 — 시나리오 주석의 curl로 재생성 가능)
+assets/

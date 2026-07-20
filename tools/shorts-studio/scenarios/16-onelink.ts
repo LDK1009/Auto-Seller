@@ -6,6 +6,7 @@ import type { Scenario } from "../scripts/lib/recorder";
 export const scenario: Scenario = {
   id: "16",
   url: "/domeggook-import",
+  recapItems: ["카테고리 자동 추천", "상품명 검사", "판매가 마진 계산", "태그 후보까지"],
   run: async (p) => {
     const input = p.page.getByLabel(/도매꾹 링크·상품번호 또는 검색어/);
     await p.humanType(input, "캠핑랜턴");

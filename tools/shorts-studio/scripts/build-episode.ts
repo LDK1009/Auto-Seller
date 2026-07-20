@@ -82,8 +82,8 @@ const main = async () => {
     });
   }
   props.focuses = focuses;
-  // 엔딩 리캡 (에피소드별 커스텀은 파서 확장 예정 — 기본값)
-  props.recapItems = ["카테고리 자동 추천", "상품명 검사", "판매가 마진 계산", "태그 후보까지"];
+  // 엔딩 리캡 — 시나리오가 정의 (에피소드별 "한 일" 체크)
+  props.recapItems = scenario.recapItems ?? [];
   // 자막 배치 — 1순위: 정차역 스냅 (자막 수 = 정차역 수 + 1일 때 1:1 매칭) / 폴백: 비례 재배치
   // 마지막 자막은 엔딩 카드 시작 직전에 끝냄 — durationSec 반올림 오차로 카드와 겹치는 것 방지
   const cardStartSec = props.durationSec - resultCardSec;

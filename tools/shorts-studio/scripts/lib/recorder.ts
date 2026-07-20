@@ -14,6 +14,7 @@ const OUT_LOG = resolve(__dirname, "../../out/rec");
 export type Scenario = {
   id: string; // 에피소드 번호 (예: "16")
   url: string; // 시작 경로 (BASE_URL 기준)
+  recapItems?: string[]; // 엔딩 리캡 (에피소드별 "한 일" 체크 목록)
   run: (p: HumanPage) => Promise<void>;
 };
 
