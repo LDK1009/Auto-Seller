@@ -3,6 +3,7 @@
 import { Composition } from "remotion";
 import { TimerShort } from "./TimerShort";
 import { timerShortSchema } from "./schema";
+import "pretendard/dist/web/variable/pretendardvariable.css"; // AI티 제거 — 실제 서비스와 동일 폰트
 
 export const FPS = 30;
 
@@ -24,6 +25,8 @@ const defaultProps = {
   durationSec: 30,
   resultCardSec: 5,
   focuses: [],
+  bgmSrc: null,
+  sfxDoneSrc: null,
 };
 
 export const Root = () => {

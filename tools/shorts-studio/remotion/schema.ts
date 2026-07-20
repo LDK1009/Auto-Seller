@@ -30,6 +30,9 @@ export const timerShortSchema = z.object({
   durationSec: z.number().default(30), // 전체 길이
   resultCardSec: z.number().default(5), // 끝의 결과 카드 길이
   focuses: z.array(focusSchema).default([]),
+  // 오디오 (public/ 기준 경로, 파일 있을 때만 build-episode가 주입)
+  bgmSrc: z.string().nullable().default(null),
+  sfxDoneSrc: z.string().nullable().default(null),
 });
 
 export type TimerShortProps = z.infer<typeof timerShortSchema>;

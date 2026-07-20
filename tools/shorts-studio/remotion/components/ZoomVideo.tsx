@@ -1,6 +1,7 @@
-//////////////////////////////////////// 시연 영상 (줌·팬) ////////////////////////////////////////
-// 녹화 파일 재생 + 포커스 좌표(플레이라이트 이벤트 로그)로 줌인·복귀 애니메이션.
-// videoSrc 없으면 플레이스홀더 (A단계 검증용).
+//////////////////////////////////////// 시연 영상 — 전체 화면 ↔ 줌인 강조 (Cursorful 스타일) ////////////////////////////////////////
+// PC(16:9) 녹화를 세로 카드에 담는다:
+//  - 기본 상태 = 전체 화면 (fit — 페이지 전경 파악)
+//  - 클릭 포커스 = 해당 지점으로 부드러운 줌인 (스케일·팬) → hold 후 다시 전체로
 import React from "react";
 import { AbsoluteFill, OffthreadVideo, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { COLOR, FONT_STACK } from "../theme";
@@ -10,51 +11,47 @@ type PropsType = {
   videoSrc: string | null;
   videoStartSec: number;
   focuses: TimerShortProps["focuses"];
+  videoAspect?: number; // 녹화 원본 비율 (기본 16:9)
 };
 
-////////// 현재 초의 줌 상태 계산 — 포커스 구간이면 해당 좌표로 확대, 아니면 1배
-const useZoom = (focuses: PropsType["focuses"], nowSec: number) => {
-  const TRANS = 0.4; // 줌 전환 시간
+const TRANS = 0.55; // 줌 전환 시간 (초)
+
+////////// 시각 → 줌 상태 (전체 1배 ↔ 포커스 지점 scale배)
+const zoomAt = (focuses: PropsType["focuses"], nowSec: number) => {
   for (const f of focuses) {
     const start = f.at;
     const end = f.at + f.holdSec;
     if (nowSec >= start - TRANS && nowSec <= end + TRANS) {
-      const idx =
+      const k =
         nowSec < start
           ? interpolate(nowSec, [start - TRANS, start], [0, 1])
           : nowSec > end
             ? interpolate(nowSec, [end, end + TRANS], [1, 0])
             : 1;
-      return {
-        scale: 1 + (f.scale - 1) * idx,
-        // 확대 중심을 포커스 좌표로 이동 (0~1 상대 좌표)
-        originX: f.x * 100,
-        originY: f.y * 100,
-      };
+      // easeInOut
+      const e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      return { k: e, x: f.x, y: f.y, scale: f.scale };
     }
   }
-  return { scale: 1, originX: 50, originY: 50 };
+  return { k: 0, x: 0.5, y: 0.5, scale: 1 };
 };
 
-export const ZoomVideo = ({ videoSrc, videoStartSec, focuses }: PropsType) => {
+export const ZoomVideo = ({ videoSrc, videoStartSec, focuses, videoAspect = 16 / 9 }: PropsType) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const nowSec = frame / fps;
-  const zoom = useZoom(focuses, nowSec);
+  const z = zoomAt(focuses, nowSec);
 
   if (!videoSrc) {
-    // 플레이스홀더 — 녹화 파일 연결 전 프레임 확인용
     return (
       <AbsoluteFill
         style={{
-          backgroundColor: "#1B1E27",
+          backgroundColor: "#EEF0F4",
           justifyContent: "center",
           alignItems: "center",
           fontFamily: FONT_STACK,
-          color: COLOR.textDim,
-          fontSize: 44,
-          border: `2px dashed ${COLOR.brand}`,
-          borderRadius: 28,
+          color: COLOR.inkDim,
+          fontSize: 40,
         }}
       >
         시연 녹화 영역 (videoSrc 미지정)
@@ -62,19 +59,26 @@ export const ZoomVideo = ({ videoSrc, videoStartSec, focuses }: PropsType) => {
     );
   }
 
+  const scale = 1 + (z.scale - 1) * z.k;
+  // 팬: 포커스 지점을 카드 중앙으로 — origin 이동 방식
+  const originX = 50 + (z.x * 100 - 50) * z.k;
+  const originY = 50 + (z.y * 100 - 50) * z.k;
+
   return (
-    <AbsoluteFill
-      style={{
-        transform: `scale(${zoom.scale})`,
-        transformOrigin: `${zoom.originX}% ${zoom.originY}%`,
-      }}
-    >
-      <OffthreadVideo
-        src={videoSrc.startsWith("http") ? videoSrc : staticFile(videoSrc)}
-        startFrom={0}
-        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-        // 컴포지션 videoStartSec 이전엔 Sequence로 감싸서 등장 (TimerShort에서 처리)
-      />
+    <AbsoluteFill style={{ backgroundColor: "#FFFFFF", justifyContent: "center" }}>
+      <div
+        style={{
+          width: "100%",
+          aspectRatio: `${videoAspect}`,
+          transform: `scale(${scale})`,
+          transformOrigin: `${originX}% ${originY}%`,
+        }}
+      >
+        <OffthreadVideo
+          src={videoSrc.startsWith("http") ? videoSrc : staticFile(videoSrc)}
+          style={{ width: "100%", height: "100%", objectFit: "contain" }}
+        />
+      </div>
     </AbsoluteFill>
   );
 };

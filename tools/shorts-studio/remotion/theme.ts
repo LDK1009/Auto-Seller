@@ -1,12 +1,14 @@
 //////////////////////////////////////// 비주얼 토큰 ////////////////////////////////////////
-// 브랜드 컬러(소프트 인디고)·안전존 수치 — 전 컴포넌트 공용
+// 라이트 캔버스 — 서비스(라이트 UI)와 융화. 브랜드 인디고는 포인트로만 절제.
 export const COLOR = {
-  brand: "#6366F1", // 브랜드 B안 소프트 인디고
-  bg: "#0F1115", // 프레임 배경 (시연 영역 밖)
-  text: "#FFFFFF",
-  textDim: "rgba(255,255,255,0.72)",
-  timerBg: "rgba(15,17,21,0.82)",
-  accent: "#FACC15", // 강조 (결과 숫자)
+  brand: "#6366F1",
+  canvas: "#F7F7F5", // 프레임 배경 (오프화이트)
+  ink: "#111318", // 본문 텍스트
+  inkDim: "#6B7280",
+  card: "#FFFFFF",
+  cardBorder: "#E7E8EA",
+  highlight: "#FFE763", // 형광펜 하이라이트
+  accent: "#111318", // 결과 숫자 (검정 대자보 스타일)
 };
 
 // 안전존 (3플랫폼 교집합): 상 250 · 하 420 · 우 160
@@ -19,4 +21,4 @@ export const SAFE = {
 };
 
 export const FONT_STACK =
-  "'Pretendard', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif";
+  "'Pretendard Variable', 'Pretendard', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif";

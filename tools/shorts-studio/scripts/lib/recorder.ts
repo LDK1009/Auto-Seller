@@ -5,7 +5,8 @@ import { mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { HumanPage, type DemoEvent } from "./humanize";
 
-export const VIEWPORT = { width: 414, height: 896 };
+// PC 화면 녹화 (16:9) — 세로 프레임에서는 전체↔줌인 연출로 소화 (Cursorful 스타일)
+export const VIEWPORT = { width: 1600, height: 900 };
 const PUBLIC_REC = resolve(__dirname, "../../public/rec");
 const OUT_LOG = resolve(__dirname, "../../out/rec");
 
@@ -30,12 +31,7 @@ export const record = async (scenario: Scenario): Promise<RecordResult> => {
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
     viewport: VIEWPORT,
-    deviceScaleFactor: 2,
-    isMobile: true,
-    hasTouch: true,
     recordVideo: { dir: PUBLIC_REC, size: VIEWPORT },
-    userAgent:
-      "Mozilla/5.0 (Linux; Android 13; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36",
   });
   const page = await context.newPage();
   const human = new HumanPage(page, VIEWPORT);

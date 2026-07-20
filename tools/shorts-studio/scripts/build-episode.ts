@@ -48,6 +48,9 @@ const main = async () => {
   props.resultCardSec = resultCardSec;
   props.durationSec = Math.round(videoStartSec + rec.durationSec + resultCardSec);
   props.resultTime = fmt(rec.durationSec); // ⏱ 실측 자동 기입 (녹화 실경과)
+  // 오디오 — public/audio/ 에 파일 있으면 주입 (bgm.mp3 · sfx-done.mp3)
+  props.bgmSrc = existsSync(join(STUDIO_ROOT, "public/audio/bgm.mp3")) ? "audio/bgm.mp3" : null;
+  props.sfxDoneSrc = existsSync(join(STUDIO_ROOT, "public/audio/sfx-done.mp3")) ? "audio/sfx-done.mp3" : null;
   // 클릭 이벤트 → 줌 포커스 (영상 시작 오프셋 반영)
   props.focuses = rec.events
     .filter((e) => e.type === "click" && e.x !== undefined)
