@@ -10,11 +10,12 @@ import type { TimerShortProps } from "../schema";
 type PropsType = {
   videoSrc: string | null;
   videoStartSec: number;
+  videoTrimSec?: number; // 녹화 앞부분(로딩 공백) 건너뛰기
   focuses: TimerShortProps["focuses"];
   videoAspect?: number; // 녹화 원본 비율 (기본 16:9)
 };
 
-const TRANS = 0.55; // 줌 전환 시간 (초)
+const TRANS = 0.8; // 줌 전환 시간 (초) — 스르륵 (급전환 방지)
 
 ////////// 시각 → 줌 상태 (전체 1배 ↔ 포커스 지점 scale배)
 const zoomAt = (focuses: PropsType["focuses"], nowSec: number) => {
@@ -36,7 +37,7 @@ const zoomAt = (focuses: PropsType["focuses"], nowSec: number) => {
   return { k: 0, x: 0.5, y: 0.5, scale: 1 };
 };
 
-export const ZoomVideo = ({ videoSrc, videoStartSec, focuses, videoAspect = 16 / 9 }: PropsType) => {
+export const ZoomVideo = ({ videoSrc, videoStartSec, videoTrimSec = 0, focuses, videoAspect = 16 / 9 }: PropsType) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const nowSec = frame / fps;
@@ -76,6 +77,7 @@ export const ZoomVideo = ({ videoSrc, videoStartSec, focuses, videoAspect = 16 /
       >
         <OffthreadVideo
           src={videoSrc.startsWith("http") ? videoSrc : staticFile(videoSrc)}
+          startFrom={Math.round(videoTrimSec * fps)}
           style={{ width: "100%", height: "100%", objectFit: "contain" }}
         />
       </div>

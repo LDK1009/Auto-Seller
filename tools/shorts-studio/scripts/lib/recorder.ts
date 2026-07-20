@@ -19,6 +19,7 @@ export type Scenario = {
 export type RecordResult = {
   videoRelPath: string; // public/ 기준 상대 경로 (staticFile 용)
   durationSec: number;
+  loadedSec: number; // 로딩 완료 시각 — 앞부분 트림 기준
   events: DemoEvent[];
 };
 
@@ -33,13 +34,16 @@ export const record = async (scenario: Scenario): Promise<RecordResult> => {
     viewport: VIEWPORT,
     recordVideo: { dir: PUBLIC_REC, size: VIEWPORT },
   });
+  // 비디오 녹화는 페이지 생성 시점부터 시작 — 이벤트 시각은 이 기준으로 기록해야 영상과 싱크됨
+  const recStart = Date.now();
   const page = await context.newPage();
   const human = new HumanPage(page, VIEWPORT);
+  human.markRecordStart(recStart);
 
-  const started = Date.now();
   await human.start(`${BASE_URL}${scenario.url}`);
   await scenario.run(human);
-  const durationSec = (Date.now() - started) / 1000;
+  await human.hold(2); // 종료 버퍼 — 화면 뚝 끊김 방지
+  const durationSec = (Date.now() - recStart) / 1000;
 
   const video = page.video();
   await context.close(); // 녹화 파일 flush
@@ -56,5 +60,5 @@ export const record = async (scenario: Scenario): Promise<RecordResult> => {
     "utf-8",
   );
 
-  return { videoRelPath: `rec/${finalName}`, durationSec, events: human.events };
+  return { videoRelPath: `rec/${finalName}`, durationSec, loadedSec: human.loadedSec, events: human.events };
 };

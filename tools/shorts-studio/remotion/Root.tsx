@@ -22,11 +22,13 @@ const defaultProps = {
   commentLine: "재보고 싶은 작업, 댓글로",
   videoSrc: null,
   videoStartSec: 3,
+  videoTrimSec: 0,
   durationSec: 30,
   resultCardSec: 5,
   focuses: [],
   bgmSrc: null,
   sfxDoneSrc: null,
+  logoSrc: null,
 };
 
 export const Root = () => {

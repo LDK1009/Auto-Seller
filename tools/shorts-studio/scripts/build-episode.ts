@@ -43,21 +43,34 @@ const main = async () => {
   ////////// 3) 병합 — 녹화 실측값 주입
   const videoStartSec = 3;
   const resultCardSec = 5;
+  // 로딩 공백 트림 — 로드 완료 0.3초 전부터 사용 (실측 시간도 작업 구간만)
+  const trimSec = Math.max(0, rec.loadedSec - 0.3);
+  const demoSec = rec.durationSec - trimSec;
   props.videoSrc = rec.videoRelPath;
   props.videoStartSec = videoStartSec;
+  props.videoTrimSec = trimSec;
   props.resultCardSec = resultCardSec;
-  props.durationSec = Math.round(videoStartSec + rec.durationSec + resultCardSec);
-  props.resultTime = fmt(rec.durationSec); // ⏱ 실측 자동 기입 (녹화 실경과)
-  // 오디오 — public/audio/ 에 파일 있으면 주입 (bgm.mp3 · sfx-done.mp3)
+  props.durationSec = Math.round(videoStartSec + demoSec + resultCardSec);
+  props.resultTime = fmt(demoSec); // ⏱ 실측 자동 기입 (로딩 제외 작업 구간)
+  // 오디오·로고 — public/ 에 파일 있으면 주입
   props.bgmSrc = existsSync(join(STUDIO_ROOT, "public/audio/bgm.mp3")) ? "audio/bgm.mp3" : null;
   props.sfxDoneSrc = existsSync(join(STUDIO_ROOT, "public/audio/sfx-done.mp3")) ? "audio/sfx-done.mp3" : null;
-  // 클릭 이벤트 → 줌 포커스 (영상 시작 오프셋 반영)
-  props.focuses = rec.events
-    .filter((e) => e.type === "click" && e.x !== undefined)
-    .map((e) => ({ at: videoStartSec + e.t, x: e.x, y: e.y, scale: 1.6, holdSec: 1.6 }));
+  props.logoSrc = existsSync(join(STUDIO_ROOT, "public/logo.png")) ? "logo.png" : null;
+  // 클릭 이벤트 → 줌 포커스: 줌아웃=전체 화면, 줌인=액션 섹션
+  // 규칙: 초기 3초(화면 파악 구간) 줌 금지 · 포커스 간 최소 3초 간격 (스르륵 리듬)
+  const clicks = rec.events.filter((e) => e.type === "click" && e.x !== undefined);
+  const focuses: { at: number; x: number; y: number; scale: number; holdSec: number }[] = [];
+  for (const e of clicks) {
+    const t = e.t - trimSec; // 트림 반영한 영상 시각
+    if (t < 3) continue; // 초기 전체 화면 파악 구간
+    const last = focuses[focuses.length - 1];
+    if (last && t - (last.at - videoStartSec) < last.holdSec + 3) continue; // 간격 확보
+    focuses.push({ at: videoStartSec + t, x: e.x!, y: e.y!, scale: 2.2, holdSec: 2.4 });
+  }
+  props.focuses = focuses;
   // 자막 타임라인을 실측 길이에 맞게 비율 재배치 (대본 기준 24초 → 실제 길이)
   const scriptDemoEnd = 24;
-  const realDemoEnd = videoStartSec + rec.durationSec;
+  const realDemoEnd = videoStartSec + demoSec;
   props.captions = props.captions.map((c: { from: number; to: number; text: string }) => ({
     ...c,
     from: c.from <= videoStartSec ? c.from : videoStartSec + ((c.from - videoStartSec) / (scriptDemoEnd - videoStartSec)) * (realDemoEnd - videoStartSec),
@@ -65,9 +78,10 @@ const main = async () => {
   }));
   writeFileSync(propsPath, JSON.stringify(props, null, 2), "utf-8");
 
-  ////////// 4) 렌더
-  mkdirSync(join(STUDIO_ROOT, "out"), { recursive: true });
-  const outPath = `out/${month}-${day}-숏츠.mp4`;
+  ////////// 4) 렌더 — 완성본은 컨텐츠 폴더(원고 옆)에 저장, 대표는 폴더에서 바로 예약 업로드
+  const contentDir = resolve(STUDIO_ROOT, `../../docs/마케팅/컨텐츠/${month}/${day}`);
+  mkdirSync(contentDir, { recursive: true });
+  const outPath = join(contentDir, "숏츠.mp4");
   console.log(`🎞 렌더: ${outPath}`);
   execSync(
     `npx remotion render TimerShort "${outPath}" --props="${propsPath}" --browser-executable="${CHROME}"`,

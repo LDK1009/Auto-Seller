@@ -1,6 +1,6 @@
 //////////////////////////////////////// 결과 카드 (라이트 대자보) ////////////////////////////////////////
 import React from "react";
-import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Img, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { COLOR, FONT_STACK, SAFE } from "../theme";
 
 type PropsType = {
@@ -8,9 +8,10 @@ type PropsType = {
   resultTime: string;
   ctaLine: string;
   commentLine: string;
+  logoSrc?: string | null;
 };
 
-export const ResultCard = ({ resultLabel, resultTime, ctaLine, commentLine }: PropsType) => {
+export const ResultCard = ({ resultLabel, resultTime, ctaLine, commentLine, logoSrc }: PropsType) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const pop = spring({ frame, fps, config: { damping: 11, mass: 0.6 } });
@@ -32,6 +33,9 @@ export const ResultCard = ({ resultLabel, resultTime, ctaLine, commentLine }: Pr
         textAlign: "center",
       }}
     >
+      {logoSrc ? (
+        <Img src={staticFile(logoSrc)} style={{ height: 72, marginBottom: 36, objectFit: "contain" }} />
+      ) : null}
       <div style={{ fontSize: 54, fontWeight: 700, color: COLOR.inkDim, marginBottom: 20 }}>
         {resultLabel}
       </div>

@@ -12,6 +12,7 @@ export type DemoEvent = {
 
 export class HumanPage {
   readonly events: DemoEvent[] = [];
+  loadedSec = 0; // 페이지 로드 완료 시각 (녹화 기준) — 앞부분 로딩 공백 트림용
   private t0 = 0;
 
   constructor(
@@ -19,11 +20,17 @@ export class HumanPage {
     private viewport: { width: number; height: number },
   ) {}
 
+  ////////// 녹화 시작 시각 동기 — 비디오 타임라인 기준점 (페이지 생성 시각)
+  markRecordStart(timestampMs: number) {
+    this.t0 = timestampMs;
+  }
+
   async start(url: string) {
     await this.page.addInitScript(CURSOR_INIT_SCRIPT);
     await this.page.goto(url, { waitUntil: "networkidle" });
-    this.t0 = Date.now();
-    await this.hold(0.8); // 첫 화면 인지 시간
+    this.loadedSec = this.now();
+    // 초기 화면 파악 버퍼 — 전체 화면을 충분히 보여준 뒤 액션 시작
+    await this.hold(2.2);
   }
 
   now() {

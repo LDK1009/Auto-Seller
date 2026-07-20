@@ -52,6 +52,7 @@ export const TimerShort = (props: TimerShortProps) => {
           <ZoomVideo
             videoSrc={props.videoSrc}
             videoStartSec={props.videoStartSec}
+            videoTrimSec={props.videoTrimSec}
             focuses={props.focuses.map((f) => ({ ...f, at: f.at - props.videoStartSec }))}
           />
         </SafeArea>
@@ -64,6 +65,7 @@ export const TimerShort = (props: TimerShortProps) => {
           resultTime={props.resultTime}
           ctaLine={props.ctaLine}
           commentLine={props.commentLine}
+          logoSrc={props.logoSrc}
         />
       </Sequence>
     </>

@@ -27,12 +27,14 @@ export const timerShortSchema = z.object({
   commentLine: z.string().default("재보고 싶은 작업, 댓글로"),
   videoSrc: z.string().nullable().default(null), // 시연 녹화 파일 (public/ 기준 또는 절대 경로). null = 플레이스홀더
   videoStartSec: z.number().default(3), // 시연 영상이 시작되는 컴포지션 시각
+  videoTrimSec: z.number().default(0), // 녹화 앞부분 트림 (로딩 공백 제거)
   durationSec: z.number().default(30), // 전체 길이
   resultCardSec: z.number().default(5), // 끝의 결과 카드 길이
   focuses: z.array(focusSchema).default([]),
-  // 오디오 (public/ 기준 경로, 파일 있을 때만 build-episode가 주입)
+  // 오디오·로고 (public/ 기준 경로, 파일 있을 때만 build-episode가 주입)
   bgmSrc: z.string().nullable().default(null),
   sfxDoneSrc: z.string().nullable().default(null),
+  logoSrc: z.string().nullable().default(null),
 });
 
 export type TimerShortProps = z.infer<typeof timerShortSchema>;
