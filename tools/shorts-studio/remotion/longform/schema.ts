@@ -11,12 +11,14 @@ export const lineSchema = z.object({
   showCaption: z.boolean(), // 롱폼 자막 표시 여부 (AI 티 방지: 강조 문장만)
 });
 
-////////// 화면 소스 3종
+////////// 화면 소스 4종
 export const screenSchema = z.discriminatedUnion("kind", [
-  // 정적 이미지 — 긴 캡처를 챕터 길이에 맞춰 스크롤
+  // 정적 이미지 — 긴 캡처는 스크롤, 짧으면 켄번스(줌·팬)
   z.object({ kind: z.literal("image"), src: z.string(), scroll: z.boolean() }),
   // 실시간 녹화 — 길이 안 맞으면 배속/정지로 흡수
   z.object({ kind: z.literal("video"), src: z.string(), trimSec: z.number(), playbackRate: z.number() }),
+  // 강의 슬라이드 — 이미지 없는 개념 설명 챕터 (제목 + 불릿 순차 등장)
+  z.object({ kind: z.literal("slide"), heading: z.string(), bullets: z.array(z.string()) }),
   // 화면 없음 — 직전 화면 유지 (인트로 카드 금지 규칙)
   z.object({ kind: z.literal("hold") }),
 ]);

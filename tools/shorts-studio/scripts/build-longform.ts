@@ -106,8 +106,8 @@ const main = async () => {
         from: sec2frames(cursorSec),
         durationInFrames: sec2frames(audio.durationSec),
         isStation: sentence.isStation,
-        // 롱폼 자막은 강조(정차역) 문장만 — 전문장 자막은 자동생성 지문
-        showCaption: sentence.isStation,
+        // 전문장 자막 (2026-07-22 대표 판정 — 강조만 표시는 지루·정보 약함)
+        showCaption: true,
       });
 
       const gap = isLastOfChapter ? GAP_AFTER_CHAPTER : sentence.isStation ? GAP_AFTER_STATION : GAP_DEFAULT;
@@ -121,6 +121,10 @@ const main = async () => {
 
     if (isHoldScreen(chapter.screen)) {
       screen = { kind: "hold" };
+    } else if (chapter.screen === "슬라이드") {
+      // 이미지·녹화 없는 개념 설명 챕터 — 정차역 문장을 불릿으로 자동 구성
+      const bullets = chapter.sentences.filter((s) => s.isStation).map((s) => s.text);
+      screen = { kind: "slide", heading: chapter.title, bullets: bullets.length ? bullets : [chapter.sentences[0]?.text ?? ""] };
     } else if (isImageScreen(chapter.screen)) {
       // full 캡처(세로 7951px)만 스크롤. 섹션 조각은 정지 표시
       screen = { kind: "image", src: `marketing/${chapter.screen}.jpg`, scroll: chapter.screen.endsWith("-full") };
