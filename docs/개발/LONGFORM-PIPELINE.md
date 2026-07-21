@@ -91,9 +91,28 @@
 | `scripts/lib/recorder.ts` | 수정 | 뷰포트를 가로/세로 선택 가능하게 (`VIEWPORT_DESKTOP` 추가) |
 | `remotion/components/*` | 재사용 | HighlightRing·SafeArea 등 비율만 조정 |
 
+## 5-1. 분량·렌더 비용 (2026-07-21 실측)
+
+분량 규칙의 단일 출처는 [MARKETING.md](../마케팅/MARKETING.md). 여기는 제작 비용 환산.
+
+| 산출물 | 길이 | 프레임(30fps) | 렌더 소요 |
+|---|---|---|---|
+| 롱폼 | 10분 | 18,000 | 약 36분 |
+| 숏폼 | 60초 × 4 | 1,800 × 4 | 약 15분 |
+| **소재 1개 총** | | | **약 50분** |
+
+**실측 근거:** 기존 숏츠(33초·990프레임) 렌더에 **2분 0초** = 8.25fps = 실시간의 3.6배. `remotion render TimerShort` 기준.
+
+> **부분 렌더 필수.** 36분짜리를 실수 하나로 통째 재렌더하면 손실이 크다(숏츠 36편 중 6편이 시나리오 오류로 재작업했던 전례). `--frames=시작-끝`으로 챕터 단위 재렌더를 처음부터 지원한다:
+> ```bash
+> npm run longform -- {소재} --chapter=3   # 3챕터만 재렌더 후 교체
+> ```
+
 ## 6. TTS 연동
 
 - 제공자: ElevenLabs (Creator $22/월, 월 100,000 크레딧)
+- 키: `.env.local`의 `ELEVENLABS_API_KEY` · `ELEVENLABS_VOICE_ID` (서버 전용, `NEXT_PUBLIC_` 금지)
+- **오디오 길이 측정: `npx remotion ffprobe`** — Remotion에 ffmpeg가 번들돼 있어 새 의존성 불필요 (검증 완료)
 - 소요 추정: 10분 영상 ≈ 3,000자 → 주 3편 = 월 36,000자 (여유)
 - **캐시 필수**: 대본 문장 해시로 캐싱. 문장 하나 고쳤다고 전체 재생성하면 크레딧이 낭비된다
 - API 키는 `.env.local`에 `ELEVENLABS_API_KEY` (서버 전용, `NEXT_PUBLIC_` 금지)
