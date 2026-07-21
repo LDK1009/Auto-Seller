@@ -25,7 +25,16 @@ export type RecordResult = {
   events: DemoEvent[];
 };
 
-export const BASE_URL = process.env.SHORTS_BASE_URL ?? "https://www.auto-seller.co.kr";
+// 기본은 로컬 dev 서버 — 자동화가 프로덕션 GA를 오염시키지 않도록 (2026-07-21).
+// 프로덕션 대상이 꼭 필요하면 SHORTS_BASE_URL=https://www.auto-seller.co.kr 로 명시.
+export const BASE_URL = process.env.SHORTS_BASE_URL ?? "http://localhost:3000";
+
+// 자동화 트래픽이 GA에 잡히지 않도록 애널리틱스 요청 차단 (로컬도 NEXT_PUBLIC_GA_ID가 있어 gtag가 붙음)
+export const ANALYTICS_BLOCK = [
+  "**googletagmanager.com/**",
+  "**google-analytics.com/**",
+  "**analytics.google.com/**",
+];
 
 export const record = async (scenario: Scenario): Promise<RecordResult> => {
   mkdirSync(PUBLIC_REC, { recursive: true });
@@ -41,6 +50,9 @@ export const record = async (scenario: Scenario): Promise<RecordResult> => {
     userAgent:
       "Mozilla/5.0 (Linux; Android 13; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36",
   });
+  // 애널리틱스 차단 — 자동화 트래픽이 GA 지표를 오염시키지 않도록
+  for (const pattern of ANALYTICS_BLOCK) await context.route(pattern, (route) => route.abort());
+
   // 비디오 녹화는 페이지 생성 시점부터 시작 — 이벤트 시각은 이 기준으로 기록해야 영상과 싱크됨
   const recStart = Date.now();
   const page = await context.newPage();

@@ -48,12 +48,20 @@ scripts/
 ## Phase B — 녹화 자동화 (코어 검증 완료)
 
 ```bash
-# 원커맨드: 녹화(프로덕션 실조작) → 파싱 → 렌더
-npm run episode -- 16        # → out/2026-07-16-숏츠.mp4 (실측 시간 자동 기입)
+# 사전: 로컬 dev 서버 실행 (기본 대상이 http://localhost:3000)
+npm run dev   # 저장소 루트에서
 
-# 로컬 대상 녹화 (API 예산 절약)
-$env:SHORTS_BASE_URL="http://localhost:3000"; npm run episode -- 16
+# 원커맨드: 녹화(로컬 실조작) → 파싱 → 렌더
+npm run episode -- 20        # → docs/마케팅/컨텐츠/2026-07/20/숏츠/{영상제목}.mp4
+
+# 화면 캡처(블로그용)도 동일하게 로컬 대상
+npx tsx scripts/capture-screens.ts
+
+# 프로덕션 대상이 꼭 필요할 때만 명시 (권장하지 않음)
+$env:SHORTS_BASE_URL="https://www.auto-seller.co.kr"; npm run episode -- 20
 ```
+
+> ⚠️ **자동화는 로컬 dev 서버 대상이 기본 (2026-07-21).** 프로덕션에 돌리면 GA 지표가 봇 트래픽으로 오염된다(7/20 사고: 활성 60명 중 대부분이 스크립트). 추가 안전장치로 **애널리틱스 요청을 Playwright에서 차단**한다 (`recorder.ts` `ANALYTICS_BLOCK` — 로컬도 `.env.local`에 `NEXT_PUBLIC_GA_ID`가 있어 gtag가 붙기 때문).
 
 - `scripts/lib/humanize.ts` 인간 페이싱 (타이핑 딜레이·스무스 스크롤·대기·이벤트 로그)
 - `scripts/lib/cursor.ts` 가짜 커서 오버레이 + 클릭 리플 (DOM 주입)

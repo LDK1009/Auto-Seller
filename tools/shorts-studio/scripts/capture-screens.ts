@@ -9,7 +9,9 @@ import sharp from "sharp";
 
 const OUT = resolve(__dirname, "../../../public/marketing");
 const ASSETS = resolve(__dirname, "../assets");
-const BASE = process.env.SHORTS_BASE_URL ?? "https://www.auto-seller.co.kr";
+// 기본은 로컬 dev 서버 — 자동화가 프로덕션 GA를 오염시키지 않도록 (2026-07-21)
+const BASE = process.env.SHORTS_BASE_URL ?? "http://localhost:3000";
+const ANALYTICS_BLOCK = ["**googletagmanager.com/**", "**google-analytics.com/**", "**analytics.google.com/**"];
 const VIEWPORT = { width: 1440, height: 900 };
 
 // main 콘텐츠 영역만 저장 (사이드바·헤더 제외). 너무 길면 상단 크롭 (블로그·쓰레드용)
@@ -48,6 +50,8 @@ const main = async () => {
   mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: VIEWPORT, deviceScaleFactor: 2 });
+  // 애널리틱스 차단 — 자동화 트래픽이 GA 지표를 오염시키지 않도록
+  for (const pattern of ANALYTICS_BLOCK) await page.route(pattern, (route) => route.abort());
   // 사이드바 접기(레일) — "원클릭 등록 준비 중" 배지 등 미출시 표기 숨김
   await page.addInitScript(() => localStorage.setItem("sidebar-collapsed", "1"));
 
