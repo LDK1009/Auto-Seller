@@ -69,7 +69,9 @@ const main = async () => {
   if (imageScreens.length > 0) await prepareImages(imageScreens);
 
   ////////// 3) 녹화 — 영상 화면이 필요한 챕터만
-  const videoChapters = script.chapters.filter((c) => !isImageScreen(c.screen) && !isHoldScreen(c.screen) && c.screen !== "슬라이드");
+  // 녹화가 필요한 챕터만 — 이미지·hold·슬라이드·아웃트로는 제외
+  const NON_VIDEO = new Set(["인트로", "슬라이드", "아웃트로"]);
+  const videoChapters = script.chapters.filter((c) => !isImageScreen(c.screen) && !NON_VIDEO.has(c.screen));
   type Rec = { videoRelPath: string; durationSec: number; loadedSec: number; events: { type: string; t: number; x?: number; y?: number; w?: number; h?: number; holdSec?: number }[] };
   const recordings = new Map<string, Rec>();
   // 우리 서비스 화면 판정 — 이 경로들은 실제 도구. URL 배지 + 강조 링을 붙인다
