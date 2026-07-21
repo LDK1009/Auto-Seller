@@ -112,8 +112,19 @@
 
 - 제공자: ElevenLabs (Creator $22/월, 월 100,000 크레딧)
 - 키: `.env.local`의 `ELEVENLABS_API_KEY` · `ELEVENLABS_VOICE_ID` (서버 전용, `NEXT_PUBLIC_` 금지)
-- **오디오 길이 측정: `npx remotion ffprobe`** — Remotion에 ffmpeg가 번들돼 있어 새 의존성 불필요 (검증 완료)
-- 소요 추정: 10분 영상 ≈ 3,000자 → 주 3편 = 월 36,000자 (여유)
+- **모델: `eleven_multilingual_v2`** · 보이스: Professional Voice Clone(한국어 네이티브) — PVC는 **Creator 이상** 필수 (Free·Starter는 402)
+- **오디오 길이 측정: `npx remotion ffprobe`** — Remotion 번들 ffmpeg 사용, 새 의존성 0 (검증 완료)
+- **해시 캐시 동작 확인** — 동일 문장 재실행 시 API 미호출 (신규 0 / 캐시 3)
+
+**실측 (2026-07-22, 3문장):**
+
+| 항목 | 값 |
+|---|---|
+| 발화 속도 | **초당 6.1-6.5자 = 분당 385자** (공백 제외) |
+| 문장 간 간격 포함 실효 | **분당 약 340자** |
+| 크레딧 | 1자 = 1크레딧. 편당 약 2,300 (Creator 10만 = 월 43편) |
+
+> 문서 기준이던 "분당 300자"는 실측보다 28% 느렸다. MARKETING.md 분량표를 실측값으로 갱신함.
 - **캐시 필수**: 대본 문장 해시로 캐싱. 문장 하나 고쳤다고 전체 재생성하면 크레딧이 낭비된다
 - API 키는 `.env.local`에 `ELEVENLABS_API_KEY` (서버 전용, `NEXT_PUBLIC_` 금지)
 
