@@ -55,3 +55,4 @@ docs/마케팅/컨텐츠/**/*.mp4
 
 # 롱폼 TTS 캐시 (생성물)
 tools/shorts-studio/public/tts/
+tools/shorts-studio/public/marketing/

@@ -7,7 +7,9 @@
     "studio": "remotion studio",
     "render": "remotion render TimerShort",
     "parse": "tsx scripts/parse-script.ts",
-    "episode": "tsx scripts/build-episode.ts"
+    "episode": "tsx scripts/build-episode.ts",
+    "longform": "tsx scripts/build-longform.ts",
+    "parse-longform": "tsx scripts/parse-longform.ts"
   },
   "dependencies": {
     "@remotion/cli": "4.0.245",

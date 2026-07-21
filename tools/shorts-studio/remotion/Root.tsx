@@ -3,6 +3,8 @@
 import { Composition } from "remotion";
 import { TimerShort } from "./TimerShort";
 import { timerShortSchema } from "./schema";
+import { LongForm } from "./longform/LongForm";
+import { longformSchema } from "./longform/schema";
 import "pretendard/dist/web/variable/pretendardvariable.css"; // AI티 제거 — 실제 서비스와 동일 폰트
 
 export const FPS = 30;
@@ -32,19 +34,41 @@ const defaultProps = {
   logoSrc: null,
 };
 
+////////// 롱폼 기본값 — 스튜디오 미리보기용 (실제 값은 build-longform.ts가 props로 주입)
+const longformDefaults = {
+  videoTitle: "",
+  durationInFrames: 300,
+  lines: [],
+  chapters: [],
+  captionVariant: 0,
+};
+
 export const Root = () => {
   return (
-    <Composition
-      id="TimerShort"
-      component={TimerShort}
-      width={1080}
-      height={1920}
-      fps={FPS}
-      schema={timerShortSchema}
-      defaultProps={defaultProps}
-      calculateMetadata={({ props }) => ({
-        durationInFrames: Math.round(props.durationSec * FPS),
-      })}
-    />
+    <>
+      <Composition
+        id="TimerShort"
+        component={TimerShort}
+        width={1080}
+        height={1920}
+        fps={FPS}
+        schema={timerShortSchema}
+        defaultProps={defaultProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: Math.round(props.durationSec * FPS),
+        })}
+      />
+      {/* 롱폼 16:9 — 길이는 오디오 실측으로 계산돼 props.durationInFrames로 들어온다 */}
+      <Composition
+        id="LongForm"
+        component={LongForm}
+        width={1920}
+        height={1080}
+        fps={FPS}
+        schema={longformSchema}
+        defaultProps={longformDefaults}
+        calculateMetadata={({ props }) => ({ durationInFrames: props.durationInFrames })}
+      />
+    </>
   );
 };
