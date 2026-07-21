@@ -15,10 +15,21 @@ export const lineSchema = z.object({
 export const screenSchema = z.discriminatedUnion("kind", [
   // 정적 이미지 — 긴 캡처는 스크롤, 짧으면 켄번스(줌·팬)
   z.object({ kind: z.literal("image"), src: z.string(), scroll: z.boolean() }),
-  // 실시간 녹화 — 길이 안 맞으면 배속/정지로 흡수
-  z.object({ kind: z.literal("video"), src: z.string(), trimSec: z.number(), playbackRate: z.number() }),
+  // 실시간 녹화 — 길이 안 맞으면 배속/정지로 흡수. isOurService면 URL 배지 + 강조 링
+  z.object({
+    kind: z.literal("video"),
+    src: z.string(),
+    trimSec: z.number(),
+    playbackRate: z.number(),
+    isOurService: z.boolean().default(false),
+    focuses: z
+      .array(z.object({ at: z.number(), x: z.number(), y: z.number(), w: z.number(), h: z.number(), holdSec: z.number() }))
+      .default([]),
+  }),
   // 강의 슬라이드 — 이미지 없는 개념 설명 챕터 (제목 + 불릿 순차 등장)
   z.object({ kind: z.literal("slide"), heading: z.string(), bullets: z.array(z.string()) }),
+  // 아웃트로 — 핵심 요약 3줄 + 구독·댓글 CTA (갑자기 끝나는 느낌 방지)
+  z.object({ kind: z.literal("outro"), summary: z.array(z.string()) }),
   // 화면 없음 — 직전 화면 유지 (인트로 카드 금지 규칙)
   z.object({ kind: z.literal("hold") }),
 ]);

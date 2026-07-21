@@ -69,8 +69,11 @@ const main = async () => {
   if (imageScreens.length > 0) await prepareImages(imageScreens);
 
   ////////// 3) 녹화 — 영상 화면이 필요한 챕터만
-  const videoChapters = script.chapters.filter((c) => !isImageScreen(c.screen) && !isHoldScreen(c.screen));
-  const recordings = new Map<string, { videoRelPath: string; durationSec: number; loadedSec: number }>();
+  const videoChapters = script.chapters.filter((c) => !isImageScreen(c.screen) && !isHoldScreen(c.screen) && c.screen !== "슬라이드");
+  type Rec = { videoRelPath: string; durationSec: number; loadedSec: number; events: { type: string; t: number; x?: number; y?: number; w?: number; h?: number; holdSec?: number }[] };
+  const recordings = new Map<string, Rec>();
+  // 우리 서비스 화면 판정 — 이 경로들은 실제 도구. URL 배지 + 강조 링을 붙인다
+  const OUR_SERVICE = new Set(["keyword-stats", "domeggook-import", "domeggook-search", "margin-calculator", "roas-calculator", "vat-calculator", "image-check", "image-resize", "watermark", "image-split", "excel-import", "background-removal"]);
   const scenarioDir = join(STUDIO_ROOT, "scenarios");
   const scenarioFiles = readdirSync(scenarioDir);
 
@@ -119,7 +122,11 @@ const main = async () => {
     const chapterSec = chapterFrames / FPS;
     let screen: Record<string, unknown>;
 
-    if (isHoldScreen(chapter.screen)) {
+    if (chapter.screen === "아웃트로") {
+      // 마무리 챕터 — 정차역 문장을 요약 줄로. 없으면 앞 문장들에서 짧은 것 3개
+      const summary = chapter.sentences.filter((s) => s.isStation).map((s) => s.text);
+      screen = { kind: "outro", summary: summary.length ? summary : chapter.sentences.slice(0, 3).map((s) => s.text) };
+    } else if (isHoldScreen(chapter.screen)) {
       screen = { kind: "hold" };
     } else if (chapter.screen === "슬라이드") {
       // 이미지·녹화 없는 개념 설명 챕터 — 정차역 문장을 불릿으로 자동 구성
@@ -135,7 +142,19 @@ const main = async () => {
       // 녹화가 길면 배속으로 압축. 짧으면 늦춰서 늘리되 0.7배까지만 — 그 이하는 부자연스럽다.
       const raw = usableSec / chapterSec;
       const playbackRate = Number(Math.max(0.7, raw).toFixed(3));
-      screen = { kind: "video", src: rec.videoRelPath, trimSec, playbackRate };
+      // 정차역(focus) 이벤트 → 화면 시각으로 변환. 원본시각 t → (t-trim)/배속 이 화면상 위치
+      const focuses = rec.events
+        .filter((e) => e.type === "focus" && e.x !== undefined)
+        .map((e) => ({
+          at: (e.t - trimSec) / playbackRate,
+          x: e.x!,
+          y: e.y!,
+          w: e.w ?? 0,
+          h: e.h ?? 0,
+          holdSec: (e.holdSec ?? 2) / playbackRate,
+        }))
+        .filter((f) => f.at >= 0);
+      screen = { kind: "video", src: rec.videoRelPath, trimSec, playbackRate, isOurService: OUR_SERVICE.has(chapter.screen), focuses };
       const covered = usableSec / playbackRate;
       const freeze = chapterSec - covered;
       console.log(
