@@ -52,3 +52,6 @@ next-env.d.ts
 
 # 숏츠 완성본 (스튜디오 재생성 가능 산출물)
 docs/마케팅/컨텐츠/**/*.mp4
+
+# 롱폼 TTS 캐시 (생성물)
+tools/shorts-studio/public/tts/
