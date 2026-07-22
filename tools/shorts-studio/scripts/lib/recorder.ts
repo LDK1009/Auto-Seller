@@ -6,9 +6,8 @@ import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:f
 import { join, resolve } from "node:path";
 import { HumanPage, type DemoEvent } from "./humanize";
 
-// Remotion 번들 ffmpeg — webm(VP8)은 임의 지점 seek이 불안정해 렌더 시 프레임 추출 실패.
-// h264 mp4로 재인코딩하면 안정적. (별도 설치 불필요 — Remotion에 동봉)
-const FFMPEG = resolve(__dirname, "../../node_modules/@remotion/compositor-win32-x64-msvc/ffmpeg.exe");
+// Remotion 번들 ffmpeg — 별도 설치 불필요 (동봉). 녹화 webm→mp4 변환 + 빌더의 챕터 길이 맞춤에 사용.
+export const FFMPEG = resolve(__dirname, "../../node_modules/@remotion/compositor-win32-x64-msvc/ffmpeg.exe");
 
 // 모바일 뷰 녹화 (9:16 근접) — 숏츠 판독성·시청자 화면 재현감 (2026-07-20 확정)
 // 캡처는 뷰포트 동일 크기 (확대 캡처는 좌상단 고정 버그 — 리모션에서 업스케일로 소화)

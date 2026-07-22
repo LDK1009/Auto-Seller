@@ -21,11 +21,13 @@ export const scenario: Scenario = {
 
     // 나레이션(약 45초)을 채우기 위한 탐색 구간 — 차트를 훑으며 데이터 근거를 보여준다
     await p.smoothScrollBy(700, 3);
-    await p.hold(2);
+    await p.hold(2.5);
     await p.smoothScrollBy(700, 3);
     await p.hold(2.5);
     // 연관 키워드로 후보를 넓히는 장면
     await p.smoothScrollBy(900, 3.5);
+    await p.hold(3);
+    await p.smoothScrollBy(700, 3);
     await p.hold(3);
   },
 };

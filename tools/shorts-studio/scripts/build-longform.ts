@@ -5,9 +5,10 @@ import { execSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { execFileSync } from "node:child_process";
 import { parseLongform } from "./parse-longform";
 import { generateNarration } from "./lib/tts";
-import { record } from "./lib/recorder";
+import { record, FFMPEG } from "./lib/recorder";
 
 const FPS = 30;
 const STUDIO_ROOT = resolve(__dirname, "..");
@@ -157,22 +158,30 @@ const main = async () => {
       const rec = recordings.get(chapter.screen)!;
       const trimSec = Math.max(0, rec.loadedSec - 0.3); // 로딩 공백 제거
       const usableSec = rec.durationSec - trimSec;
-      // 1.0배 재생 — 배속 없음. 화면보다 짧으면 뒤를 Freeze, 길면 화면 길이까지만 보이고 나머지 잘림.
-      const videoFrames = Math.floor(usableSec * FPS);
-      // 정차역(focus) 이벤트 → 화면 시각 = 원본시각 - 트림 (1.0배라 그대로)
+      // 챕터 길이에 맞춰 트림한 mp4를 미리 생성 — Remotion은 seek 없이 처음부터 재생만.
+      // (OffthreadVideo의 startFrom·playbackRate·Freeze가 이 소스에서 seek 오작동 → 근본 회피)
+      // 번들 ffmpeg는 최소 빌드라 필터(tpad·fps) 미지원 → 트림+자르기(-ss·-t)만. 부족분은 시나리오 보강으로 해결.
+      const shortBy = chapterSec - usableSec; // 양수면 영상이 챕터보다 짧음(끝에 정지 프레임 없이 검은 화면 위험)
+      const cutSec = Math.min(usableSec, chapterSec + 0.5); // 챕터보다 살짝 길게 잘라 여유
+      const fitName = `${chapter.screen.replace(/[^\w-]/g, "")}-ch${chapter.index}-fit.mp4`;
+      const fitPath = join(STUDIO_ROOT, "public/rec", fitName);
+      const srcAbs = join(STUDIO_ROOT, "public", rec.videoRelPath);
+      execFileSync(
+        FFMPEG,
+        ["-y", "-ss", trimSec.toFixed(3), "-i", srcAbs, "-t", cutSec.toFixed(3), "-c:v", "libx264", "-preset", "fast", "-crf", "20", "-pix_fmt", "yuv420p", "-an", fitPath],
+        { stdio: "ignore" },
+      );
+      // 정차역 → 화면 시각 = 원본시각 - 트림 (fit이 트림 제거라 그대로 매핑)
       const focuses = rec.events
         .filter((e) => e.type === "focus" && e.x !== undefined)
         .map((e) => ({ at: e.t - trimSec, x: e.x!, y: e.y!, w: e.w ?? 0, h: e.h ?? 0, holdSec: e.holdSec ?? 2 }))
         .filter((f) => f.at >= 0 && f.at <= chapterSec);
-      screen = { kind: "video", src: rec.videoRelPath, trimSec, videoFrames, isOurService: OUR_SERVICE.has(chapter.screen), focuses };
-      const freeze = chapterSec - usableSec;
+      screen = { kind: "video", src: `rec/${fitName}`, isOurService: OUR_SERVICE.has(chapter.screen), focuses };
       console.log(
         `   ch${chapter.index} 화면 ${usableSec.toFixed(1)}초 / 나레이션 ${chapterSec.toFixed(1)}초` +
-          (freeze > 1 ? `  → 뒤 ${freeze.toFixed(1)}초 정지` : freeze < -1 ? `  → ${(-freeze).toFixed(1)}초 잘림` : ""),
+          (shortBy > 0.5 ? `  ⚠️ ${shortBy.toFixed(1)}초 짧음 — 시나리오 보강 필요` : `  → ${(-shortBy).toFixed(1)}초 잘림`),
       );
-      if (freeze > 6) {
-        console.warn(`   ⚠️ ch${chapter.index} 시나리오가 짧다 — ${freeze.toFixed(0)}초 정지. scenarios/${day}-ch${chapter.index}-*.ts 에 조작 추가 권장`);
-      }
+      if (shortBy > 0.5) console.warn(`   ⚠️ ch${chapter.index} 영상이 나레이션보다 ${shortBy.toFixed(1)}초 짧다 — scenarios/${day}-ch${chapter.index}-*.ts 에 조작 추가 (끝에 검은 화면 방지)`);
     }
 
     chapters.push({
