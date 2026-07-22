@@ -17,6 +17,7 @@
     "@mui/material": "^9.1.2",
     "@mui/material-nextjs": "^9.1.1",
     "@supabase/supabase-js": "^2.110.0",
+    "@tosspayments/tosspayments-sdk": "^2.7.1",
     "dayjs": "^1.11.21",
     "framer-motion": "^12.42.2",
     "jszip": "^3.10.1",
