@@ -29,6 +29,7 @@ import NoAccountsIcon from '@mui/icons-material/NoAccounts';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import { APP_NAME, APP_NAME_EN, APP_DESCRIPTION, SLOGAN_LINES } from '@/shared/constants/app';
+import { BUSINESS_INFO } from '@/shared/constants/business';
 import BestProductsSection from './_components/BestProductsSection';
 import { TOOLS, TOOL_GROUPS, FLAGSHIP_TOOL } from '@/shared/constants/tools';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
@@ -288,25 +289,41 @@ export default function MainView() {
         </Container>
       </CtaBand>
 
-      {/* 푸터 */}
+      {/* 푸터 — 사업자 표기(PG 심사·전자상거래법 요건) + 법적 문서 링크 */}
       <Band $tone="default">
         <Container maxWidth="md">
           <Stack spacing={2}>
             <Divider />
             <Stack
               direction="row"
-              sx={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}
+              sx={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}
               useFlexGap
             >
-              <Stack spacing={0.25}>
+              <Stack spacing={0.75}>
                 <Typography variant="subtitle2">{APP_NAME_EN}</Typography>
                 <Typography variant="caption" color="text.secondary">
                   {APP_DESCRIPTION}
                 </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+                  상호: {BUSINESS_INFO.companyName} · 대표: {BUSINESS_INFO.representative}
+                  <br />
+                  사업자등록번호: {BUSINESS_INFO.registrationNumber}
+                  <br />
+                  주소: {BUSINESS_INFO.address}
+                  <br />
+                  문의: {BUSINESS_INFO.email} · {BUSINESS_INFO.phone}
+                </Typography>
               </Stack>
-              <Typography variant="caption" color="text.secondary">
-                © 2026 {APP_NAME_EN}
-              </Typography>
+              <Stack spacing={0.75} sx={{ alignItems: 'flex-end' }}>
+                <Stack direction="row" spacing={1.5}>
+                  <FooterLink href="/terms">이용약관</FooterLink>
+                  <FooterLink href="/privacy">개인정보처리방침</FooterLink>
+                  <FooterLink href="/refund-policy">환불 규정</FooterLink>
+                </Stack>
+                <Typography variant="caption" color="text.secondary">
+                  © 2026 {APP_NAME_EN}
+                </Typography>
+              </Stack>
             </Stack>
           </Stack>
         </Container>
@@ -432,6 +449,16 @@ const CheckerboardLayer = styled.div(({ theme }) => {
 const SloganLine = styled('span', transientOptions)<{ $isAccent: boolean }>(({ theme, $isAccent }) => ({
   display: 'block',
   color: $isAccent ? theme.palette.primary.main : theme.palette.text.primary,
+}));
+
+// 푸터 법적 문서 링크
+const FooterLink = styled(Link)(({ theme }) => ({
+  color: theme.palette.text.secondary,
+  fontSize: 12,
+  textDecoration: 'none',
+  '&:hover': {
+    textDecoration: 'underline',
+  },
 }));
 
 // 소싱 미결정자용 보조 링크 (히어로 전용)

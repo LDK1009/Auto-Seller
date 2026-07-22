@@ -19,6 +19,9 @@ const PUBLIC_ROUTES: [string, number][] = [
   ['/excel-import', 0.6],
   ['/roas-calculator', 0.6],
   ['/vat-calculator', 0.6],
+  ['/terms', 0.2],
+  ['/privacy', 0.2],
+  ['/refund-policy', 0.2],
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
