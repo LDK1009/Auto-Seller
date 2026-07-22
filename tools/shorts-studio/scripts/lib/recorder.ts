@@ -1,9 +1,14 @@
 //////////////////////////////////////// 녹화 러너 ////////////////////////////////////////
 // 세로 뷰포트(414×896) 크로미움 컨텍스트에서 시나리오 실행 + webm 녹화 + 이벤트 로그 저장.
 import { chromium } from "playwright";
-import { mkdirSync, renameSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { HumanPage, type DemoEvent } from "./humanize";
+
+// Remotion 번들 ffmpeg — webm(VP8)은 임의 지점 seek이 불안정해 렌더 시 프레임 추출 실패.
+// h264 mp4로 재인코딩하면 안정적. (별도 설치 불필요 — Remotion에 동봉)
+const FFMPEG = resolve(__dirname, "../../node_modules/@remotion/compositor-win32-x64-msvc/ffmpeg.exe");
 
 // 모바일 뷰 녹화 (9:16 근접) — 숏츠 판독성·시청자 화면 재현감 (2026-07-20 확정)
 // 캡처는 뷰포트 동일 크기 (확대 캡처는 좌상단 고정 버그 — 리모션에서 업스케일로 소화)
@@ -80,8 +85,21 @@ export const record = async (scenario: Scenario): Promise<RecordResult> => {
 
   // 녹화 파일을 에피소드 이름으로 정리
   const rawPath = await video!.path();
-  const finalName = `${scenario.id}.webm`;
-  renameSync(rawPath, join(PUBLIC_REC, finalName));
+  const webmPath = join(PUBLIC_REC, `${scenario.id}.webm`);
+  renameSync(rawPath, webmPath);
+
+  // webm → mp4(h264) 재인코딩 — 렌더 시 seek/프레임추출 안정화. 실패 시 webm 폴백.
+  let finalName = `${scenario.id}.webm`;
+  if (existsSync(FFMPEG)) {
+    try {
+      const mp4Path = join(PUBLIC_REC, `${scenario.id}.mp4`);
+      execFileSync(FFMPEG, ["-y", "-i", webmPath, "-c:v", "libx264", "-preset", "fast", "-crf", "20", "-pix_fmt", "yuv420p", "-an", mp4Path], { stdio: "ignore" });
+      rmSync(webmPath);
+      finalName = `${scenario.id}.mp4`;
+    } catch (e) {
+      console.warn(`   ⚠️ mp4 변환 실패, webm 사용: ${(e as Error).message.slice(0, 80)}`);
+    }
+  }
 
   writeFileSync(
     join(OUT_LOG, `${scenario.id}-events.json`),
