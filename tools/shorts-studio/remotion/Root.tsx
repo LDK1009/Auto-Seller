@@ -5,6 +5,7 @@ import { TimerShort } from "./TimerShort";
 import { timerShortSchema } from "./schema";
 import { LongForm } from "./longform/LongForm";
 import { longformSchema } from "./longform/schema";
+import { Thumbnail, thumbnailSchema } from "./longform/Thumbnail";
 import "pretendard/dist/web/variable/pretendardvariable.css"; // AI티 제거 — 실제 서비스와 동일 폰트
 
 export const FPS = 30;
@@ -68,6 +69,17 @@ export const Root = () => {
         schema={longformSchema}
         defaultProps={longformDefaults}
         calculateMetadata={({ props }) => ({ durationInFrames: props.durationInFrames })}
+      />
+      {/* 유튜브 썸네일 — remotion still 로 추출 */}
+      <Composition
+        id="Thumbnail"
+        component={Thumbnail}
+        width={1280}
+        height={720}
+        fps={30}
+        durationInFrames={1}
+        schema={thumbnailSchema}
+        defaultProps={{ eyebrow: "스마트스토어 2026", line1: "등록 한도 바뀌었어요", line2: "내 계정은", highlight: "몇 개까지?" }}
       />
     </>
   );
