@@ -100,24 +100,39 @@ const main = async () => {
     const chapterStartSec = cursorSec + (chapterOrder === 0 ? 0 : CHAPTER_LEAD_IN);
     cursorSec = chapterStartSec;
 
+    const chapterStartFrame = sec2frames(chapterStartSec);
+    const slideHighlights: { from: number; to: number; row: number }[] = []; // 챕터-로컬 프레임 기준
+
     for (const [sentenceOrder, sentence] of chapter.sentences.entries()) {
       const audio = narration[narrationIndex];
       narrationIndex += 1;
       const isLastOfChapter = sentenceOrder === chapter.sentences.length - 1;
+      const fromFrame = sec2frames(cursorSec);
+      const durFrames = sec2frames(audio.durationSec);
 
       lines.push({
         text: sentence.text,
         audioSrc: audio.audioSrc,
-        from: sec2frames(cursorSec),
-        durationInFrames: sec2frames(audio.durationSec),
+        from: fromFrame,
+        durationInFrames: durFrames,
         isStation: sentence.isStation,
         // 전문장 자막 (2026-07-22 대표 판정 — 강조만 표시는 지루·정보 약함)
         showCaption: true,
       });
 
+      // 표 강조 — {행:N} 문장이 나오는 동안 해당 행 하이라이트 (다음 강조 전까지 유지)
+      if (sentence.highlightRow !== undefined) {
+        slideHighlights.push({ from: fromFrame - chapterStartFrame, to: 0, row: sentence.highlightRow });
+      }
+
       const gap = isLastOfChapter ? GAP_AFTER_CHAPTER : sentence.isStation ? GAP_AFTER_STATION : GAP_DEFAULT;
       cursorSec += audio.durationSec + gap;
     }
+    // 각 강조의 끝 = 다음 강조 시작 (마지막은 챕터 끝까지)
+    const chapterEndLocal = sec2frames(cursorSec - chapterStartSec);
+    slideHighlights.forEach((h, i) => {
+      h.to = i + 1 < slideHighlights.length ? slideHighlights[i + 1].from : chapterEndLocal;
+    });
 
     ////////// 화면 소스 — 챕터 길이에 맞춰 배속/스크롤 결정
     const chapterFrames = sec2frames(cursorSec - chapterStartSec);
@@ -131,9 +146,7 @@ const main = async () => {
     } else if (isHoldScreen(chapter.screen)) {
       screen = { kind: "hold" };
     } else if (chapter.screen === "슬라이드") {
-      // 이미지·녹화 없는 개념 설명 챕터 — 정차역 문장을 불릿으로 자동 구성
-      const bullets = chapter.sentences.filter((s) => s.isStation).map((s) => s.text);
-      screen = { kind: "slide", heading: chapter.title, bullets: bullets.length ? bullets : [chapter.sentences[0]?.text ?? ""] };
+      screen = { kind: "slide", heading: chapter.title, tableId: chapter.tableId ?? "", highlights: slideHighlights };
     } else if (isImageScreen(chapter.screen)) {
       // full 캡처(세로 7951px)만 스크롤. 섹션 조각은 정지 표시
       screen = { kind: "image", src: `marketing/${chapter.screen}.jpg`, scroll: chapter.screen.endsWith("-full") };

@@ -8,12 +8,14 @@ const CONTENT_ROOT = resolve(__dirname, "../../../docs/마케팅/컨텐츠");
 export type Sentence = {
   text: string; // 나레이션 1줄 = TTS 1호출 = 자막 1줄
   isStation: boolean; // (정차역) 표시 — 화면 강조 시점
+  highlightRow?: number; // {행:N} — 표 슬라이드에서 이 문장이 나올 때 강조할 행
 };
 
 export type Chapter = {
   index: number; // 1부터
   title: string;
-  screen: string; // [화면: xxx] — 녹화 시나리오 id, "인트로"면 녹화 없음
+  screen: string; // [화면: xxx] 녹화/이미지/인트로/아웃트로, 또는 [표: id]면 "표:id"
+  tableId?: string; // [표: id] 인 경우
   sentences: Sentence[];
 };
 
@@ -72,11 +74,23 @@ export const parseLongform = (month: string, day: string): LongformScript => {
       continue;
     }
 
-    ////////// 나레이션 — 줄 하나가 문장 하나
+    ////////// 표 지시 — "[표: limit-5]" → 표 슬라이드
+    const tableRef = line.match(/^\[표:\s*(.+?)\]$/);
+    if (tableRef) {
+      if (!current) throw new Error(`챕터 밖의 표 지시: ${line}`);
+      current.screen = "슬라이드";
+      current.tableId = tableRef[1].trim();
+      continue;
+    }
+
+    ////////// 나레이션 — 줄 하나가 문장 하나. 앞에 (정차역) 또는 {행:N} 마커 가능
     if (!current) continue; // 헤더 앞 잡소리 무시
-    const isStation = line.startsWith("(정차역)");
-    const text = isStation ? line.replace(/^\(정차역\)\s*/, "").trim() : line;
-    if (text) current.sentences.push({ text, isStation });
+    const rowMatch = line.match(/^\{행:\s*(\d+)\}\s*/);
+    const highlightRow = rowMatch ? Number(rowMatch[1]) : undefined;
+    const afterRow = rowMatch ? line.slice(rowMatch[0].length) : line;
+    const isStation = afterRow.startsWith("(정차역)") || highlightRow !== undefined;
+    const text = afterRow.replace(/^\(정차역\)\s*/, "").trim();
+    if (text) current.sentences.push({ text, isStation, highlightRow });
   }
 
   if (chapters.length === 0) throw new Error("챕터가 없음 — '## 1. 제목' 형식 확인");

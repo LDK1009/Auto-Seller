@@ -59,21 +59,31 @@ export class HumanPage {
     await target.evaluate((el) => el.scrollIntoView({ behavior: "smooth", block: "center" }));
     await this.page.evaluate(() => (window as any).__dimCursor?.(true)); // 읽는 동안 커서 숨김 (라벨 가림 방지)
     await this.page.waitForTimeout(800); // 스무스 스크롤 완료 + 정착
-    // 타겟(보통 섹션 라벨 텍스트)의 조상 중 섹션 카드(뷰포트 60% 이상 폭)를 찾아 그 박스를 강조 링 영역으로 사용
+    // 강조 영역 = 타겟이 속한 "의미 있는 블록"을 좁게 잡는다.
+    // 조상을 올라가되, 폭이 뷰포트 55%를 넘어서기 직전(= 컨텐츠 블록)에서 멈춘다.
+    // 이러면 화면 전체를 감싸는 거대 링(부정확 원인)이 아니라 해당 항목만 감싼다.
     const box = await target.evaluate((el) => {
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      let node: HTMLElement | null = el as HTMLElement;
-      while (node) {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const target = el as HTMLElement;
+      const tRect = target.getBoundingClientRect();
+      let best = { x: tRect.x, y: tRect.y, width: tRect.width, height: tRect.height };
+      let node: HTMLElement | null = target.parentElement;
+      let depth = 0;
+      while (node && depth < 6) {
         const rect = node.getBoundingClientRect();
-        // 섹션 카드 판정: 폭 60% 이상 + 높이 7% 이상 (라벨 행 래퍼는 높이 미달로 스킵)
-        if (rect.width >= viewportWidth * 0.6 && rect.height >= viewportHeight * 0.07) {
-          return { x: rect.x, y: rect.y, width: rect.width, height: Math.min(rect.height, viewportHeight * 0.45) };
+        // 폭 55% 초과 = 레이아웃 컨테이너로 간주하고 멈춤. 그 직전까지가 "항목 블록"
+        if (rect.width > vw * 0.55) break;
+        // 유의미하게 커진 블록만 채택 (텍스트 → 그 항목 카드)
+        if (rect.width >= best.width && rect.height >= best.height && rect.height <= vh * 0.35) {
+          best = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
         }
         node = node.parentElement;
+        depth += 1;
       }
-      const rect = (el as HTMLElement).getBoundingClientRect();
-      return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+      // 살짝 여백을 줘 텍스트에 딱 붙지 않게
+      const pad = 10;
+      return { x: best.x - pad, y: best.y - pad, width: best.width + pad * 2, height: best.height + pad * 2 };
     });
     if (box) {
       this.events.push({

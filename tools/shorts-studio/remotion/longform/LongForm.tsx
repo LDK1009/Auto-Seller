@@ -4,6 +4,7 @@
 //   전문장 자막 · 등속 금지(easing) · 화면 전환 크로스페이드 · 정지 이미지엔 켄번스(줌·팬) + 강조
 import { AbsoluteFill, Audio, Easing, Img, OffthreadVideo, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { COLOR, FONT_STACK } from "../theme";
+import { TABLES as SLIDE_TABLES } from "./slideData";
 import type { Chapter, Line, LongformProps } from "./schema";
 
 const EASE = Easing.bezier(0.4, 0, 0.2, 1);
@@ -158,19 +159,58 @@ const OutroScreen: React.FC<{ summary: string[] }> = ({ summary }) => {
   );
 };
 
-////////// 강의 슬라이드 — 이미지가 없는 개념 설명 챕터용 (표/불릿을 코드로 렌더)
-const SlideScreen: React.FC<{ heading: string; bullets: string[]; durationInFrames: number }> = ({ heading, bullets, durationInFrames }) => {
+////////// 아이콘 — SVG (외부 리소스 없이 인라인). 시선 포인트
+const Icon: React.FC<{ name: string; size?: number }> = ({ name, size = 40 }) => {
+  const common = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", strokeWidth: 2.4, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  if (name === "warning")
+    return (
+      <svg {...common} stroke="#E8590C"><path d="M12 3L2 20h20L12 3z" /><line x1="12" y1="10" x2="12" y2="14" /><circle cx="12" cy="17.5" r="0.6" fill="#E8590C" stroke="#E8590C" /></svg>
+    );
+  if (name === "check")
+    return <svg {...common} stroke={COLOR.brand}><path d="M20 6L9 17l-5-5" /></svg>;
+  return <svg {...common} stroke={COLOR.inkDim}><circle cx="12" cy="12" r="9" /><line x1="12" y1="11" x2="12" y2="16" /><circle cx="12" cy="8" r="0.6" fill={COLOR.inkDim} stroke={COLOR.inkDim} /></svg>; // info
+};
+
+////////// 표 슬라이드 — 원본 표를 코드로 재현. 말하는 행에 형광펜 + 헤더 순차 등장
+const SlideScreen: React.FC<{ heading: string; tableId: string; highlights: { from: number; to: number; row: number }[] }> = ({ heading, tableId, highlights }) => {
   const frame = useCurrentFrame();
+  const table = SLIDE_TABLES[tableId];
+  if (!table) return <AbsoluteFill style={{ backgroundColor: COLOR.canvas }} />;
+
+  const activeRow = highlights.find((h) => frame >= h.from && frame < h.to)?.row ?? -1;
+  const headIn = interpolate(frame, [0, 12], [0, 1], { extrapolateRight: "clamp", easing: EASE });
+
   return (
-    <AbsoluteFill style={{ backgroundColor: COLOR.canvas, padding: "120px 140px", fontFamily: FONT_STACK }}>
-      <div style={{ fontSize: 68, fontWeight: 800, color: COLOR.ink, marginBottom: 60 }}>{heading}</div>
-      {bullets.map((b, i) => {
-        // 불릿을 한 줄씩 순차 등장 — 강의 리듬
-        const appear = interpolate(frame, [i * 14, i * 14 + 10], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: EASE });
+    <AbsoluteFill style={{ backgroundColor: COLOR.canvas, padding: "90px 130px 220px", fontFamily: FONT_STACK, justifyContent: "center" }}>
+      <div style={{ fontSize: 60, fontWeight: 800, color: COLOR.ink, marginBottom: 44, opacity: headIn, transform: `translateY(${(1 - headIn) * 12}px)` }}>{heading}</div>
+
+      {/* 표 — 원본 그대로 */}
+      <div style={{ borderRadius: 18, overflow: "hidden", border: `2px solid ${COLOR.cardBorder}`, boxShadow: "0 8px 32px rgba(0,0,0,0.06)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: `repeat(${table.columns.length}, 1fr)`, backgroundColor: "#F1F2F4" }}>
+          {table.columns.map((c, i) => (
+            <div key={i} style={{ padding: "22px 20px", fontSize: 32, fontWeight: 700, color: COLOR.inkDim, textAlign: "center" }}>{c}</div>
+          ))}
+        </div>
+        {table.rows.map((row, ri) => {
+          const on = ri === activeRow;
+          const rowIn = interpolate(frame, [14 + ri * 6, 24 + ri * 6], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: EASE });
+          return (
+            <div key={ri} style={{ display: "grid", gridTemplateColumns: `repeat(${table.columns.length}, 1fr)`, backgroundColor: on ? COLOR.highlight : ri % 2 ? "#FbFbFc" : "#fff", opacity: rowIn, transition: "background-color 0.3s", borderTop: `1px solid ${COLOR.cardBorder}` }}>
+              {row.map((cell, ci) => (
+                <div key={ci} style={{ padding: "24px 20px", fontSize: ci === 0 ? 40 : 36, fontWeight: ci === 0 ? 800 : 600, color: COLOR.ink, textAlign: "center", transform: on ? "scale(1.04)" : "scale(1)" }}>{cell}</div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 조건 — 아이콘 + 문구, 순차 등장 */}
+      {table.notes?.map((n, i) => {
+        const noteIn = interpolate(frame, [30 + table.rows.length * 6 + i * 12, 42 + table.rows.length * 6 + i * 12], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: EASE });
         return (
-          <div key={i} style={{ opacity: appear, transform: `translateX(${(1 - appear) * 24}px)`, display: "flex", alignItems: "flex-start", gap: 24, marginBottom: 34 }}>
-            <div style={{ width: 16, height: 16, borderRadius: 4, backgroundColor: COLOR.brand, marginTop: 22, flexShrink: 0 }} />
-            <div style={{ fontSize: 46, fontWeight: 600, color: COLOR.ink, lineHeight: 1.4 }}>{b}</div>
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 18, marginTop: i === 0 ? 40 : 22, opacity: noteIn, transform: `translateX(${(1 - noteIn) * 20}px)` }}>
+            <Icon name={n.icon} />
+            <div style={{ fontSize: 40, fontWeight: 600, color: COLOR.ink }}>{n.text}</div>
           </div>
         );
       })}
@@ -182,7 +222,7 @@ const ChapterScreen: React.FC<{ chapter: Chapter }> = ({ chapter }) => {
   const { screen, durationInFrames } = chapter;
   if (screen.kind === "image") return <ImageScreen src={screen.src} scroll={screen.scroll} durationInFrames={durationInFrames} />;
   if (screen.kind === "video") return <VideoScreen src={screen.src} trimSec={screen.trimSec} playbackRate={screen.playbackRate} isOurService={screen.isOurService} focuses={screen.focuses} />;
-  if (screen.kind === "slide") return <SlideScreen heading={screen.heading} bullets={screen.bullets} durationInFrames={durationInFrames} />;
+  if (screen.kind === "slide") return <SlideScreen heading={screen.heading} tableId={screen.tableId} highlights={screen.highlights} />;
   if (screen.kind === "outro") return <OutroScreen summary={screen.summary} />;
   return null;
 };

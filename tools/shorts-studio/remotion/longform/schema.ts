@@ -26,8 +26,14 @@ export const screenSchema = z.discriminatedUnion("kind", [
       .array(z.object({ at: z.number(), x: z.number(), y: z.number(), w: z.number(), h: z.number(), holdSec: z.number() }))
       .default([]),
   }),
-  // 강의 슬라이드 — 이미지 없는 개념 설명 챕터 (제목 + 불릿 순차 등장)
-  z.object({ kind: z.literal("slide"), heading: z.string(), bullets: z.array(z.string()) }),
+  // 표 슬라이드 — 원본 표를 코드로 재현. highlights[]는 나레이션 문장별로 강조할 행 인덱스
+  z.object({
+    kind: z.literal("slide"),
+    heading: z.string(),
+    tableId: z.string(),
+    // 문장 프레임 구간마다 강조할 행 — [{ from, to, row }]
+    highlights: z.array(z.object({ from: z.number(), to: z.number(), row: z.number() })).default([]),
+  }),
   // 아웃트로 — 핵심 요약 3줄 + 구독·댓글 CTA (갑자기 끝나는 느낌 방지)
   z.object({ kind: z.literal("outro"), summary: z.array(z.string()) }),
   // 화면 없음 — 직전 화면 유지 (인트로 카드 금지 규칙)
