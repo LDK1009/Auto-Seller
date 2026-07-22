@@ -157,32 +157,21 @@ const main = async () => {
       const rec = recordings.get(chapter.screen)!;
       const trimSec = Math.max(0, rec.loadedSec - 0.3); // 로딩 공백 제거
       const usableSec = rec.durationSec - trimSec;
-      // 녹화가 길면 배속으로 압축. 짧으면 늦춰서 늘리되 0.7배까지만 — 그 이하는 부자연스럽다.
-      const raw = usableSec / chapterSec;
-      const playbackRate = Number(Math.max(0.7, raw).toFixed(3));
-      // 정차역(focus) 이벤트 → 화면 시각으로 변환. 원본시각 t → (t-trim)/배속 이 화면상 위치
+      // 1.0배 재생 — 배속 없음. 화면보다 짧으면 뒤를 Freeze, 길면 화면 길이까지만 보이고 나머지 잘림.
+      const videoFrames = Math.floor(usableSec * FPS);
+      // 정차역(focus) 이벤트 → 화면 시각 = 원본시각 - 트림 (1.0배라 그대로)
       const focuses = rec.events
         .filter((e) => e.type === "focus" && e.x !== undefined)
-        .map((e) => ({
-          at: (e.t - trimSec) / playbackRate,
-          x: e.x!,
-          y: e.y!,
-          w: e.w ?? 0,
-          h: e.h ?? 0,
-          holdSec: (e.holdSec ?? 2) / playbackRate,
-        }))
-        .filter((f) => f.at >= 0);
-      screen = { kind: "video", src: rec.videoRelPath, trimSec, playbackRate, isOurService: OUR_SERVICE.has(chapter.screen), focuses };
-      const covered = usableSec / playbackRate;
-      const freeze = chapterSec - covered;
+        .map((e) => ({ at: e.t - trimSec, x: e.x!, y: e.y!, w: e.w ?? 0, h: e.h ?? 0, holdSec: e.holdSec ?? 2 }))
+        .filter((f) => f.at >= 0 && f.at <= chapterSec);
+      screen = { kind: "video", src: rec.videoRelPath, trimSec, videoFrames, isOurService: OUR_SERVICE.has(chapter.screen), focuses };
+      const freeze = chapterSec - usableSec;
       console.log(
-        `   ch${chapter.index} 화면 ${usableSec.toFixed(1)}초 / 나레이션 ${chapterSec.toFixed(1)}초 → 배속 ${playbackRate}` +
-          (freeze > 1 ? `  ⚠️ 정지 ${freeze.toFixed(1)}초` : ""),
+        `   ch${chapter.index} 화면 ${usableSec.toFixed(1)}초 / 나레이션 ${chapterSec.toFixed(1)}초` +
+          (freeze > 1 ? `  → 뒤 ${freeze.toFixed(1)}초 정지` : freeze < -1 ? `  → ${(-freeze).toFixed(1)}초 잘림` : ""),
       );
-      if (freeze > 5) {
-        console.warn(
-          `   ⚠️ ch${chapter.index} 시나리오가 짧다 — ${freeze.toFixed(0)}초간 정지 화면. scenarios/${day}-ch${chapter.index}-*.ts 에 조작·정차를 추가할 것`,
-        );
+      if (freeze > 6) {
+        console.warn(`   ⚠️ ch${chapter.index} 시나리오가 짧다 — ${freeze.toFixed(0)}초 정지. scenarios/${day}-ch${chapter.index}-*.ts 에 조작 추가 권장`);
       }
     }
 

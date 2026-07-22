@@ -15,12 +15,13 @@ export const lineSchema = z.object({
 export const screenSchema = z.discriminatedUnion("kind", [
   // 정적 이미지 — 긴 캡처는 스크롤, 짧으면 켄번스(줌·팬)
   z.object({ kind: z.literal("image"), src: z.string(), scroll: z.boolean() }),
-  // 실시간 녹화 — 길이 안 맞으면 배속/정지로 흡수. isOurService면 URL 배지 + 강조 링
+  // 실시간 녹화 — 1.0배 재생. 영상이 챕터보다 짧으면 videoFrames 이후 마지막 프레임 정지(Freeze).
+  // 배속(playbackRate≠1)은 OffthreadVideo seek을 깨뜨려 제거함. isOurService면 URL 배지 + 강조 링
   z.object({
     kind: z.literal("video"),
     src: z.string(),
     trimSec: z.number(),
-    playbackRate: z.number(),
+    videoFrames: z.number(), // 실제 재생 가능한 프레임 수 (이후는 정지)
     isOurService: z.boolean().default(false),
     focuses: z
       .array(z.object({ at: z.number(), x: z.number(), y: z.number(), w: z.number(), h: z.number(), holdSec: z.number() }))

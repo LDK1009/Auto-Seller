@@ -2,7 +2,7 @@
 // 오디오가 타임라인을 지배한다 — 문장별 실측 길이로 프레임이 이미 계산돼 props로 들어온다.
 // AI 티 방지 (규칙: docs/마케팅/MARKETING.md):
 //   전문장 자막 · 등속 금지(easing) · 화면 전환 크로스페이드 · 정지 이미지엔 켄번스(줌·팬) + 강조
-import { AbsoluteFill, Audio, Easing, Img, OffthreadVideo, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Audio, Easing, Freeze, Img, OffthreadVideo, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { COLOR, FONT_STACK } from "../theme";
 import { TABLES as SLIDE_TABLES } from "./slideData";
 import type { Chapter, Line, LongformProps } from "./schema";
@@ -55,10 +55,10 @@ const ImageScreen: React.FC<{ src: string; scroll: boolean; durationInFrames: nu
 
 ////////// 녹화 화면 위 강조 링 — 정차역 시점에 해당 영역을 감싸 시선 유도
 // contain 매핑: 1920×1080 화면에 원본(가로 녹화)이 꽉 차므로 좌표(0~1)를 그대로 화면 비율로 환산
-const FocusRing: React.FC<{ focus: { at: number; x: number; y: number; w: number; h: number; holdSec: number }; playbackRate: number }> = ({ focus, playbackRate }) => {
+const FocusRing: React.FC<{ focus: { at: number; x: number; y: number; w: number; h: number; holdSec: number } }> = ({ focus }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
-  // 녹화 이벤트 시각(at)은 원본 기준 → 배속·트림 반영은 빌더가 이미 at을 화면 시각으로 변환해 넘김
+  // at은 빌더가 화면 시각(트림 반영, 1.0배)으로 변환해 넘김
   const nowSec = frame / fps;
   const start = focus.at;
   const end = focus.at + focus.holdSec;
@@ -115,22 +115,23 @@ const ServiceBadge: React.FC = () => (
   </div>
 );
 
-////////// 실시간 녹화 — 나레이션보다 짧으면 마지막 프레임 정지, 길면 배속
-const VideoScreen: React.FC<{ src: string; trimSec: number; playbackRate: number; isOurService: boolean; focuses: { at: number; x: number; y: number; w: number; h: number; holdSec: number }[] }> = ({ src, trimSec, playbackRate, isOurService, focuses }) => (
-  <AbsoluteFill style={{ backgroundColor: COLOR.canvas }}>
-    <OffthreadVideo
-      src={staticFile(src)}
-      startFrom={Math.round(trimSec * 30)}
-      playbackRate={playbackRate}
-      muted
-      style={{ width: "100%", height: "100%", objectFit: "contain" }}
-    />
-    {focuses.map((f, i) => (
-      <FocusRing key={i} focus={f} playbackRate={playbackRate} />
-    ))}
-    {isOurService ? <ServiceBadge /> : null}
-  </AbsoluteFill>
-);
+////////// 실시간 녹화 — 1.0배 재생. videoFrames 이후는 마지막 프레임 정지(Freeze)로 seek 에러 방지
+const VideoScreen: React.FC<{ src: string; trimSec: number; videoFrames: number; isOurService: boolean; focuses: { at: number; x: number; y: number; w: number; h: number; holdSec: number }[] }> = ({ src, trimSec, videoFrames, isOurService, focuses }) => {
+  const frame = useCurrentFrame();
+  const startFrom = Math.round(trimSec * 30);
+  const past = frame >= videoFrames - 1; // 영상 끝 도달 → 정지
+  return (
+    <AbsoluteFill style={{ backgroundColor: COLOR.canvas }}>
+      <Freeze frame={videoFrames - 1} active={past}>
+        <OffthreadVideo src={staticFile(src)} startFrom={startFrom} muted style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+      </Freeze>
+      {focuses.map((f, i) => (
+        <FocusRing key={i} focus={f} />
+      ))}
+      {isOurService ? <ServiceBadge /> : null}
+    </AbsoluteFill>
+  );
+};
 
 ////////// 아웃트로 — 핵심 요약 + 구독 유도 (갑자기 끝나는 느낌 제거)
 const OutroScreen: React.FC<{ summary: string[] }> = ({ summary }) => {
@@ -246,7 +247,7 @@ const ChapterScreen: React.FC<{ chapter: Chapter }> = ({ chapter }) => {
   const { screen, durationInFrames } = chapter;
   if (screen.kind === "intro") return <IntroScreen title={screen.title} keyword={screen.keyword} />;
   if (screen.kind === "image") return <ImageScreen src={screen.src} scroll={screen.scroll} durationInFrames={durationInFrames} />;
-  if (screen.kind === "video") return <VideoScreen src={screen.src} trimSec={screen.trimSec} playbackRate={screen.playbackRate} isOurService={screen.isOurService} focuses={screen.focuses} />;
+  if (screen.kind === "video") return <VideoScreen src={screen.src} trimSec={screen.trimSec} videoFrames={screen.videoFrames} isOurService={screen.isOurService} focuses={screen.focuses} />;
   if (screen.kind === "slide") return <SlideScreen heading={screen.heading} tableId={screen.tableId} highlights={screen.highlights} />;
   if (screen.kind === "outro") return <OutroScreen summary={screen.summary} />;
   return null;
