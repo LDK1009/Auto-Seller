@@ -143,6 +143,9 @@ const main = async () => {
       // 마무리 챕터 — 정차역 문장을 요약 줄로. 없으면 앞 문장들에서 짧은 것 3개
       const summary = chapter.sentences.filter((s) => s.isStation).map((s) => s.text);
       screen = { kind: "outro", summary: summary.length ? summary : chapter.sentences.slice(0, 3).map((s) => s.text) };
+    } else if (chapter.screen === "인트로") {
+      // 오프닝 1회 — 제목 + 검색어 도입 화면
+      screen = { kind: "intro", title: script.title, keyword: script.keyword };
     } else if (isHoldScreen(chapter.screen)) {
       screen = { kind: "hold" };
     } else if (chapter.screen === "슬라이드") {
@@ -223,6 +226,12 @@ const main = async () => {
 
   const totalMin = durationInFrames / FPS / 60;
   console.log(`\n⏱  총 ${totalMin.toFixed(1)}분 (${durationInFrames}프레임) · 자막 ${lines.filter((l: any) => l.showCaption).length}줄`);
+
+  // --props-only: 렌더 스킵. 스틸(remotion still)로 디자인 검증할 때 사용 — 20분 렌더 낭비 방지
+  if (process.argv.includes("--props-only")) {
+    console.log(`\n📋 props만 생성: ${propsPath} (렌더 스킵)`);
+    return;
+  }
 
   ////////// 5) 렌더
   const contentDir = resolve(STUDIO_ROOT, `../../docs/마케팅/컨텐츠/${month}/${day}/롱폼`);

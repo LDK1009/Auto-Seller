@@ -36,7 +36,9 @@ export const screenSchema = z.discriminatedUnion("kind", [
   }),
   // 아웃트로 — 핵심 요약 3줄 + 구독·댓글 CTA (갑자기 끝나는 느낌 방지)
   z.object({ kind: z.literal("outro"), summary: z.array(z.string()) }),
-  // 화면 없음 — 직전 화면 유지 (인트로 카드 금지 규칙)
+  // 인트로 — 영상 오프닝 1회. 제목 + 검색어 (매 챕터 반복 카드가 아니라 도입부 전용)
+  z.object({ kind: z.literal("intro"), title: z.string(), keyword: z.string() }),
+  // 화면 없음 — 직전 화면 유지
   z.object({ kind: z.literal("hold") }),
 ]);
 

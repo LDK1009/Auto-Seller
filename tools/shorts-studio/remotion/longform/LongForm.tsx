@@ -180,24 +180,29 @@ const SlideScreen: React.FC<{ heading: string; tableId: string; highlights: { fr
   const activeRow = highlights.find((h) => frame >= h.from && frame < h.to)?.row ?? -1;
   const headIn = interpolate(frame, [0, 12], [0, 1], { extrapolateRight: "clamp", easing: EASE });
 
+  // 행이 많으면 자동 축소 — 5행 표도 자막 영역(하단) 위에 다 들어오게
+  const many = table.rows.length >= 5;
+  const cellPadV = many ? 14 : 20;
+  const cellFont = many ? 32 : 38;
+  const headFont = many ? 27 : 30;
   return (
-    <AbsoluteFill style={{ backgroundColor: COLOR.canvas, padding: "90px 130px 220px", fontFamily: FONT_STACK, justifyContent: "center" }}>
-      <div style={{ fontSize: 60, fontWeight: 800, color: COLOR.ink, marginBottom: 44, opacity: headIn, transform: `translateY(${(1 - headIn) * 12}px)` }}>{heading}</div>
+    <AbsoluteFill style={{ backgroundColor: COLOR.canvas, padding: "56px 130px 210px", fontFamily: FONT_STACK, justifyContent: "flex-start" }}>
+      <div style={{ fontSize: 52, fontWeight: 800, color: COLOR.ink, marginBottom: 26, opacity: headIn, transform: `translateY(${(1 - headIn) * 12}px)` }}>{heading}</div>
 
       {/* 표 — 원본 그대로 */}
-      <div style={{ borderRadius: 18, overflow: "hidden", border: `2px solid ${COLOR.cardBorder}`, boxShadow: "0 8px 32px rgba(0,0,0,0.06)" }}>
+      <div style={{ borderRadius: 16, overflow: "hidden", border: `2px solid ${COLOR.cardBorder}`, boxShadow: "0 8px 32px rgba(0,0,0,0.06)" }}>
         <div style={{ display: "grid", gridTemplateColumns: `repeat(${table.columns.length}, 1fr)`, backgroundColor: "#F1F2F4" }}>
           {table.columns.map((c, i) => (
-            <div key={i} style={{ padding: "22px 20px", fontSize: 32, fontWeight: 700, color: COLOR.inkDim, textAlign: "center" }}>{c}</div>
+            <div key={i} style={{ padding: `14px 18px`, fontSize: headFont, fontWeight: 700, color: COLOR.inkDim, textAlign: "center" }}>{c}</div>
           ))}
         </div>
         {table.rows.map((row, ri) => {
           const on = ri === activeRow;
           const rowIn = interpolate(frame, [14 + ri * 6, 24 + ri * 6], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: EASE });
           return (
-            <div key={ri} style={{ display: "grid", gridTemplateColumns: `repeat(${table.columns.length}, 1fr)`, backgroundColor: on ? COLOR.highlight : ri % 2 ? "#FbFbFc" : "#fff", opacity: rowIn, transition: "background-color 0.3s", borderTop: `1px solid ${COLOR.cardBorder}` }}>
+            <div key={ri} style={{ display: "grid", gridTemplateColumns: `repeat(${table.columns.length}, 1fr)`, backgroundColor: on ? COLOR.highlight : ri % 2 ? "#FbFbFc" : "#fff", opacity: rowIn, borderTop: `1px solid ${COLOR.cardBorder}` }}>
               {row.map((cell, ci) => (
-                <div key={ci} style={{ padding: "24px 20px", fontSize: ci === 0 ? 40 : 36, fontWeight: ci === 0 ? 800 : 600, color: COLOR.ink, textAlign: "center", transform: on ? "scale(1.04)" : "scale(1)" }}>{cell}</div>
+                <div key={ci} style={{ padding: `${cellPadV}px 18px`, fontSize: ci === 0 ? cellFont + 4 : cellFont, fontWeight: ci === 0 ? 800 : 600, color: COLOR.ink, textAlign: "center" }}>{cell}</div>
               ))}
             </div>
           );
@@ -208,9 +213,9 @@ const SlideScreen: React.FC<{ heading: string; tableId: string; highlights: { fr
       {table.notes?.map((n, i) => {
         const noteIn = interpolate(frame, [30 + table.rows.length * 6 + i * 12, 42 + table.rows.length * 6 + i * 12], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: EASE });
         return (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 18, marginTop: i === 0 ? 40 : 22, opacity: noteIn, transform: `translateX(${(1 - noteIn) * 20}px)` }}>
-            <Icon name={n.icon} />
-            <div style={{ fontSize: 40, fontWeight: 600, color: COLOR.ink }}>{n.text}</div>
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, marginTop: i === 0 ? 26 : 16, opacity: noteIn, transform: `translateX(${(1 - noteIn) * 20}px)` }}>
+            <Icon name={n.icon} size={36} />
+            <div style={{ fontSize: 36, fontWeight: 600, color: COLOR.ink }}>{n.text}</div>
           </div>
         );
       })}
@@ -218,8 +223,28 @@ const SlideScreen: React.FC<{ heading: string; tableId: string; highlights: { fr
   );
 };
 
+////////// 인트로 — 오프닝 1회. 제목 크게 + 검색어 태그. 잔잔한 등장
+const IntroScreen: React.FC<{ title: string; keyword: string }> = ({ title, keyword }) => {
+  const frame = useCurrentFrame();
+  const titleIn = interpolate(frame, [4, 22], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: EASE });
+  const kwIn = interpolate(frame, [18, 34], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: EASE });
+  return (
+    <AbsoluteFill style={{ backgroundColor: COLOR.canvas, justifyContent: "center", padding: "0 160px", fontFamily: FONT_STACK }}>
+      <div style={{ opacity: kwIn, marginBottom: 32 }}>
+        <span style={{ fontSize: 34, fontWeight: 700, color: "#fff", backgroundColor: COLOR.brand, padding: "10px 24px", borderRadius: 999 }}>
+          {keyword}
+        </span>
+      </div>
+      <div style={{ opacity: titleIn, transform: `translateY(${(1 - titleIn) * 16}px)`, fontSize: 82, fontWeight: 800, color: COLOR.ink, lineHeight: 1.28, maxWidth: "88%" }}>
+        {title}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 const ChapterScreen: React.FC<{ chapter: Chapter }> = ({ chapter }) => {
   const { screen, durationInFrames } = chapter;
+  if (screen.kind === "intro") return <IntroScreen title={screen.title} keyword={screen.keyword} />;
   if (screen.kind === "image") return <ImageScreen src={screen.src} scroll={screen.scroll} durationInFrames={durationInFrames} />;
   if (screen.kind === "video") return <VideoScreen src={screen.src} trimSec={screen.trimSec} playbackRate={screen.playbackRate} isOurService={screen.isOurService} focuses={screen.focuses} />;
   if (screen.kind === "slide") return <SlideScreen heading={screen.heading} tableId={screen.tableId} highlights={screen.highlights} />;
