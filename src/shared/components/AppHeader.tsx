@@ -19,6 +19,7 @@ import { APP_NAME_EN } from '@/shared/constants/app';
 import { TOOLS, FLAGSHIP_TOOL } from '@/shared/constants/tools';
 import { HEADER_HEIGHT } from '@/shared/constants/layout';
 import { SidebarNav } from '@/shared/components/AppSidebar';
+import AuthMenu from '@/shared/components/AuthMenu';
 
 export default function AppHeader() {
   const pathname = usePathname();
@@ -48,12 +49,15 @@ export default function AppHeader() {
             </LogoLink>
           </LeftSlot>
 
-          {/* 랜딩 전용: 도구 진입 버튼 하나 */}
-          {!isWorkspace && (
-            <Button component={Link} href={FLAGSHIP_TOOL.href} variant="contained" size="small">
-              워크스페이스
-            </Button>
-          )}
+          <RightSlot>
+            <AuthMenu />
+            {/* 랜딩 전용: 도구 진입 버튼 하나 */}
+            {!isWorkspace && (
+              <Button component={Link} href={FLAGSHIP_TOOL.href} variant="contained" size="small">
+                워크스페이스
+              </Button>
+            )}
+          </RightSlot>
         </Inner>
       </Container>
 
@@ -87,6 +91,12 @@ const Inner = styled.div({
 });
 
 const LeftSlot = styled.div(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1),
+}));
+
+const RightSlot = styled.div(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   gap: theme.spacing(1),
