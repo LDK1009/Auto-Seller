@@ -2,7 +2,7 @@
 // 오디오가 타임라인을 지배한다 — 문장별 실측 길이로 프레임이 이미 계산돼 props로 들어온다.
 // AI 티 방지 (규칙: docs/마케팅/MARKETING.md):
 //   전문장 자막 · 등속 금지(easing) · 화면 전환 크로스페이드 · 정지 이미지엔 켄번스(줌·팬) + 강조
-import { AbsoluteFill, Audio, Easing, Img, OffthreadVideo, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Audio, Easing, Img, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { COLOR, FONT_STACK } from "../theme";
 import { TABLES as SLIDE_TABLES } from "./slideData";
 import type { Chapter, Line, LongformProps } from "./schema";
@@ -115,16 +115,23 @@ const ServiceBadge: React.FC = () => (
   </div>
 );
 
-////////// 실시간 녹화 — 챕터 길이에 맞춰 미리 자른 mp4. 처음부터 순차 재생 (seek 없음)
-const VideoScreen: React.FC<{ src: string; isOurService: boolean; focuses: { at: number; x: number; y: number; w: number; h: number; holdSec: number }[] }> = ({ src, isOurService, focuses }) => (
-  <AbsoluteFill style={{ backgroundColor: COLOR.canvas }}>
-    <OffthreadVideo src={staticFile(src)} muted style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-    {focuses.map((f, i) => (
-      <FocusRing key={i} focus={f} />
-    ))}
-    {isOurService ? <ServiceBadge /> : null}
-  </AbsoluteFill>
-);
+////////// 실시간 녹화 — jpg 프레임 시퀀스. 현재 시각 → 해당 프레임 Img (seek 없음)
+const VideoScreen: React.FC<{ frameDir: string; frameCount: number; srcFps: number; isOurService: boolean; focuses: { at: number; x: number; y: number; w: number; h: number; holdSec: number }[] }> = ({ frameDir, frameCount, srcFps, isOurService, focuses }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  // 컴포지션 시각(초) → 원본 fps 기준 프레임 번호 (1부터). 끝을 넘으면 마지막 프레임 정지.
+  const srcFrame = Math.min(frameCount, Math.max(1, Math.round((frame / fps) * srcFps) + 1));
+  const name = String(srcFrame).padStart(5, "0");
+  return (
+    <AbsoluteFill style={{ backgroundColor: COLOR.canvas }}>
+      <Img src={staticFile(`${frameDir}/${name}.jpg`)} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+      {focuses.map((f, i) => (
+        <FocusRing key={i} focus={f} />
+      ))}
+      {isOurService ? <ServiceBadge /> : null}
+    </AbsoluteFill>
+  );
+};
 
 ////////// 아웃트로 — 핵심 요약 + 구독 유도 (갑자기 끝나는 느낌 제거)
 const OutroScreen: React.FC<{ summary: string[] }> = ({ summary }) => {
@@ -240,7 +247,7 @@ const ChapterScreen: React.FC<{ chapter: Chapter }> = ({ chapter }) => {
   const { screen, durationInFrames } = chapter;
   if (screen.kind === "intro") return <IntroScreen title={screen.title} keyword={screen.keyword} />;
   if (screen.kind === "image") return <ImageScreen src={screen.src} scroll={screen.scroll} durationInFrames={durationInFrames} />;
-  if (screen.kind === "video") return <VideoScreen src={screen.src} isOurService={screen.isOurService} focuses={screen.focuses} />;
+  if (screen.kind === "video") return <VideoScreen frameDir={screen.frameDir} frameCount={screen.frameCount} srcFps={screen.srcFps} isOurService={screen.isOurService} focuses={screen.focuses} />;
   if (screen.kind === "slide") return <SlideScreen heading={screen.heading} tableId={screen.tableId} highlights={screen.highlights} />;
   if (screen.kind === "outro") return <OutroScreen summary={screen.summary} />;
   return null;

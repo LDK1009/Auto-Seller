@@ -2,7 +2,7 @@
 // 대본 파싱 → TTS → 녹화 → 타임라인 조립 → 렌더. 사용: npm run longform -- 22 [2026-07]
 import { createHash } from "node:crypto";
 import { execSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
@@ -158,30 +158,33 @@ const main = async () => {
       const rec = recordings.get(chapter.screen)!;
       const trimSec = Math.max(0, rec.loadedSec - 0.3); // 로딩 공백 제거
       const usableSec = rec.durationSec - trimSec;
-      // 챕터 길이에 맞춰 트림한 mp4를 미리 생성 — Remotion은 seek 없이 처음부터 재생만.
-      // (OffthreadVideo의 startFrom·playbackRate·Freeze가 이 소스에서 seek 오작동 → 근본 회피)
-      // 번들 ffmpeg는 최소 빌드라 필터(tpad·fps) 미지원 → 트림+자르기(-ss·-t)만. 부족분은 시나리오 보강으로 해결.
-      const shortBy = chapterSec - usableSec; // 양수면 영상이 챕터보다 짧음(끝에 정지 프레임 없이 검은 화면 위험)
-      const cutSec = Math.min(usableSec, chapterSec + 0.5); // 챕터보다 살짝 길게 잘라 여유
-      const fitName = `${chapter.screen.replace(/[^\w-]/g, "")}-ch${chapter.index}-fit.mp4`;
-      const fitPath = join(STUDIO_ROOT, "public/rec", fitName);
+      // 녹화를 jpg 프레임 시퀀스로 추출 — OffthreadVideo(mp4)가 이 소스에서 seek 오작동해 폐기.
+      // Img 정적 참조라 seek 자체가 없다. 번들 ffmpeg는 필터 미지원이라 원본 fps 그대로 뽑고 Remotion이 시각 매핑.
+      const cutSec = Math.min(usableSec, chapterSec + 0.5);
+      const frameDirName = `${chapter.screen.replace(/[^\w-]/g, "")}-ch${chapter.index}-frames`;
+      const frameDir = join(STUDIO_ROOT, "public/rec", frameDirName);
+      rmSync(frameDir, { recursive: true, force: true });
+      mkdirSync(frameDir, { recursive: true });
       const srcAbs = join(STUDIO_ROOT, "public", rec.videoRelPath);
       execFileSync(
         FFMPEG,
-        ["-y", "-ss", trimSec.toFixed(3), "-i", srcAbs, "-t", cutSec.toFixed(3), "-c:v", "libx264", "-preset", "fast", "-crf", "20", "-pix_fmt", "yuv420p", "-an", fitPath],
+        ["-y", "-ss", trimSec.toFixed(3), "-i", srcAbs, "-t", cutSec.toFixed(3), "-q:v", "4", join(frameDir, "%05d.jpg")],
         { stdio: "ignore" },
       );
-      // 정차역 → 화면 시각 = 원본시각 - 트림 (fit이 트림 제거라 그대로 매핑)
+      const frameCount = readdirSync(frameDir).filter((f) => f.endsWith(".jpg")).length;
+      const srcFps = frameCount / cutSec; // 원본 실측 fps (녹화가 정확히 30fps가 아닐 수 있음)
+      // 정차역 → 화면 시각 = 원본시각 - 트림
       const focuses = rec.events
         .filter((e) => e.type === "focus" && e.x !== undefined)
         .map((e) => ({ at: e.t - trimSec, x: e.x!, y: e.y!, w: e.w ?? 0, h: e.h ?? 0, holdSec: e.holdSec ?? 2 }))
         .filter((f) => f.at >= 0 && f.at <= chapterSec);
-      screen = { kind: "video", src: `rec/${fitName}`, isOurService: OUR_SERVICE.has(chapter.screen), focuses };
+      screen = { kind: "video", frameDir: `rec/${frameDirName}`, frameCount, srcFps: Number(srcFps.toFixed(3)), isOurService: OUR_SERVICE.has(chapter.screen), focuses };
+      const shortBy = chapterSec - usableSec;
       console.log(
-        `   ch${chapter.index} 화면 ${usableSec.toFixed(1)}초 / 나레이션 ${chapterSec.toFixed(1)}초` +
-          (shortBy > 0.5 ? `  ⚠️ ${shortBy.toFixed(1)}초 짧음 — 시나리오 보강 필요` : `  → ${(-shortBy).toFixed(1)}초 잘림`),
+        `   ch${chapter.index} 화면 ${usableSec.toFixed(1)}초(${frameCount}프레임 @${srcFps.toFixed(1)}fps) / 나레이션 ${chapterSec.toFixed(1)}초` +
+          (shortBy > 0.5 ? `  ⚠️ ${shortBy.toFixed(1)}초 짧음` : `  → ${(-shortBy).toFixed(1)}초 잘림`),
       );
-      if (shortBy > 0.5) console.warn(`   ⚠️ ch${chapter.index} 영상이 나레이션보다 ${shortBy.toFixed(1)}초 짧다 — scenarios/${day}-ch${chapter.index}-*.ts 에 조작 추가 (끝에 검은 화면 방지)`);
+      if (shortBy > 0.5) console.warn(`   ⚠️ ch${chapter.index} 영상이 ${shortBy.toFixed(1)}초 짧다 — 끝에 마지막 프레임 정지됨. 시나리오 보강 권장`);
     }
 
     chapters.push({

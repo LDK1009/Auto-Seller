@@ -15,11 +15,13 @@ export const lineSchema = z.object({
 export const screenSchema = z.discriminatedUnion("kind", [
   // 정적 이미지 — 긴 캡처는 스크롤, 짧으면 켄번스(줌·팬)
   z.object({ kind: z.literal("image"), src: z.string(), scroll: z.boolean() }),
-  // 실시간 녹화 — 빌더가 챕터 길이에 딱 맞게 미리 자른 mp4. Remotion은 seek 없이 처음부터 재생만.
-  // (startFrom·playbackRate·Freeze는 이 소스에서 seek 오작동 → 빌더 ffmpeg 트림으로 근본 회피)
+  // 실시간 녹화 — jpg 프레임 시퀀스로 붙인다. OffthreadVideo(mp4 seek)가 이 소스에서 오작동해 폐기.
+  // Img는 정적 참조라 seek 자체가 없음. dir/00001.jpg … frameCount 장, 원본 srcFps로 재생.
   z.object({
     kind: z.literal("video"),
-    src: z.string(),
+    frameDir: z.string(), // public/ 기준 (rec/xxx-frames)
+    frameCount: z.number(),
+    srcFps: z.number(),
     isOurService: z.boolean().default(false),
     focuses: z
       .array(z.object({ at: z.number(), x: z.number(), y: z.number(), w: z.number(), h: z.number(), holdSec: z.number() }))
