@@ -5,7 +5,7 @@ import { CURSOR_INIT_SCRIPT } from "./cursor";
 
 export type DemoEvent = {
   t: number; // 녹화 시작 기준 초
-  type: "click" | "type" | "scroll" | "hold" | "focus"; // focus = 정차역 (강조 구간)
+  type: "click" | "type" | "scroll" | "hold" | "focus" | "scene"; // focus = 정차역(강조) / scene = 씬 경계
   x?: number; // 0~1 뷰포트 상대 좌표 (박스 중심)
   y?: number;
   w?: number; // 0~1 정차역 박스 크기 — 강조 테두리 링 사이즈용
@@ -48,6 +48,11 @@ export class HumanPage {
   }
 
   ////////// 대기 (화면 머묾) — 지터 적용
+  ////////// 씬 경계 표시 — 데모 영상에서 좌상단 제목·자막이 바뀌는 시점
+  markScene() {
+    this.events.push({ t: this.now(), type: "scene" });
+  }
+
   async hold(sec: number) {
     await this.page.waitForTimeout(jitter(sec) * 1000);
   }

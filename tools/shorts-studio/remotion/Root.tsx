@@ -6,6 +6,8 @@ import { timerShortSchema } from "./schema";
 import { LongForm } from "./longform/LongForm";
 import { longformSchema } from "./longform/schema";
 import { Thumbnail, thumbnailSchema } from "./longform/Thumbnail";
+import { Demo } from "./demo/Demo";
+import { demoSchema } from "./demo/schema";
 import "pretendard/dist/web/variable/pretendardvariable.css"; // AI티 제거 — 실제 서비스와 동일 폰트
 
 export const FPS = 30;
@@ -68,6 +70,25 @@ export const Root = () => {
         fps={FPS}
         schema={longformSchema}
         defaultProps={longformDefaults}
+        calculateMetadata={({ props }) => ({ durationInFrames: props.durationInFrames })}
+      />
+      {/* 데모 영상 — 기능 시연 (세로 1080×1920, 쓰레드·릴스용) */}
+      <Composition
+        id="Demo"
+        component={Demo}
+        width={1080}
+        height={1920}
+        fps={FPS}
+        schema={demoSchema}
+        defaultProps={{
+          videoTitle: "",
+          durationInFrames: 300,
+          frameDir: "",
+          frameCount: 1,
+          srcFps: 25,
+          scenes: [],
+          focuses: [],
+        }}
         calculateMetadata={({ props }) => ({ durationInFrames: props.durationInFrames })}
       />
       {/* 유튜브 썸네일 — remotion still 로 추출 */}

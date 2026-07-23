@@ -9,7 +9,8 @@
     "parse": "tsx scripts/parse-script.ts",
     "episode": "tsx scripts/build-episode.ts",
     "longform": "tsx scripts/build-longform.ts",
-    "parse-longform": "tsx scripts/parse-longform.ts"
+    "parse-longform": "tsx scripts/parse-longform.ts",
+    "demo": "tsx scripts/build-demo.ts"
   },
   "dependencies": {
     "@remotion/cli": "4.0.245",
