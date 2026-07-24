@@ -46,7 +46,7 @@ export default function LoginRequiredDialog({ open, description, onClose }: Logi
             다음에
           </Button>
           <Button variant="contained" onClick={handleLogin}>
-            카카오로 로그인
+            로그인
           </Button>
         </Stack>
       </Stack>

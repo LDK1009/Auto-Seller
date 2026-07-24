@@ -62,7 +62,7 @@ export default function PricingView() {
               구독 관리는 로그인 후 이용할 수 있습니다.
             </Typography>
             <Button variant="contained" size="large" onClick={handleSignIn}>
-              카카오로 로그인
+              로그인
             </Button>
           </PlanCard>
         ) : subscription && subscription.status !== 'canceled' ? (

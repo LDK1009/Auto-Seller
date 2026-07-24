@@ -96,7 +96,7 @@ export default function MyProductsView() {
               로그인하면 상품을 저장하고 품절을 한 번에 확인할 수 있습니다.
             </Typography>
             <Button variant="contained" onClick={handleSignIn}>
-              카카오로 로그인
+              로그인
             </Button>
           </EmptyBox>
         ) : products.length === 0 ? (
