@@ -3,7 +3,7 @@ import type { DemoScenario } from "./types";
 import { resolve } from "node:path";
 import { readdirSync } from "node:fs";
 
-const ASSETS = resolve(__dirname, "../../assets/ep20");
+const ASSETS = resolve(__dirname, "../../assets/products");
 const files = (limit: number) =>
   readdirSync(ASSETS)
     .filter((f) => /\.(jpg|jpeg|png|webp)$/i.test(f))
@@ -30,9 +30,12 @@ export const demo: DemoScenario = {
     await p.hold(1.2);
 
     p.markScene();
-    // 결과 이미지를 눌러 편집 패널 열기 → 배경색 선택
-    await p.smoothScrollBy(500, 2);
-    await p.hold(2.5);
+    // 배경 선택 모달 → 색상 팝오버 → 추천 색상 적용 (자막이 말하는 동작을 실제로 한다)
+    await p.humanClick(p.page.getByRole("button", { name: "배경 선택" }).first(), 0.9);
+    await p.humanClick(p.page.getByRole("button", { name: "배경 색상" }).first(), 0.7);
+    await p.humanClick(p.page.getByRole("button", { name: "연블루" }).first(), 1.4);
+    await p.humanClick(p.page.getByRole("button", { name: "흰색" }).first(), 1.6);
+    await p.humanClick(p.page.getByRole("button", { name: "확인" }).first(), 1.2);
 
     p.markScene();
     await p.showSection(p.page.getByRole("button", { name: "다운로드" }).first(), 2.4);

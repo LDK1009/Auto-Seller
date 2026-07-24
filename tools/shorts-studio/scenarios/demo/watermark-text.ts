@@ -3,7 +3,7 @@ import type { DemoScenario } from "./types";
 import { resolve } from "node:path";
 import { readdirSync } from "node:fs";
 
-const ASSETS = resolve(__dirname, "../../assets/ep20");
+const ASSETS = resolve(__dirname, "../../assets/products");
 const files = (limit: number) =>
   readdirSync(ASSETS)
     .filter((f) => /\.(jpg|jpeg|png|webp)$/i.test(f))
@@ -24,11 +24,13 @@ export const demo: DemoScenario = {
   run: async (p) => {
     p.markScene();
     await p.page.locator('input[type="file"]').first().setInputFiles(files(4));
-    await p.hold(2.0);
+    await p.hold(1.2);
+    await p.showSection(p.page.getByLabel("워터마크 문구"), 1.6);
 
     p.markScene();
     await p.humanType(p.page.getByLabel("워터마크 문구"), "오토셀러스토어");
-    await p.hold(1.5);
+    await p.hold(0.8);
+    await p.showSection(p.page.getByRole("button", { name: "워터마크 적용" }).first(), 1.6);
 
     p.markScene();
     await p.humanClick(p.page.getByRole("button", { name: "워터마크 적용" }).first(), 1.0);

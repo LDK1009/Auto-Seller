@@ -3,7 +3,7 @@ import type { DemoScenario } from "./types";
 import { resolve } from "node:path";
 import { readdirSync } from "node:fs";
 
-const ASSETS = resolve(__dirname, "../../assets/ep20");
+const ASSETS = resolve(__dirname, "../../assets/products");
 const files = (limit: number) =>
   readdirSync(ASSETS)
     .filter((f) => /\.(jpg|jpeg|png|webp)$/i.test(f))

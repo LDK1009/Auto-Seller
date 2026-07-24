@@ -190,8 +190,11 @@ const Hook: React.FC<{ frameDir: string; srcFrame: number; text: string }> = ({ 
         src={staticFile(`${frameDir}/${String(srcFrame).padStart(5, "0")}.jpg`)}
         style={{ width: "100%", height: "100%", objectFit: "contain", transform: `scale(${scale})`, transformOrigin: `50% ${BASE_ORIGIN_Y * 100}%` }}
       />
-      <AbsoluteFill style={{ backgroundColor: "rgba(17,19,24,0.45)" }} />
-      <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", padding: "0 70px" }}>
+      {/* 전체를 어둡게 덮으면 "결과 먼저 보여주기"가 죽는다 — 문구가 놓일 위쪽만 진하게 */}
+      <AbsoluteFill
+        style={{ background: "linear-gradient(to bottom, rgba(17,19,24,0.82) 0%, rgba(17,19,24,0.72) 34%, rgba(17,19,24,0.12) 56%, rgba(17,19,24,0.05) 100%)" }}
+      />
+      <AbsoluteFill style={{ justifyContent: "flex-start", alignItems: "center", padding: "210px 70px 0" }}>
         <div
           style={{
             opacity: pop,
