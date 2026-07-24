@@ -35,22 +35,27 @@ const layout = (srcW: number, srcH: number, frameW: number, frameH: number) => {
   return { left: (frameW - w) / 2, top: (frameH - h) / 2, w, h };
 };
 
+// 기본 배율 — 녹화 화면 하단은 대개 빈 공간이라 살짝 확대해 콘텐츠를 키운다.
+// 원점을 위쪽(35%)에 두어 상단 컨트롤 영역이 잘리지 않게 한다.
+const BASE_SCALE = 1.22;
+const BASE_ORIGIN_Y = 0.35;
+
 ////////// 강조 구간이면 그 영역으로 스프링 줌인. 화면·링에 같은 변환을 쓴다.
 const useZoom = (focuses: Focus[], nowSec: number, fps: number) => {
   const active = focuses.find((f) => nowSec >= f.at - 0.3 && nowSec <= f.at + f.holdSec + 0.3);
-  if (!active) return { scale: 1, ox: 0.5, oy: 0.5 };
+  if (!active) return { scale: BASE_SCALE, ox: 0.5, oy: BASE_ORIGIN_Y };
 
   const inP = spring({ frame: Math.round((nowSec - (active.at - 0.3)) * fps), fps, config: { damping: 24, mass: 0.6, stiffness: 100 } });
   const outStart = active.at + active.holdSec;
   const outP = nowSec > outStart ? spring({ frame: Math.round((nowSec - outStart) * fps), fps, config: { damping: 24, mass: 0.6, stiffness: 100 } }) : 0;
   const amount = inP * (1 - outP);
 
-  // 강조 박스가 화면 폭의 68%를 차지하도록 (최대 2.6배)
-  const target = Math.min(2.6, Math.max(1.2, 0.68 / Math.max(0.1, active.w)));
+  // 강조 박스가 화면 폭의 72%를 차지하도록 (최대 2.8배)
+  const target = Math.min(2.8, Math.max(BASE_SCALE + 0.15, 0.72 / Math.max(0.1, active.w)));
   return {
-    scale: 1 + (target - 1) * amount,
+    scale: BASE_SCALE + (target - BASE_SCALE) * amount,
     ox: 0.5 + (active.x - 0.5) * amount, // 확대 원점을 강조 영역으로 이동
-    oy: 0.5 + (active.y - 0.5) * amount,
+    oy: BASE_ORIGIN_Y + (active.y - BASE_ORIGIN_Y) * amount,
   };
 };
 
@@ -177,12 +182,12 @@ const Hook: React.FC<{ frameDir: string; srcFrame: number; text: string }> = ({ 
   const { fps } = useVideoConfig();
   const pop = spring({ frame, fps, config: { damping: 12, mass: 0.6 } });
   // 살짝 줌아웃되며 등장 — 정지 화면보다 시선을 끈다
-  const scale = interpolate(pop, [0, 1], [1.18, 1.04]);
+  const scale = interpolate(pop, [0, 1], [BASE_SCALE + 0.16, BASE_SCALE + 0.04]);
   return (
     <AbsoluteFill style={{ backgroundColor: COLOR.canvas, overflow: "hidden" }}>
       <Img
         src={staticFile(`${frameDir}/${String(srcFrame).padStart(5, "0")}.jpg`)}
-        style={{ width: "100%", height: "100%", objectFit: "contain", transform: `scale(${scale})` }}
+        style={{ width: "100%", height: "100%", objectFit: "contain", transform: `scale(${scale})`, transformOrigin: `50% ${BASE_ORIGIN_Y * 100}%` }}
       />
       <AbsoluteFill style={{ backgroundColor: "rgba(17,19,24,0.45)" }} />
       <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", padding: "0 70px" }}>

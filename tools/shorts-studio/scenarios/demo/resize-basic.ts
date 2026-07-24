@@ -14,12 +14,12 @@ export const demo: DemoScenario = {
   id: "resize-basic",
   title: "이미지 규격 1000x1000으로 한 번에 맞추기",
   url: "/image-resize",
-  hookText: "이미지 크기 제각각,\n하나씩 맞추시나요?",
-  ctaText: "규격 변환\n한 번에",
+  hookText: "도매처 이미지\n크기가 제각각이죠",
+  ctaText: "대표이미지 규격\n일괄 변환",
   scenes: [
     { title: "이미지 올리기", caption: "크기가 제각각인 이미지를 올립니다" },
-    { title: "규격 변환", caption: "마켓 권장 크기로 한 번에 맞춥니다" },
-    { title: "내려받기", caption: "변환된 이미지를 묶어서 받습니다" },
+    { title: "규격 변환", caption: "1000×1000으로 한 번에 맞춥니다" },
+    { title: "ZIP으로 받기", caption: "변환된 이미지를 묶어서 받습니다" },
   ],
   run: async (p) => {
     p.markScene();

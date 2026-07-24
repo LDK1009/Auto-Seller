@@ -14,12 +14,12 @@ export const demo: DemoScenario = {
   id: "nukki-basic",
   title: "이미지 여러 장 배경 제거",
   url: "/background-removal",
-  hookText: "배경 지우는 데\n몇 시간씩 쓰고 계신가요?",
-  ctaText: "이미지 여러 장,\n한 번에 배경 제거",
+  hookText: "상품 20개 올리는데\n누끼만 두 시간",
+  ctaText: "누끼 여러 장\n한 번에",
   scenes: [
     { title: "이미지 올리기", caption: "가공할 상품 사진을 한 번에 올립니다" },
-    { title: "배경 제거", caption: "버튼 한 번이면 전부 처리됩니다" },
-    { title: "내려받기", caption: "완성된 이미지를 묶어서 받습니다" },
+    { title: "배경 제거", caption: "여러 장을 한 번에 처리합니다" },
+    { title: "ZIP으로 받기", caption: "등록에 바로 쓸 수 있게 묶어서 받습니다" },
   ],
   run: async (p) => {
     // 씬 1 — 업로드

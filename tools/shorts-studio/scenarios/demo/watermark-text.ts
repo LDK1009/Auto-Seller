@@ -14,11 +14,11 @@ export const demo: DemoScenario = {
   id: "watermark-text",
   title: "여러 장에 워터마크 한 번에 넣기",
   url: "/watermark",
-  hookText: "공들인 이미지,\n그대로 퍼가더라고요",
+  hookText: "공들인 상세\n그대로 퍼가더라고요",
   ctaText: "워터마크\n여러 장 한 번에",
   scenes: [
     { title: "이미지 올리기", caption: "워터마크를 넣을 이미지를 올립니다" },
-    { title: "문구 입력", caption: "넣고 싶은 문구를 적습니다" },
+    { title: "문구 입력", caption: "스토어명이나 로고를 넣습니다" },
     { title: "일괄 적용", caption: "올린 이미지 전부에 들어갑니다" },
   ],
   run: async (p) => {

@@ -14,8 +14,8 @@ export const demo: DemoScenario = {
   id: "split-basic",
   title: "긴 상세 이미지 마켓 규격에 맞게 자르기",
   url: "/image-split",
-  hookText: "상세 이미지 길다고\n등록 거부당한 적 있죠?",
-  ctaText: "긴 이미지\n자동으로 자르기",
+  hookText: "상세 이미지 길어서\n등록 거부당한 적",
+  ctaText: "긴 상세\n자동 분할",
   scenes: [
     { title: "상세 이미지 올리기", caption: "세로로 긴 이미지를 그대로 올립니다" },
     { title: "자동 분할", caption: "마켓 높이 제한에 맞춰 잘립니다" },

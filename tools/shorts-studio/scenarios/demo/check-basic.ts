@@ -14,12 +14,12 @@ export const demo: DemoScenario = {
   id: "check-basic",
   title: "이미지 규격 맞는지 한 번에 검사",
   url: "/image-check",
-  hookText: "규격 안 맞아서\n등록 막힌 적 있죠?",
-  ctaText: "이미지 규격\n한 번에 검사",
+  hookText: "규격 안 맞아서\n등록 막힌 적 있죠",
+  ctaText: "대표이미지 규격\n한 번에 검사",
   scenes: [
     { title: "이미지 올리기", caption: "확인할 이미지를 한 번에 올립니다" },
     { title: "자동 검사", caption: "해상도·비율·용량을 확인합니다" },
-    { title: "변환으로 연결", caption: "안 맞는 것만 바로 고칠 수 있습니다" },
+    { title: "변환으로 연결", caption: "안 맞는 것만 바로 고칩니다" },
   ],
   run: async (p) => {
     p.markScene();

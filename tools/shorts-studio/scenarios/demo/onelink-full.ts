@@ -6,14 +6,14 @@ export const demo: DemoScenario = {
   id: "onelink-full",
   title: "도매꾹 링크 하나로 등록 준비 끝내기",
   url: "/domeggook-import",
-  hookText: "등록 칸 12개,\n손으로 다 채우시나요?",
-  ctaText: "링크 하나로\n등록 준비 끝",
+  hookText: "등록 폼 12칸\n매번 손으로 채우시죠",
+  ctaText: "도매꾹 링크 하나로\n등록 준비 끝",
   scenes: [
-    { title: "상품 찾기", caption: "검색어나 도매꾹 링크를 넣습니다" },
-    { title: "상품 선택", caption: "후보 중에서 팔 상품을 고릅니다" },
-    { title: "등록 정보 확인", caption: "등록 화면 순서 그대로 나옵니다" },
-    { title: "최소수량 확인", caption: "묶음 상품이면 원가를 다시 계산해줍니다" },
-    { title: "복사해서 붙여넣기", caption: "위에서 아래로 옮기기만 하면 됩니다" },
+    { title: "상품 찾기", caption: "도매꾹 링크나 검색어를 넣습니다" },
+    { title: "상품 선택", caption: "후보 중에서 올릴 상품을 고릅니다" },
+    { title: "등록 정보 생성", caption: "스마트스토어 폼 순서 그대로 나옵니다" },
+    { title: "MOQ 확인", caption: "묶음 상품이면 원가를 다시 잡아줍니다" },
+    { title: "복사해서 붙여넣기", caption: "위에서 아래로 옮기면 등록 끝" },
   ],
   run: async (p) => {
     // 씬 1 — 검색

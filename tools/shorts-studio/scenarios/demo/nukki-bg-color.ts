@@ -14,12 +14,12 @@ export const demo: DemoScenario = {
   id: "nukki-bg-color",
   title: "배경 지운 다음 원하는 색으로 채우기",
   url: "/background-removal",
-  hookText: "배경 지운 다음이\n더 고민이죠",
+  hookText: "누끼 딴 다음\n배경은 뭘로 채우세요?",
   ctaText: "배경 교체까지\n클릭 한 번",
   scenes: [
     { title: "배경 제거", caption: "먼저 배경을 지웁니다" },
-    { title: "배경 고르기", caption: "지운 자리에 원하는 색을 넣습니다" },
-    { title: "내려받기", caption: "바뀐 이미지를 묶어서 받습니다" },
+    { title: "배경 교체", caption: "흰 배경이든 컬러든 바로 바꿉니다" },
+    { title: "ZIP으로 받기", caption: "바뀐 이미지를 묶어서 받습니다" },
   ],
   run: async (p) => {
     p.markScene();

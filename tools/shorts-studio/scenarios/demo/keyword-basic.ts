@@ -5,8 +5,8 @@ export const demo: DemoScenario = {
   id: "keyword-basic",
   title: "팔릴 키워드 숫자로 고르기",
   url: "/keyword-stats",
-  hookText: "뭘 팔지 감으로\n고르고 계신가요?",
-  ctaText: "팔릴 키워드\n숫자로 확인",
+  hookText: "다음 상품\n감으로 고르시나요",
+  ctaText: "검색수 ÷ 상품수\n숫자로 고르기",
   scenes: [
     { title: "키워드 입력", caption: "생각해둔 키워드를 넣습니다" },
     { title: "검색량 확인", caption: "한 달에 얼마나 검색되는지 봅니다" },

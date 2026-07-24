@@ -75,6 +75,8 @@ export const record = async (scenario: Scenario): Promise<RecordResult> => {
   // 비디오 녹화는 페이지 생성 시점부터 시작 — 이벤트 시각은 이 기준으로 기록해야 영상과 싱크됨
   const recStart = Date.now();
   const page = await context.newPage();
+  // 데모 영상은 기능 화면만 보여준다 — 사이드바는 불필요한 영역이라 접어둔다
+  if (isTall) await page.addInitScript(() => localStorage.setItem("sidebar-collapsed", "1"));
   const human = new HumanPage(page, viewport);
   human.markRecordStart(recStart);
 
