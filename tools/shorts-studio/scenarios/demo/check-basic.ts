@@ -26,13 +26,15 @@ export const demo: DemoScenario = {
     await p.page.locator('input[type="file"]').first().setInputFiles(files(8));
     await p.hold(2.5);
 
+    // 검사 결과 카드가 뜨는 것으로 완료 판정 ([규격 변환으로 보내기] 버튼은
+    // 부적합 항목이 있을 때만 노출돼 대기 대상으로 부적합)
     p.markScene();
-    await p.waitLoaded(p.page.getByRole("button", { name: "규격 변환으로 보내기" }).first(), 60000);
-    await p.hold(2.0);
-    await p.smoothScrollBy(500, 2.5);
+    await p.waitLoaded(p.page.getByText(/적합|주의|부적합/).first(), 60000);
+    await p.hold(1.2);
+    await p.smoothScrollBy(400, 1.5);
 
     p.markScene();
-    await p.showSection(p.page.getByRole("button", { name: "규격 변환으로 보내기" }).first(), 2.6);
-    await p.hold(1.2);
+    await p.showSection(p.page.getByText(/적합|주의|부적합/).first(), 2.4);
+    await p.hold(1.0);
   },
 };
