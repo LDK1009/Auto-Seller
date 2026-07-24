@@ -30,7 +30,7 @@ import EventOutlinedIcon from '@mui/icons-material/EventOutlined';
 import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
 import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
 import { useSnackbar } from 'notistack';
-import { FEE_PRESETS, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from '@/shared/constants/marketFees';
+import { SMARTSTORE_FEE_RATE as SHARED_SMARTSTORE_FEE_RATE, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from '@/shared/constants/marketFees';
 import { calculateMargin, calculateReversePrice, PRICE_ROUND_UNIT } from '@/shared/utils/marginCalculation';
 import type { DomeggookItem } from '@/shared/types/domeggook';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
@@ -42,7 +42,7 @@ import { fetchKeywordStats, fetchCategorySuggest, fetchKeywordDetail, type Categ
 import type { KeywordDetail } from '@/shared/types/keywordDetail';
 import type { KeywordStat, RelatedKeyword } from '@/shared/types/keywordStats';
 
-const SMARTSTORE_FEE_RATE = FEE_PRESETS[0].rate; // 5.6% (스마트스토어)
+const SMARTSTORE_FEE_RATE = SHARED_SMARTSTORE_FEE_RATE; // 5.6% (스마트스토어)
 // 할인율 표시 프리셋 (%) — 최종 결제가는 유지하고 정가만 역산 (스스 관행: 정가+할인 표기)
 const DISCOUNT_DISPLAY_PRESETS = [0, 10, 20, 30];
 

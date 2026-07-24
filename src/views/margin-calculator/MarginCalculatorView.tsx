@@ -17,7 +17,7 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
-import { FEE_PRESETS, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from '@/shared/constants/marketFees';
+import { SMARTSTORE_FEE_RATE, FEE_DISCLAIMER, TARGET_MARGIN_PRESETS } from '@/shared/constants/marketFees';
 import { calculateMargin, calculateReversePrice, type MarginInput } from '@/shared/utils/marginCalculation';
 import MarginResultPanel from './_components/MarginResultPanel';
 import ReversePricePanel from './_components/ReversePricePanel';
@@ -38,7 +38,7 @@ export default function MarginCalculatorView() {
   const [input, setInput] = useState<MarginInput>({
     sellingPrice: 0,
     costPrice: 0,
-    feeRate: FEE_PRESETS[0].rate,
+    feeRate: SMARTSTORE_FEE_RATE,
     shippingCharge: 0,
     shippingCost: 0,
     otherCost: 0,
@@ -142,23 +142,13 @@ export default function MarginCalculatorView() {
               )}
 
               <Typography variant="subtitle2" color="text.secondary">
-                마켓 수수료
+                수수료
               </Typography>
-              <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
-                {FEE_PRESETS.map((preset) => (
-                  <Chip
-                    key={preset.key}
-                    label={`${preset.label} ${preset.rate}%`}
-                    color={input.feeRate === preset.rate ? 'primary' : 'default'}
-                    variant={input.feeRate === preset.rate ? 'filled' : 'outlined'}
-                    onClick={() => updateInput({ feeRate: preset.rate })}
-                  />
-                ))}
-              </Stack>
+              {/* 타겟 = 스마트스토어 단일 — 마켓 선택 없이 스스 기본값 + 직접 수정만 (2026-07-24 간소화) */}
               <TextField
                 size="small"
                 type="number"
-                label="수수료율"
+                label="수수료율 (스마트스토어 기준)"
                 value={input.feeRate}
                 onChange={(event) => updateInput({ feeRate: parseAmount(event.target.value) })}
                 slotProps={{

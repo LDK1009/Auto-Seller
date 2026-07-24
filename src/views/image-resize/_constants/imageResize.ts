@@ -14,9 +14,9 @@ export type ResizeSettings = {
   cropBottomPercent: number; // 변환 전 하단 잘라내기 %
 };
 
-//////////////////// 마켓 규격 프리셋 ////////////////////
+//////////////////// 규격 프리셋 (스마트스토어 기준 — 타겟 단일 마켓) ////////////////////
 export const SIZE_PRESETS: { key: string; label: string; width: number; height: number }[] = [
-  { key: 'main-1000', label: '대표 1000×1000 (스마트스토어·쿠팡 권장)', width: 1000, height: 1000 },
+  { key: 'main-1000', label: '대표 1000×1000 (권장)', width: 1000, height: 1000 },
   { key: 'min-500', label: '최소 500×500', width: 500, height: 500 },
   { key: 'detail-860', label: '상세 가로 860×860', width: 860, height: 860 },
 ];
