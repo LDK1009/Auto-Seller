@@ -57,7 +57,7 @@ export default function RelatedKeywordTable({
             productCount !== null && entry.monthlySearches > 0
               ? Math.round((productCount / entry.monthlySearches) * 100) / 100
               : null;
-          const verdict = judgeCompetition(ratio);
+          const verdict = judgeCompetition(ratio, entry.monthlySearches);
           const isCheckDisabled = !isChecked && isCheckLimitReached;
           return (
             <Row key={entry.keyword}>

@@ -12,7 +12,7 @@ type PropsType = {
 };
 
 export default function StatSummaryCards({ stat }: PropsType) {
-  const verdict = judgeCompetition(stat.ratio);
+  const verdict = judgeCompetition(stat.ratio, stat.monthlySearches);
 
   return (
     <CardGrid>
@@ -54,6 +54,11 @@ export default function StatSummaryCards({ stat }: PropsType) {
             variant={verdict.color === 'default' ? 'outlined' : 'filled'}
             sx={{ fontWeight: 700 }}
           />
+          {verdict.note && (
+            <Typography variant="caption" color="text.secondary">
+              {verdict.note}
+            </Typography>
+          )}
         </ChipLine>
       </StatCard>
     </CardGrid>

@@ -55,7 +55,7 @@ export default function StarterKeywordTable({ title, stats, isLoading, onSelectK
           </HeaderRow>
           <ListBox>
             {visibleStats.map((stat, index) => {
-              const verdict = judgeCompetition(stat.ratio);
+              const verdict = judgeCompetition(stat.ratio, stat.monthlySearches);
               return (
               <RowButton key={stat.keyword} onClick={() => onSelectKeyword(stat.keyword)}>
                 <RankNumber $isTop={index < 3}>{index + 1}</RankNumber>

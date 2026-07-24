@@ -185,7 +185,7 @@ export default function CompareSection({ entries }: PropsType) {
                   <Typography variant="caption" color="text.secondary">판정</Typography>
                 </td>
                 {entries.map((entry) => {
-                  const verdict = judgeCompetition(entry.ratio);
+                  const verdict = judgeCompetition(entry.ratio, entry.monthlySearches);
                   return (
                     <td key={entry.keyword}>
                       <Chip
