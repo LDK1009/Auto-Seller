@@ -86,8 +86,13 @@ export const Root = () => {
           frameDir: "",
           frameCount: 1,
           srcFps: 25,
+          srcW: 1200,
+          srcH: 1600,
+          segments: [],
           scenes: [],
           focuses: [],
+          hook: { srcSec: 0, text: "", durationInFrames: 90 },
+          ctaText: "",
         }}
         calculateMetadata={({ props }) => ({ durationInFrames: props.durationInFrames })}
       />

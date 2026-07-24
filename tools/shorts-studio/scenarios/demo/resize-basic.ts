@@ -14,6 +14,8 @@ export const demo: DemoScenario = {
   id: "resize-basic",
   title: "이미지 규격 1000x1000으로 한 번에 맞추기",
   url: "/image-resize",
+  hookText: "이미지 크기 제각각,\n하나씩 맞추시나요?",
+  ctaText: "규격 변환\n한 번에",
   scenes: [
     { title: "이미지 올리기", caption: "크기가 제각각인 이미지를 올립니다" },
     { title: "규격 변환", caption: "마켓 권장 크기로 한 번에 맞춥니다" },
@@ -26,7 +28,7 @@ export const demo: DemoScenario = {
 
     p.markScene();
     await p.humanClick(p.page.getByRole("button", { name: "규격 변환" }).first(), 1.0);
-    await p.waitVisible(p.page.getByRole("button", { name: "다운로드" }).first(), 60000);
+    await p.waitLoaded(p.page.getByRole("button", { name: "다운로드" }).first(), 60000);
     await p.hold(2.0);
 
     p.markScene();

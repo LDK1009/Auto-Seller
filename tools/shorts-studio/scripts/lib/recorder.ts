@@ -14,6 +14,9 @@ export const FFMPEG = resolve(__dirname, "../../node_modules/@remotion/composito
 export const VIEWPORT = { width: 414, height: 896 };
 // 롱폼(16:9) 녹화용 — deviceScaleFactor 1로 둔다. 2로 하면 3840px라 렌더가 급격히 무거워진다.
 export const VIEWPORT_DESKTOP = { width: 1920, height: 1080 };
+// 데모(세로 소셜)용 — PC 레이아웃이면서 세로에 가까운 비율. 16:9를 세로 프레임에 넣으면
+// 화면이 너무 작아져 글씨가 안 읽힌다. 3:4로 찍으면 여백이 씬제목·자막 자리로 딱 맞는다.
+export const VIEWPORT_TALL = { width: 1200, height: 1600 };
 const PUBLIC_REC = resolve(__dirname, "../../public/rec");
 const OUT_LOG = resolve(__dirname, "../../out/rec");
 
@@ -21,7 +24,8 @@ export type Scenario = {
   id: string; // 에피소드 번호 (예: "16") 또는 롱폼 챕터 id (예: "22-ch7")
   url: string; // 시작 경로 (BASE_URL 기준)
   recapItems?: string[]; // 엔딩 리캡 (숏츠 전용 — 롱폼은 미사용)
-  desktop?: boolean; // true면 가로 1920×1080 (롱폼). 기본은 세로 모바일
+  desktop?: boolean; // true면 가로 1920×1080 (롱폼)
+  tall?: boolean; // true면 세로형 PC뷰 1200×1600 (데모 — 소셜 세로 프레임용)
   run: (p: HumanPage) => Promise<void>;
 };
 
@@ -47,8 +51,9 @@ export const record = async (scenario: Scenario): Promise<RecordResult> => {
   mkdirSync(PUBLIC_REC, { recursive: true });
   mkdirSync(OUT_LOG, { recursive: true });
 
-  const isDesktop = scenario.desktop === true;
-  const viewport = isDesktop ? VIEWPORT_DESKTOP : VIEWPORT;
+  const isTall = scenario.tall === true;
+  const isDesktop = scenario.desktop === true || isTall;
+  const viewport = isTall ? VIEWPORT_TALL : isDesktop ? VIEWPORT_DESKTOP : VIEWPORT;
 
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({

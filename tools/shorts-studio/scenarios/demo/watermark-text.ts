@@ -14,6 +14,8 @@ export const demo: DemoScenario = {
   id: "watermark-text",
   title: "여러 장에 워터마크 한 번에 넣기",
   url: "/watermark",
+  hookText: "공들인 이미지,\n그대로 퍼가더라고요",
+  ctaText: "워터마크\n여러 장 한 번에",
   scenes: [
     { title: "이미지 올리기", caption: "워터마크를 넣을 이미지를 올립니다" },
     { title: "문구 입력", caption: "넣고 싶은 문구를 적습니다" },
@@ -30,7 +32,7 @@ export const demo: DemoScenario = {
 
     p.markScene();
     await p.humanClick(p.page.getByRole("button", { name: "워터마크 적용" }).first(), 1.0);
-    await p.waitVisible(p.page.getByRole("button", { name: "다운로드" }).first(), 60000);
+    await p.waitLoaded(p.page.getByRole("button", { name: "다운로드" }).first(), 60000);
     await p.hold(2.0);
     await p.showSection(p.page.getByRole("button", { name: "다운로드" }).first(), 2.2);
   },

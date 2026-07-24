@@ -14,6 +14,8 @@ export const demo: DemoScenario = {
   id: "nukki-bg-color",
   title: "배경 지운 다음 원하는 색으로 채우기",
   url: "/background-removal",
+  hookText: "배경 지운 다음이\n더 고민이죠",
+  ctaText: "배경 교체까지\n클릭 한 번",
   scenes: [
     { title: "배경 제거", caption: "먼저 배경을 지웁니다" },
     { title: "배경 고르기", caption: "지운 자리에 원하는 색을 넣습니다" },
@@ -24,7 +26,7 @@ export const demo: DemoScenario = {
     await p.page.locator('input[type="file"]').first().setInputFiles(files(2));
     await p.hold(1.5);
     await p.humanClick(p.page.getByRole("button", { name: "배경 제거" }).first(), 0.8);
-    await p.waitVisible(p.page.getByRole("button", { name: "다운로드" }).first(), 240000);
+    await p.waitLoaded(p.page.getByRole("button", { name: "다운로드" }).first(), 240000);
     await p.hold(1.2);
 
     p.markScene();

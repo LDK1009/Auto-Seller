@@ -1,91 +1,168 @@
 //////////////////////////////////////// 데모 영상 합성 (1080×1920) ////////////////////////////////////////
-// 기능 시연 — 광고가 아니라 설명서. 타이머·결과카드·BGM 없음.
-// 화면(프레임 시퀀스) + 좌상단 씬 제목 + 하단 자막 + 강조 링.
+// PC뷰 녹화를 세로 프레임에 담되, 강조 구간은 스프링 줌인으로 꽉 채운다.
+// 원칙 (2026-07-24 피드백):
+//   ① 첫 3초 훅 — 하이라이트 장면 먼저  ② 시선이 갈 곳을 항상 지정  ③ 로딩 구간 삭제
+//   ④ 템포 빠르게  ⑤ 씬 제목 크게  ⑥ 끝에 CTA  ⑦ 모든 움직임은 스프링
 import { AbsoluteFill, Easing, Img, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { COLOR, FONT_STACK } from "../theme";
-import type { DemoProps } from "./schema";
+import type { DemoProps, focusSchema } from "./schema";
+import type { z } from "zod";
 
+type Focus = z.infer<typeof focusSchema>;
 const EASE = Easing.bezier(0.4, 0, 0.2, 1);
 
-////////// 강조 링 — 조작 대상 영역을 감싸고 바깥을 살짝 눌러 시선을 모은다
-const FocusRing: React.FC<{ focus: DemoProps["focuses"][number] }> = ({ focus }) => {
+//////////////////////////////////////// 프레임 선택 ////////////////////////////////////////
+
+////////// 출력 시각 → 원본 프레임 번호. 로딩 구간(segments 사이)은 건너뛴다.
+const pickSrcFrame = (outSec: number, segments: DemoProps["segments"], srcFps: number, frameCount: number) => {
+  let remain = outSec;
+  for (const seg of segments) {
+    const len = seg.to - seg.from;
+    if (remain <= len) return Math.min(frameCount, Math.max(1, Math.round((seg.from + remain) * srcFps) + 1));
+    remain -= len;
+  }
+  return frameCount; // 끝을 넘으면 마지막 프레임 유지
+};
+
+//////////////////////////////////////// 화면 (줌 포함) ////////////////////////////////////////
+
+// contain 배치 결과 — 실제 이미지가 프레임 안 어디에 얼마 크기로 놓이는지.
+// 링 좌표(0~1은 녹화 화면 기준)를 프레임 픽셀로 옮기려면 이 값이 필요하다. 어긋남의 근본 원인.
+const layout = (srcW: number, srcH: number, frameW: number, frameH: number) => {
+  const s = Math.min(frameW / srcW, frameH / srcH);
+  const w = srcW * s;
+  const h = srcH * s;
+  return { left: (frameW - w) / 2, top: (frameH - h) / 2, w, h };
+};
+
+////////// 강조 구간이면 그 영역으로 스프링 줌인. 화면·링에 같은 변환을 쓴다.
+const useZoom = (focuses: Focus[], nowSec: number, fps: number) => {
+  const active = focuses.find((f) => nowSec >= f.at - 0.3 && nowSec <= f.at + f.holdSec + 0.3);
+  if (!active) return { scale: 1, ox: 0.5, oy: 0.5 };
+
+  const inP = spring({ frame: Math.round((nowSec - (active.at - 0.3)) * fps), fps, config: { damping: 24, mass: 0.6, stiffness: 100 } });
+  const outStart = active.at + active.holdSec;
+  const outP = nowSec > outStart ? spring({ frame: Math.round((nowSec - outStart) * fps), fps, config: { damping: 24, mass: 0.6, stiffness: 100 } }) : 0;
+  const amount = inP * (1 - outP);
+
+  // 강조 박스가 화면 폭의 68%를 차지하도록 (최대 2.6배)
+  const target = Math.min(2.6, Math.max(1.2, 0.68 / Math.max(0.1, active.w)));
+  return {
+    scale: 1 + (target - 1) * amount,
+    ox: 0.5 + (active.x - 0.5) * amount, // 확대 원점을 강조 영역으로 이동
+    oy: 0.5 + (active.y - 0.5) * amount,
+  };
+};
+
+type Zoom = ReturnType<typeof useZoom>;
+
+const Screen: React.FC<{ frameDir: string; srcFrame: number; zoom: Zoom }> = ({ frameDir, srcFrame, zoom }) => (
+  <AbsoluteFill style={{ backgroundColor: "#000", overflow: "hidden" }}>
+    <Img
+      src={staticFile(`${frameDir}/${String(srcFrame).padStart(5, "0")}.jpg`)}
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "contain",
+        transform: `scale(${zoom.scale})`,
+        transformOrigin: `${zoom.ox * 100}% ${zoom.oy * 100}%`,
+      }}
+    />
+  </AbsoluteFill>
+);
+
+////////// 강조 링 — 화면과 동일한 contain 배치 + 줌 변환을 적용해야 대상 위에 정확히 얹힌다
+const FocusRing: React.FC<{ focus: Focus; zoom: Zoom; srcW: number; srcH: number }> = ({ focus, zoom, srcW, srcH }) => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const nowSec = frame / fps;
-  const start = focus.at;
-  const end = focus.at + focus.holdSec;
-  if (nowSec < start - 0.3 || nowSec > end + 0.3) return null;
+  if (nowSec < focus.at - 0.2 || nowSec > focus.at + focus.holdSec + 0.25) return null;
 
-  const appear = spring({ frame: Math.round((nowSec - start + 0.3) * fps), fps, config: { damping: 14 } });
-  const fadeOut = interpolate(nowSec, [end, end + 0.3], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const boxW = (focus.w || 0.5) * width;
-  const boxH = (focus.h || 0.12) * height;
+  const appear = spring({ frame: Math.round((nowSec - focus.at + 0.2) * fps), fps, config: { damping: 15 } });
+  const fadeOut = interpolate(nowSec, [focus.at + focus.holdSec, focus.at + focus.holdSec + 0.25], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // 1) contain 배치에서의 위치 → 2) 줌 변환(transform-origin 기준 확대) 적용
+  const L = layout(srcW, srcH, width, height);
+  const rawX = L.left + focus.x * L.w;
+  const rawY = L.top + focus.y * L.h;
+  const originX = zoom.ox * width;
+  const originY = zoom.oy * height;
+  const cx = originX + (rawX - originX) * zoom.scale;
+  const cy = originY + (rawY - originY) * zoom.scale;
+  const boxW = focus.w * L.w * zoom.scale;
+  const boxH = focus.h * L.h * zoom.scale;
+
   return (
     <div
       style={{
         position: "absolute",
-        left: focus.x * width - boxW / 2,
-        top: focus.y * height - boxH / 2,
+        left: cx - boxW / 2,
+        top: cy - boxH / 2,
         width: boxW,
         height: boxH,
-        border: `6px solid ${COLOR.brand}`,
+        border: `7px solid ${COLOR.brand}`,
         borderRadius: 16,
-        boxShadow: "0 0 0 9999px rgba(17,19,24,0.30)",
+        boxShadow: "0 0 0 9999px rgba(17,19,24,0.38)",
         opacity: appear * fadeOut,
-        transform: `scale(${1.1 - appear * 0.1})`,
       }}
     />
   );
 };
 
-////////// 좌상단 씬 제목 — 지금 뭘 하는 단계인지 상시 표시
+//////////////////////////////////////// 오버레이 ////////////////////////////////////////
+
+////////// 좌상단 씬 제목 — 크게. 작으면 안 보인다
 const SceneTitle: React.FC<{ text: string }> = ({ text }) => {
   const frame = useCurrentFrame();
-  const appear = interpolate(frame, [0, 8], [0, 1], { extrapolateRight: "clamp", easing: EASE });
+  const { fps } = useVideoConfig();
+  const appear = spring({ frame, fps, config: { damping: 18 } });
   return (
     <div
       style={{
         position: "absolute",
-        top: 64,
-        left: 52,
+        top: 54,
+        left: 44,
+        right: 44,
         opacity: appear,
-        transform: `translateX(${(1 - appear) * -14}px)`,
+        transform: `translateY(${(1 - appear) * -18}px)`,
         display: "flex",
         alignItems: "center",
-        gap: 14,
-        backgroundColor: "rgba(255,255,255,0.94)",
-        padding: "14px 24px 14px 18px",
-        borderRadius: 14,
-        boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+        gap: 16,
+        backgroundColor: COLOR.brand,
+        padding: "22px 30px",
+        borderRadius: 18,
+        boxShadow: "0 8px 28px rgba(0,0,0,0.22)",
       }}
     >
-      <div style={{ width: 8, height: 40, borderRadius: 4, backgroundColor: COLOR.brand }} />
-      <div style={{ fontFamily: FONT_STACK, fontSize: 44, fontWeight: 800, color: COLOR.ink }}>{text}</div>
+      <div style={{ fontFamily: FONT_STACK, fontSize: 60, fontWeight: 900, color: "#fff", lineHeight: 1.1 }}>{text}</div>
     </div>
   );
 };
 
-////////// 하단 자막 — 한 동작 = 한 줄
+////////// 하단 자막
 const Caption: React.FC<{ text: string }> = ({ text }) => {
   const frame = useCurrentFrame();
-  const appear = interpolate(frame, [0, 6], [0, 1], { extrapolateRight: "clamp", easing: EASE });
+  const { fps } = useVideoConfig();
+  const appear = spring({ frame, fps, config: { damping: 20 } });
   return (
-    // 하단 여백을 크게 둬 화면 콘텐츠를 가리지 않는다 (안전존: 하단 420px)
-    <AbsoluteFill style={{ justifyContent: "flex-end", alignItems: "center", paddingBottom: 130 }}>
+    <AbsoluteFill style={{ justifyContent: "flex-end", alignItems: "center", paddingBottom: 150 }}>
       <div
         style={{
           opacity: appear,
-          transform: `translateY(${(1 - appear) * 10}px)`,
+          transform: `translateY(${(1 - appear) * 14}px)`,
           fontFamily: FONT_STACK,
-          fontSize: 44,
-          fontWeight: 700,
+          fontSize: 52,
+          fontWeight: 800,
           color: "#fff",
-          backgroundColor: "rgba(17,19,24,0.88)",
-          padding: "18px 34px",
-          borderRadius: 18,
-          maxWidth: "88%",
+          backgroundColor: "rgba(17,19,24,0.9)",
+          padding: "22px 38px",
+          borderRadius: 20,
+          maxWidth: "90%",
           textAlign: "center",
-          lineHeight: 1.36,
+          lineHeight: 1.32,
         }}
       >
         {text}
@@ -94,30 +171,102 @@ const Caption: React.FC<{ text: string }> = ({ text }) => {
   );
 };
 
-export const Demo: React.FC<DemoProps> = ({ frameDir, frameCount, srcFps, scenes, focuses }) => {
+////////// 오프닝 훅 — 첫 3초. 결과 장면 + 큰 문구로 붙잡는다
+const Hook: React.FC<{ frameDir: string; srcFrame: number; text: string }> = ({ frameDir, srcFrame, text }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  // 컴포지션 시각 → 원본 프레임 번호. 끝을 넘으면 마지막 프레임 정지.
-  const srcFrame = Math.min(frameCount, Math.max(1, Math.round((frame / fps) * srcFps) + 1));
+  const pop = spring({ frame, fps, config: { damping: 12, mass: 0.6 } });
+  // 살짝 줌아웃되며 등장 — 정지 화면보다 시선을 끈다
+  const scale = interpolate(pop, [0, 1], [1.18, 1.04]);
+  return (
+    <AbsoluteFill style={{ backgroundColor: COLOR.canvas, overflow: "hidden" }}>
+      <Img
+        src={staticFile(`${frameDir}/${String(srcFrame).padStart(5, "0")}.jpg`)}
+        style={{ width: "100%", height: "100%", objectFit: "contain", transform: `scale(${scale})` }}
+      />
+      <AbsoluteFill style={{ backgroundColor: "rgba(17,19,24,0.45)" }} />
+      <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", padding: "0 70px" }}>
+        <div
+          style={{
+            opacity: pop,
+            transform: `scale(${0.9 + pop * 0.1})`,
+            fontFamily: FONT_STACK,
+            fontSize: 88,
+            fontWeight: 900,
+            color: "#fff",
+            textAlign: "center",
+            lineHeight: 1.24,
+            textShadow: "0 6px 30px rgba(0,0,0,0.5)",
+          }}
+        >
+          {text}
+        </div>
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+////////// 엔딩 CTA — 어디로 가면 되는지
+const Cta: React.FC<{ text: string }> = ({ text }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const appear = spring({ frame, fps, config: { damping: 16 } });
+  return (
+    <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", backgroundColor: "rgba(17,19,24,0.92)" }}>
+      <div style={{ opacity: appear, transform: `translateY(${(1 - appear) * 20}px)`, textAlign: "center", fontFamily: FONT_STACK }}>
+        <div style={{ fontSize: 62, fontWeight: 900, color: "#fff", lineHeight: 1.3, marginBottom: 34 }}>{text}</div>
+        <div style={{ fontSize: 46, fontWeight: 800, color: "#fff", backgroundColor: COLOR.brand, padding: "20px 44px", borderRadius: 999, display: "inline-block" }}>
+          프로필 링크에서 바로
+        </div>
+        <div style={{ fontSize: 38, fontWeight: 700, color: "rgba(255,255,255,0.72)", marginTop: 26 }}>auto-seller.co.kr</div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+//////////////////////////////////////// 루트 ////////////////////////////////////////
+
+const Body: React.FC<DemoProps> = ({ frameDir, frameCount, srcFps, srcW, srcH, segments, scenes, focuses }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const nowSec = frame / fps;
+  const srcFrame = pickSrcFrame(nowSec, segments, srcFps, frameCount);
+  const zoom = useZoom(focuses, nowSec, fps);
+
+  return (
+    <AbsoluteFill>
+      <Screen frameDir={frameDir} srcFrame={srcFrame} zoom={zoom} />
+      {focuses.map((f, i) => (
+        <FocusRing key={i} focus={f} zoom={zoom} srcW={srcW} srcH={srcH} />
+      ))}
+      {scenes.map((s, i) => (
+        <Sequence key={i} from={s.from} durationInFrames={s.durationInFrames} name={s.title}>
+          <SceneTitle text={s.title} />
+          <Caption text={s.caption} />
+        </Sequence>
+      ))}
+    </AbsoluteFill>
+  );
+};
+
+export const Demo: React.FC<DemoProps> = (props) => {
+  const { hook, ctaText, durationInFrames } = props;
+  const CTA_FRAMES = 60; // 2초
+  const bodyFrames = durationInFrames - hook.durationInFrames - CTA_FRAMES;
 
   return (
     <AbsoluteFill style={{ backgroundColor: COLOR.canvas }}>
-      {/* 녹화(414×896)를 세로 프레임 폭에 꽉 채운다. contain이면 좌우가 비어 답답하다. */}
-      <Img
-        src={staticFile(`${frameDir}/${String(srcFrame).padStart(5, "0")}.jpg`)}
-        style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }}
-      />
+      <Sequence durationInFrames={hook.durationInFrames} name="훅">
+        <Hook frameDir={props.frameDir} srcFrame={Math.max(1, Math.round(hook.srcSec * props.srcFps))} text={hook.text} />
+      </Sequence>
 
-      {focuses.map((f, i) => (
-        <FocusRing key={i} focus={f} />
-      ))}
+      <Sequence from={hook.durationInFrames} durationInFrames={bodyFrames} name="본편">
+        <Body {...props} />
+      </Sequence>
 
-      {scenes.map((scene, i) => (
-        <Sequence key={i} from={scene.from} durationInFrames={scene.durationInFrames} name={scene.title}>
-          <SceneTitle text={scene.title} />
-          <Caption text={scene.caption} />
-        </Sequence>
-      ))}
+      <Sequence from={hook.durationInFrames + bodyFrames} durationInFrames={CTA_FRAMES} name="CTA">
+        <Cta text={ctaText} />
+      </Sequence>
     </AbsoluteFill>
   );
 };

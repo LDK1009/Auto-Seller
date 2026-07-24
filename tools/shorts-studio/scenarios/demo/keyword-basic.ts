@@ -5,6 +5,8 @@ export const demo: DemoScenario = {
   id: "keyword-basic",
   title: "팔릴 키워드 숫자로 고르기",
   url: "/keyword-stats",
+  hookText: "뭘 팔지 감으로\n고르고 계신가요?",
+  ctaText: "팔릴 키워드\n숫자로 확인",
   scenes: [
     { title: "키워드 입력", caption: "생각해둔 키워드를 넣습니다" },
     { title: "검색량 확인", caption: "한 달에 얼마나 검색되는지 봅니다" },
@@ -14,7 +16,7 @@ export const demo: DemoScenario = {
     p.markScene();
     await p.humanType(p.page.getByLabel("키워드"), "주방수납");
     await p.humanClick(p.page.getByRole("button", { name: "분석" }).first(), 0.6);
-    await p.waitVisible(p.page.getByText("월간 검색수").first(), 60000);
+    await p.waitLoaded(p.page.getByText("월간 검색수").first(), 60000);
     await p.hold(1.2);
 
     p.markScene();

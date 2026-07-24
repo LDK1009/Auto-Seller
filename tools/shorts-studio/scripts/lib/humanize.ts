@@ -5,7 +5,8 @@ import { CURSOR_INIT_SCRIPT } from "./cursor";
 
 export type DemoEvent = {
   t: number; // 녹화 시작 기준 초
-  type: "click" | "type" | "scroll" | "hold" | "focus" | "scene"; // focus = 정차역(강조) / scene = 씬 경계
+  // focus = 정차역(강조) / scene = 씬 경계 / loadStart·loadEnd = 로딩 구간(빌드에서 잘라냄)
+  type: "click" | "type" | "scroll" | "hold" | "focus" | "scene" | "loadStart" | "loadEnd";
   x?: number; // 0~1 뷰포트 상대 좌표 (박스 중심)
   y?: number;
   w?: number; // 0~1 정차역 박스 크기 — 강조 테두리 링 사이즈용
@@ -53,17 +54,31 @@ export class HumanPage {
     this.events.push({ t: this.now(), type: "scene" });
   }
 
+  ////////// 로딩 구간 — 이 사이 프레임은 빌드에서 잘라낸다 (시청자는 기다려주지 않는다)
+  // 사용: const done = p.markLoading(); await p.waitVisible(...); done();
+  markLoading() {
+    this.events.push({ t: this.now(), type: "loadStart" });
+    return () => this.events.push({ t: this.now(), type: "loadEnd" });
+  }
+
+  ////////// 로딩 대기 + 자동 트림 마킹 (waitVisible 대체)
+  async waitLoaded(locator: Locator, timeoutMs = 60000) {
+    const done = this.markLoading();
+    await locator.waitFor({ state: "visible", timeout: timeoutMs });
+    done();
+  }
+
   async hold(sec: number) {
     await this.page.waitForTimeout(jitter(sec) * 1000);
   }
 
   ////////// 정차역 — 강조 대상으로 스크롤 → 머물며 보여주기 (통스크롤 금지 원칙)
   // 줌 포커스·자막 싱크의 기준점이 되는 핵심 문법
-  async showSection(target: Locator, holdSec = 1.8) {
+  async showSection(target: Locator, holdSec = 1.3) {
     // 순간이동 점프 금지 — 부드러운 스크롤로 이동 (녹화 화면 뚜둑 끊김 방지)
     await target.evaluate((el) => el.scrollIntoView({ behavior: "smooth", block: "center" }));
     await this.page.evaluate(() => (window as any).__dimCursor?.(true)); // 읽는 동안 커서 숨김 (라벨 가림 방지)
-    await this.page.waitForTimeout(800); // 스무스 스크롤 완료 + 정착
+    await this.page.waitForTimeout(420); // 스크롤 정착 (템포 우선 — 시청자는 기다려주지 않는다)
     // 강조 영역 = 타겟이 속한 "의미 있는 블록"을 좁게 잡는다.
     // 조상을 올라가되, 폭이 뷰포트 55%를 넘어서기 직전(= 컨텐츠 블록)에서 멈춘다.
     // 이러면 화면 전체를 감싸는 거대 링(부정확 원인)이 아니라 해당 항목만 감싼다.
@@ -105,17 +120,17 @@ export class HumanPage {
   }
 
   ////////// 커서 이동 + 클릭 (리플 포함, 포커스 로그)
-  async humanClick(target: Locator, holdAfterSec = 0.8) {
+  async humanClick(target: Locator, holdAfterSec = 0.45) {
     // 화면 밖일 때만 부드럽게 스크롤 (nearest = 보이면 이동 없음)
     await target.evaluate((el) => el.scrollIntoView({ behavior: "smooth", block: "nearest" }));
-    await this.page.waitForTimeout(400);
+    await this.page.waitForTimeout(220);
     await this.page.evaluate(() => (window as any).__dimCursor?.(false)); // 조작 재개 — 커서 복원
     const box = await target.boundingBox();
     if (!box) throw new Error("클릭 대상 boundingBox 없음");
     const cx = box.x + box.width / 2;
     const cy = box.y + box.height / 2;
     await this.page.evaluate(
-      ([x, y]) => (window as any).__moveCursor(x, y, 550),
+      ([x, y]) => (window as any).__moveCursor(x, y, 320),
       [cx, cy] as const,
     );
     await this.page.evaluate(
@@ -130,17 +145,22 @@ export class HumanPage {
   ////////// 글자 단위 타이핑
   async humanType(target: Locator, text: string) {
     await this.humanClick(target, 0.2);
-    await target.pressSequentially(text, { delay: 70 });
+    await target.pressSequentially(text, { delay: 45 });
     this.log({ type: "type" });
-    await this.hold(0.4);
+    await this.hold(0.25);
   }
 
   ////////// 스무스 스크롤 (요소 끝까지 천천히)
-  async smoothScrollBy(px: number, durationSec = 2) {
+  async smoothScrollBy(px: number, durationSec = 1.1) {
     this.log({ type: "scroll" });
     const steps = Math.round(durationSec * 30);
-    for (let i = 0; i < steps; i++) {
-      await this.page.mouse.wheel(0, px / steps);
+    // ease-in-out — 등속 휠은 뚝뚝 끊겨 보인다. 시작·끝을 완만하게 (스프링 느낌)
+    const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+    let prev = 0;
+    for (let i = 1; i <= steps; i++) {
+      const cur = ease(i / steps) * px;
+      await this.page.mouse.wheel(0, cur - prev);
+      prev = cur;
       await this.page.waitForTimeout((durationSec * 1000) / steps);
     }
   }

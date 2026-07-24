@@ -14,6 +14,8 @@ export const demo: DemoScenario = {
   id: "split-basic",
   title: "긴 상세 이미지 마켓 규격에 맞게 자르기",
   url: "/image-split",
+  hookText: "상세 이미지 길다고\n등록 거부당한 적 있죠?",
+  ctaText: "긴 이미지\n자동으로 자르기",
   scenes: [
     { title: "상세 이미지 올리기", caption: "세로로 긴 이미지를 그대로 올립니다" },
     { title: "자동 분할", caption: "마켓 높이 제한에 맞춰 잘립니다" },
@@ -26,7 +28,7 @@ export const demo: DemoScenario = {
 
     p.markScene();
     await p.humanClick(p.page.getByRole("button", { name: "분할하기" }).first(), 1.0);
-    await p.waitVisible(p.page.getByRole("button", { name: /다운로드/ }).first(), 60000);
+    await p.waitLoaded(p.page.getByRole("button", { name: /다운로드/ }).first(), 60000);
     await p.hold(2.0);
     await p.smoothScrollBy(600, 3);
 
