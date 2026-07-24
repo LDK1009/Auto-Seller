@@ -4,7 +4,7 @@ import { execFileSync, execSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { record, FFMPEG, VIEWPORT_TALL } from "./lib/recorder";
+import { record, FFMPEG, VIEWPORT } from "./lib/recorder";
 import type { DemoScenario } from "../scenarios/demo/types";
 
 const FPS = 30;
@@ -26,9 +26,9 @@ const buildOne = async (id: string) => {
   if (!existsSync(scenarioPath)) throw new Error(`시나리오 없음: scenarios/demo/${id}.ts`);
   const { demo } = (await import(pathToFileURL(scenarioPath).href)) as { demo: DemoScenario };
 
-  ////////// 2) 녹화 — PC뷰 기본 (줌으로 영역을 채운다)
+  ////////// 2) 녹화 — 모바일 뷰 (세로 소셜 프레임에 그대로 꽉 찬다. PC뷰는 축소돼 안 읽힘)
   console.log(`\n🎬 ${demo.id} — ${demo.title}`);
-  const rec = await record({ id: `demo-${demo.id}`, url: demo.url, tall: true, run: demo.run });
+  const rec = await record({ id: `demo-${demo.id}`, url: demo.url, run: demo.run });
   console.log(`   녹화 ${rec.durationSec.toFixed(1)}초 (로드 ${rec.loadedSec.toFixed(1)}초)`);
 
   ////////// 3) 프레임 시퀀스 추출 (mp4 seek 오작동 회피 — LONGFORM-PIPELINE.md)
@@ -115,8 +115,8 @@ const buildOne = async (id: string) => {
     frameDir: `rec/${frameDirName}`,
     frameCount,
     srcFps: Number(srcFps.toFixed(3)),
-    srcW: VIEWPORT_TALL.width,
-    srcH: VIEWPORT_TALL.height,
+    srcW: VIEWPORT.width,
+    srcH: VIEWPORT.height,
     segments,
     scenes,
     focuses,

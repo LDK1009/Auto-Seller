@@ -35,10 +35,10 @@ const layout = (srcW: number, srcH: number, frameW: number, frameH: number) => {
   return { left: (frameW - w) / 2, top: (frameH - h) / 2, w, h };
 };
 
-// 기본 배율 — 녹화 화면 하단은 대개 빈 공간이라 살짝 확대해 콘텐츠를 키운다.
-// 원점을 위쪽(35%)에 두어 상단 컨트롤 영역이 잘리지 않게 한다.
-const BASE_SCALE = 1.22;
-const BASE_ORIGIN_Y = 0.35;
+// 모바일 뷰(414×896)는 세로 프레임에 거의 꽉 찬다 → 기본 확대 불필요.
+// 강조 구간에서만 줌인해 시선을 모은다.
+const BASE_SCALE = 1.0;
+const BASE_ORIGIN_Y = 0.5;
 
 ////////// 강조 구간이면 그 영역으로 스프링 줌인. 화면·링에 같은 변환을 쓴다.
 const useZoom = (focuses: Focus[], nowSec: number, fps: number) => {
@@ -51,7 +51,8 @@ const useZoom = (focuses: Focus[], nowSec: number, fps: number) => {
   const amount = inP * (1 - outP);
 
   // 강조 박스가 화면 폭의 72%를 차지하도록 (최대 2.8배)
-  const target = Math.min(2.8, Math.max(BASE_SCALE + 0.15, 0.72 / Math.max(0.1, active.w)));
+  // 모바일은 폭이 좁아 이미 크다 → 과한 확대는 뭉개진다. 1.9배 상한.
+  const target = Math.min(1.9, Math.max(1.25, 0.85 / Math.max(0.2, active.w)));
   return {
     scale: BASE_SCALE + (target - BASE_SCALE) * amount,
     ox: 0.5 + (active.x - 0.5) * amount, // 확대 원점을 강조 영역으로 이동
@@ -62,7 +63,7 @@ const useZoom = (focuses: Focus[], nowSec: number, fps: number) => {
 type Zoom = ReturnType<typeof useZoom>;
 
 const Screen: React.FC<{ frameDir: string; srcFrame: number; zoom: Zoom }> = ({ frameDir, srcFrame, zoom }) => (
-  <AbsoluteFill style={{ backgroundColor: "#000", overflow: "hidden" }}>
+  <AbsoluteFill style={{ backgroundColor: COLOR.canvas, overflow: "hidden" }}>
     <Img
       src={staticFile(`${frameDir}/${String(srcFrame).padStart(5, "0")}.jpg`)}
       style={{
@@ -182,7 +183,7 @@ const Hook: React.FC<{ frameDir: string; srcFrame: number; text: string }> = ({ 
   const { fps } = useVideoConfig();
   const pop = spring({ frame, fps, config: { damping: 12, mass: 0.6 } });
   // 살짝 줌아웃되며 등장 — 정지 화면보다 시선을 끈다
-  const scale = interpolate(pop, [0, 1], [BASE_SCALE + 0.16, BASE_SCALE + 0.04]);
+  const scale = interpolate(pop, [0, 1], [1.14, 1.03]);
   return (
     <AbsoluteFill style={{ backgroundColor: COLOR.canvas, overflow: "hidden" }}>
       <Img
