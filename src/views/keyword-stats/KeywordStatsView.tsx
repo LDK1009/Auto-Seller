@@ -31,7 +31,7 @@ import type { KeywordStat, RelatedKeyword } from '@/shared/types/keywordStats';
 import type { KeywordDetail } from '@/shared/types/keywordDetail';
 import type { KeywordCompareResponse } from '@/shared/types/keywordCompare';
 import KeywordDetailCard from './_components/KeywordDetailCard';
-// import AiVerdictCard from './_components/AiVerdictCard'; // AI 판단 가동(카카오·키·테이블 셋업) 전까지 숨김 — 백로그 F-4
+import AiVerdictCard from './_components/AiVerdictCard'; // 가동 07-24 — 카카오 로그인·usage 테이블 완료 (ANTHROPIC_API_KEY 미설정 시 "준비 중" 안내)
 import { loadRecentKeywords, saveRecentKeyword } from './_constants/starterKeywords';
 import { NAVER_TOP_CATEGORIES } from '@/shared/constants/naverCategories';
 import type { StarterKeywordsResponse } from '@/shared/types/keywordStats';
@@ -385,8 +385,8 @@ export default function KeywordStatsView() {
           </Stack>
         )}
 
-        {/* ⓪ AI 판단 — 가동 셋업 완료 후 노출 (백로그 F-4)
-        {hasResult && <AiVerdictCard keyword={currentKeyword} stat={stat} detail={detail} />} */}
+        {/* ⓪ AI 판단 — 카카오 로그인 + 일 5회 무료 */}
+        {hasResult && <AiVerdictCard keyword={currentKeyword} stat={stat} detail={detail} />}
 
         {/* ① 핵심 지표 카드 */}
         {hasResult && (
