@@ -31,6 +31,7 @@ import { transientOptions } from '@/shared/utils/emotionTransientProps';
 import { downloadDomeggookImages } from '@/shared/services/domeggookItemService';
 import { saveProduct } from '@/shared/services/savedProductsService';
 import { useAuthSession } from '@/shared/hooks/useAuthSession';
+import LoginRequiredDialog from '@/shared/components/LoginRequiredDialog';
 import { useDomeggookItem } from './_hooks/useDomeggookItem';
 import { classifyDomeggookInput, parseDomeggookProductNo } from './_utils/parseDomeggookUrl';
 import { buildZipWithNames, downloadBlob } from '@/shared/utils/zip';
@@ -85,6 +86,7 @@ export default function DomeggookImportView() {
   // 내 목록 저장 (품절 감시 라인 2) — 조회 상품 기준 저장 여부
   const { session } = useAuthSession();
   const [isProductSaved, setIsProductSaved] = useState(false);
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false); // 비로그인 저장 시도 안내
 
   const detailImages = item ? item.images.filter((image) => image.kind === 'detail') : [];
 
@@ -269,9 +271,7 @@ export default function DomeggookImportView() {
   const handleSaveProduct = async () => {
     if (!item) return;
     if (!session) {
-      enqueueSnackbar('로그인하면 상품을 저장하고 품절을 한 번에 확인할 수 있습니다 — 우측 상단 [로그인]', {
-        variant: 'info',
-      });
+      setIsLoginDialogOpen(true);
       return;
     }
     try {
@@ -698,6 +698,13 @@ export default function DomeggookImportView() {
           }}
         />
       )}
+
+      {/* 비로그인 저장 시도 — 조건부 기능 안내는 다이얼로그 (대표 확정) */}
+      <LoginRequiredDialog
+        open={isLoginDialogOpen}
+        description="상품을 내 목록에 저장하고 품절을 한 번에 확인하려면 카카오 로그인이 필요해요."
+        onClose={() => setIsLoginDialogOpen(false)}
+      />
 
       {/* 상세설명 미리보기 — 상세 이미지 세로 이어붙임 스크롤 */}
       <DetailPreviewModal
