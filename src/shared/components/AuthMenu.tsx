@@ -86,6 +86,9 @@ export default function AuthMenu() {
           />
         </MenuItem>
         <Divider />
+        <MenuItem component={Link} href="/my-products" onClick={() => setMenuAnchorEl(null)}>
+          내 상품 목록
+        </MenuItem>
         <MenuItem component={Link} href="/pricing" onClick={() => setMenuAnchorEl(null)}>
           구독 관리
         </MenuItem>

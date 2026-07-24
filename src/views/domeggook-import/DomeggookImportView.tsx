@@ -29,6 +29,8 @@ import HelpPanel from '@/shared/components/HelpPanel';
 import { trackEvent } from '@/shared/utils/analytics';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
 import { downloadDomeggookImages } from '@/shared/services/domeggookItemService';
+import { saveProduct } from '@/shared/services/savedProductsService';
+import { useAuthSession } from '@/shared/hooks/useAuthSession';
 import { useDomeggookItem } from './_hooks/useDomeggookItem';
 import { classifyDomeggookInput, parseDomeggookProductNo } from './_utils/parseDomeggookUrl';
 import { buildZipWithNames, downloadBlob } from '@/shared/utils/zip';
@@ -40,6 +42,8 @@ import SlotImageEditorModal from './_components/SlotImageEditorModal';
 import DetailPreviewModal from './_components/DetailPreviewModal';
 import type { DomeggookItemImage } from '@/shared/types/domeggook';
 import CodeIcon from '@mui/icons-material/Code';
+import BookmarkAddOutlinedIcon from '@mui/icons-material/BookmarkAddOutlined';
+import BookmarkAddedIcon from '@mui/icons-material/BookmarkAdded';
 import CropOutlinedIcon from '@mui/icons-material/CropOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
@@ -78,6 +82,9 @@ export default function DomeggookImportView() {
   // 슬롯 이미지 미리보기 (1000×1000 기준) — context에 따라 [대표로 사용]/[제거] 제공
   const [slotPreview, setSlotPreview] = useState<{ picked: PickedImage; context: 'main' | 'extra' } | null>(null);
   const [isDetailPreviewOpen, setIsDetailPreviewOpen] = useState(false); // ⑦ 상세설명 미리보기
+  // 내 목록 저장 (품절 감시 라인 2) — 조회 상품 기준 저장 여부
+  const { session } = useAuthSession();
+  const [isProductSaved, setIsProductSaved] = useState(false);
 
   const detailImages = item ? item.images.filter((image) => image.kind === 'detail') : [];
 
@@ -112,6 +119,7 @@ export default function DomeggookImportView() {
   const handleLookup = async (input: string) => {
     setMainImage(null);
     setExtraImages([]);
+    setIsProductSaved(false);
     const fetched = await lookup(input);
     trackEvent('domeggook_lookup', { result: fetched ? 'success' : 'fail' });
     if (fetched) {
@@ -257,6 +265,26 @@ export default function DomeggookImportView() {
     }
   };
 
+  ////////// 내 목록 저장 (로그인 필요 — 도구 자체는 무가입 유지)
+  const handleSaveProduct = async () => {
+    if (!item) return;
+    if (!session) {
+      enqueueSnackbar('로그인하면 상품을 저장하고 품절을 한 번에 확인할 수 있습니다 — 우측 상단 [로그인]', {
+        variant: 'info',
+      });
+      return;
+    }
+    try {
+      await saveProduct(item);
+      setIsProductSaved(true);
+      trackEvent('save_product');
+      enqueueSnackbar('내 목록에 저장했습니다.', { variant: 'success' });
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar(error instanceof Error ? error.message : '저장에 실패했습니다.', { variant: 'error' });
+    }
+  };
+
   const isBusy = status === 'loading' || downloadProgress !== null;
 
   return (
@@ -373,9 +401,20 @@ export default function DomeggookImportView() {
                           />
                         ) : null}
                       </Stack>
-                      <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.35 }}>
-                        {item.title}
-                      </Typography>
+                      <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
+                        <Typography variant="h6" sx={{ flex: 1, fontWeight: 700, lineHeight: 1.35 }}>
+                          {item.title}
+                        </Typography>
+                        <Tooltip title={isProductSaved ? '내 목록에 저장됨' : '내 목록에 저장 (품절 일괄 확인)'}>
+                          <IconButton size="small" onClick={handleSaveProduct} aria-label="내 목록에 저장">
+                            {isProductSaved ? (
+                              <BookmarkAddedIcon color="primary" sx={{ fontSize: 22 }} />
+                            ) : (
+                              <BookmarkAddOutlinedIcon sx={{ fontSize: 22 }} />
+                            )}
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
                     </Stack>
 
                     <Stack direction="row" spacing={4} useFlexGap sx={{ flexWrap: 'wrap' }}>
