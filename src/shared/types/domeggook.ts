@@ -63,6 +63,7 @@ export type DomeggookItem = {
   resaleMinimum: number | null; // 공급사 최소 재판매가 (price.resale.minimum) — 추천 판매가 하한 가드
   moq: number; // 도매꾹 최소 구매 수량 (qty.domeMoq — 1이면 낱개 가능)
   inventory: number | null; // 재고 수량
+  saleStatus: string | null; // 판매 상태 원문 (basis.status — "판매중" 외 값이면 판매 불가 상태)
   taxType: string | null; // 과세 구분 원문 (과세상품/면세상품)
   origin: string | null; // 원산지 (detail.country)
   manufacturer: string | null; // 제조사

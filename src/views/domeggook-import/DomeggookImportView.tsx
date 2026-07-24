@@ -356,9 +356,27 @@ export default function DomeggookImportView() {
 
                   {/* 우 6: 상품명 → [가격·최소구매] → [이미지·사용 허용 여부] */}
                   <Stack spacing={2} sx={{ flex: 6, minWidth: 0 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.35 }}>
-                      {item.title}
-                    </Typography>
+                    <Stack spacing={1}>
+                      {/* 판매상태·재고 — 품절 대응이 검증된 pain이라 최상단 노출 (고객-인사이트 ②) */}
+                      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+                        {(item.saleStatus ?? null) !== null && item.saleStatus !== '판매중' && (
+                          <Chip size="small" color="warning" label={item.saleStatus} />
+                        )}
+                        {item.inventory === 0 ? (
+                          <Chip size="small" color="error" label="품절 — 공급사 재입고 확인 필요" />
+                        ) : item.inventory !== null ? (
+                          <Chip
+                            size="small"
+                            color="success"
+                            variant="outlined"
+                            label={`도매꾹 재고 ${item.inventory.toLocaleString()}개`}
+                          />
+                        ) : null}
+                      </Stack>
+                      <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.35 }}>
+                        {item.title}
+                      </Typography>
+                    </Stack>
 
                     <Stack direction="row" spacing={4} useFlexGap sx={{ flexWrap: 'wrap' }}>
                       <Stack spacing={0.25}>
