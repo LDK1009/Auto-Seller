@@ -14,7 +14,8 @@ export const demo: DemoScenario = {
   ],
   run: async (p) => {
     p.markScene();
-    await p.humanType(p.page.getByLabel("키워드"), "주방수납");
+    // 세로형 뷰포트에선 "키워드" 라벨이 여러 개 보인다(비교 섹션 등) → 첫 번째로 좁힌다
+    await p.humanType(p.page.getByLabel("키워드").first(), "주방수납");
     await p.humanClick(p.page.getByRole("button", { name: "분석" }).first(), 0.6);
     await p.waitLoaded(p.page.getByText("월간 검색수").first(), 60000);
     await p.hold(1.2);
