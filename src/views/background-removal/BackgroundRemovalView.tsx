@@ -24,6 +24,7 @@ import HelpPanel from '@/shared/components/HelpPanel';
 import { IMAGE_LIMIT_HELPER_TEXT } from '@/shared/constants/imageLimits';
 import { useBackgroundRemoval } from './_hooks/useBackgroundRemoval';
 import ImageDropzone from '@/shared/components/ImageDropzone';
+import WizardSteps from '@/shared/components/WizardSteps';
 import BackgroundOptionModal from './_components/BackgroundOptionModal';
 import ImageJobGrid from './_components/ImageJobGrid';
 import StatBox from '@/shared/components/StatBox';
@@ -54,8 +55,8 @@ export default function BackgroundRemovalView() {
   const hasJobs = jobs.length > 0;
   const overallProgress = hasJobs ? Math.round((doneCount / jobs.length) * 100) : 0;
 
-  // 작업 단계: 처리 중 / 작업 전(대기·오류 남음) / 작업 완료(전부 처리됨)
-  const phase = isProcessing ? 'processing' : pendingCount > 0 ? 'before' : 'done';
+  // 작업 단계: 처리 중 / 작업 전(빈 상태·대기·오류 남음) / 작업 완료(전부 처리됨)
+  const phase = !hasJobs ? 'before' : isProcessing ? 'processing' : pendingCount > 0 ? 'before' : 'done';
 
   // 상세 모달 선택 상태 (순수 UI 상태) — id로 보관해 삭제 시 안전
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -109,118 +110,122 @@ export default function BackgroundRemovalView() {
       }
     >
       <Stack spacing={3}>
-        {/* 업로드 (이미지가 없을 때만 노출) */}
-        {!hasJobs && <ImageDropzone onFilesAdded={addFiles} disabled={isProcessing} />}
+        {/* 위저드 스텝 — phase에서 유도 (before=①, processing=②, done=③) */}
+        <WizardSteps
+          steps={[{ title: '이미지 올리기' }, { title: '배경 제거' }, { title: '결과 받기' }]}
+          activeStep={phase === 'before' ? 0 : phase === 'processing' ? 1 : 2}
+        />
 
-        {hasJobs && (
+        {/* ① 이미지 올리기 — 업로드존은 이 스텝에서만 */}
+        {phase === 'before' && (
           <>
+            <ImageDropzone onFilesAdded={addFiles} disabled={isProcessing} />
+            {hasJobs && (
+              <Button
+                fullWidth
+                variant="contained"
+                size="large"
+                startIcon={<AutoFixHighIcon />}
+                onClick={start}
+                disabled={pendingCount === 0}
+              >
+                배경 제거 시작 ({pendingCount}장)
+              </Button>
+            )}
+          </>
+        )}
 
-            {/* 액션 바 — 단계별 버튼 (풀너비) */}
-            <Stack spacing={1.5}>
-              {/* 작업 전: 배경 제거 */}
-              {phase === 'before' && (
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<AutoFixHighIcon />}
-                  onClick={start}
-                  disabled={pendingCount === 0}
-                >
-                  배경 제거
-                </Button>
-              )}
-              {/* 작업 중: 작업 취소 */}
-              {phase === 'processing' && (
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  color="error"
-                  startIcon={<StopCircleIcon />}
-                  onClick={requestCancel}
-                  disabled={isCancelling}
-                >
-                  {isCancelling ? '중지 중…' : '작업 취소'}
-                </Button>
-              )}
-              {/* 작업 완료: 배경 선택 · 다운로드 */}
-              {phase === 'done' && (
-                <>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    startIcon={<PaletteIcon />}
-                    onClick={() => setIsBackgroundModalOpen(true)}
-                  >
-                    배경 선택
-                  </Button>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    startIcon={<DownloadIcon />}
-                    onClick={downloadAllAsZip}
-                    disabled={isZipping || doneCount === 0}
-                  >
-                    {isZipping ? '다운로드 중…' : '다운로드'}
-                  </Button>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    startIcon={<AspectRatioIcon />}
-                    onClick={handleSendToResize}
-                    disabled={doneCount === 0}
-                  >
-                    규격 변환으로 보내기
-                  </Button>
-                </>
-              )}
-            </Stack>
-
-            {/* 전체 진행률 (작업 중에만) — 모델 로딩은 서클 스피너 + 텍스트로 별도 표시 */}
-            {phase === 'processing' &&
-              (isModelLoading ? (
-                <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-                  <CircularProgress size={20} />
-                  <Typography variant="body2" color="text.secondary">
-                    AI 모델 실행 중 (최초 1회)…
+        {/* ② 배경 제거 — 진행률 + 취소 */}
+        {phase === 'processing' && (
+          <>
+            {isModelLoading ? (
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                <CircularProgress size={20} />
+                <Typography variant="body2" color="text.secondary">
+                  AI 모델 실행 중 (최초 1회)…
+                </Typography>
+              </Stack>
+            ) : (
+              <Stack spacing={0.5}>
+                <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="caption" color="text.secondary">
+                    전체 진행률
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {overallProgress}%
                   </Typography>
                 </Stack>
-              ) : (
-                <Stack spacing={0.5}>
-                  <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="caption" color="text.secondary">
-                      전체 진행률
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {overallProgress}%
-                    </Typography>
-                  </Stack>
-                  <AnimatedProgressBar value={overallProgress / 100} />
-                </Stack>
-              ))}
-
-            {/* 작업 아이템 컨테이너 (상단: 전체·완료·초기화 / 하단: 그리드) */}
-            <Paper variant="outlined" sx={{ p: 2 }}>
-              <Stack spacing={2}>
-                <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Stack direction="row" spacing={1}>
-                    <StatBox label="전체" value={jobs.length} />
-                    <StatBox label="완료" value={doneCount} />
-                  </Stack>
-                  <Button
-                    variant="outlined"
-                    color="inherit"
-                    size="small"
-                    startIcon={<RestartAltIcon />}
-                    onClick={clearAll}
-                    disabled={isProcessing}
-                  >
-                    초기화
-                  </Button>
-                </Stack>
-                <ImageJobGrid jobs={jobs} onRemove={removeJob} onOpen={setSelectedId} />
+                <AnimatedProgressBar value={overallProgress / 100} />
               </Stack>
-            </Paper>
+            )}
+            <Button
+              fullWidth
+              variant="outlined"
+              color="error"
+              startIcon={<StopCircleIcon />}
+              onClick={requestCancel}
+              disabled={isCancelling}
+            >
+              {isCancelling ? '중지 중…' : '작업 취소'}
+            </Button>
           </>
+        )}
+
+        {/* ③ 결과 받기 — 배경 선택·다운로드·핸드오프 */}
+        {phase === 'done' && hasJobs && (
+          <Stack spacing={1.5}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<PaletteIcon />}
+              onClick={() => setIsBackgroundModalOpen(true)}
+            >
+              배경 선택
+            </Button>
+            <Button
+              fullWidth
+              variant="contained"
+              startIcon={<DownloadIcon />}
+              onClick={downloadAllAsZip}
+              disabled={isZipping || doneCount === 0}
+            >
+              {isZipping ? '다운로드 중…' : '다운로드'}
+            </Button>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<AspectRatioIcon />}
+              onClick={handleSendToResize}
+              disabled={doneCount === 0}
+            >
+              규격 변환으로 보내기
+            </Button>
+          </Stack>
+        )}
+
+        {/* 작업 아이템 컨테이너 — 전 스텝 공통 (상태 확인용) */}
+        {hasJobs && (
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Stack spacing={2}>
+              <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                <Stack direction="row" spacing={1}>
+                  <StatBox label="전체" value={jobs.length} />
+                  <StatBox label="완료" value={doneCount} />
+                </Stack>
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  size="small"
+                  startIcon={<RestartAltIcon />}
+                  onClick={clearAll}
+                  disabled={isProcessing}
+                >
+                  처음부터
+                </Button>
+              </Stack>
+              <ImageJobGrid jobs={jobs} onRemove={removeJob} onOpen={setSelectedId} />
+            </Stack>
+          </Paper>
         )}
       </Stack>
 
