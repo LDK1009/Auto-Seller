@@ -60,7 +60,7 @@ export default function MarginCalculatorView() {
   return (
     <PageLayout
       title="마진 계산"
-      description="판매가로 순이익을 확인하거나, 목표 마진율로 최소 판매가를 역산해요."
+      description="팔기 전에 남는 장사인지 확인해요. 수수료·배송비까지 넣은 진짜 순이익으로요."
       maxWidth="md"
       help={
         <HelpPanel storageKey="margin-calculator">

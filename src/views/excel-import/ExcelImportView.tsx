@@ -16,9 +16,12 @@ import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import { useSnackbar } from 'notistack';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
+import WizardSteps from '@/shared/components/WizardSteps';
+import NextActionBubble from '@/shared/components/NextActionBubble';
 import { useImageHandoffStore } from '@/shared/store/imageHandoffStore';
 import { trackEvent } from '@/shared/utils/analytics';
 import { parseExcelImages, isProxyableImageUrl, type ExcelProductRow } from './_utils/parseExcelImages';
@@ -35,6 +38,7 @@ export default function ExcelImportView() {
   const [selectedIndexes, setSelectedIndexes] = useState<Set<number>>(new Set());
   const [fileName, setFileName] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
+  const [isCollecting, setIsCollecting] = useState(false); // ③ 누끼로 보내기(이미지 수집) 진행 여부 — 위저드 스텝 표시용
 
   ////////// 엑셀 파싱
   const handleFile = async (file: File) => {
@@ -62,6 +66,7 @@ export default function ExcelImportView() {
     const targets = rows.filter((_, index) => selectedIndexes.has(index));
     const urls = targets.flatMap((row) => row.imageUrls.filter(isProxyableImageUrl));
     if (urls.length === 0) return;
+    setIsCollecting(true);
 
     const limited = urls.slice(0, MAX_HANDOFF_IMAGES);
     if (urls.length > MAX_HANDOFF_IMAGES) {
@@ -92,7 +97,15 @@ export default function ExcelImportView() {
       enqueueSnackbar('이미지 수집 중 오류가 발생했어요.', { variant: 'error' });
     } finally {
       setProgress(null);
+      setIsCollecting(false);
     }
+  };
+
+  ////////// 처음부터 (엑셀 다시 올리기 — 순수 UI 상태 초기화)
+  const handleReset = () => {
+    setRows([]);
+    setSelectedIndexes(new Set());
+    setFileName(null);
   };
 
   ////////// 파생 값
@@ -103,11 +116,12 @@ export default function ExcelImportView() {
     .filter((_, index) => selectedIndexes.has(index))
     .reduce((sum, row) => sum + (row.imageUrls.length - row.proxyable), 0);
   const isBusy = progress !== null;
+  const hasRows = rows.length > 0;
 
   return (
     <PageLayout
       title="엑셀 대량 가공"
-      description="대량등록 엑셀 속 상품 이미지를 한 번에 모아 배경 제거까지 이어드려요."
+      description="엑셀 속 상품 이미지를 일일이 저장하지 말고, 한 번에 모아서 가공해요."
       maxWidth="md"
       help={
         <HelpPanel storageKey="excel-import">
@@ -123,45 +137,74 @@ export default function ExcelImportView() {
       }
     >
       <Stack spacing={3}>
-        {/* 업로드 */}
-        <Paper variant="outlined" sx={{ p: 3 }}>
-          <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-            <Button
-              component="label"
-              variant="contained"
-              startIcon={isBusy ? <CircularProgress size={16} color="inherit" /> : <UploadFileIcon />}
-              disabled={isBusy}
-            >
-              엑셀 업로드
-              <HiddenInput
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) handleFile(file);
-                  event.target.value = '';
-                }}
-              />
-            </Button>
-            <Typography variant="body2" color="text.secondary">
-              {fileName ? `${fileName} — 상품 ${rows.length}개` : 'xlsx 파일을 올려주세요'}
-            </Typography>
-          </Stack>
-        </Paper>
+        {/* 위저드 스텝 — 엑셀 없으면 ①, 상품 목록 뜨면 ②, 이미지 수집 중이면 ③ */}
+        <WizardSteps
+          steps={[{ title: '엑셀 올리기' }, { title: '상품 선택' }, { title: '누끼로 보내기' }]}
+          activeStep={!hasRows ? 0 : isCollecting ? 2 : 1}
+        />
 
-        {/* 상품 목록 */}
-        {rows.length > 0 && (
+        {/* ① 엑셀 올리기 — 업로드존은 이 스텝에서만, 빈 상태엔 다음 행동 말풍선 */}
+        {!hasRows && (
+          <Stack spacing={1.5}>
+            <NextActionBubble hint="상품 이미지 주소를 자동으로 찾아요">
+              대량등록 엑셀 파일을 올려주세요
+            </NextActionBubble>
+            <Paper variant="outlined" sx={{ p: 3 }}>
+              <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+                <Button
+                  component="label"
+                  variant="contained"
+                  startIcon={isBusy ? <CircularProgress size={16} color="inherit" /> : <UploadFileIcon />}
+                  disabled={isBusy}
+                >
+                  엑셀 업로드
+                  <HiddenInput
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) handleFile(file);
+                      event.target.value = '';
+                    }}
+                  />
+                </Button>
+                <Typography variant="body2" color="text.secondary">
+                  {fileName ? `${fileName} — 상품 ${rows.length}개` : 'xlsx 파일을 올려주세요'}
+                </Typography>
+              </Stack>
+            </Paper>
+          </Stack>
+        )}
+
+        {/* ② 상품 선택 → ③ 누끼로 보내기 — 결과 영역 (공통 하단) */}
+        {hasRows && (
           <Paper variant="outlined" sx={{ p: 3 }}>
             <Stack spacing={2}>
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                <Typography variant="subtitle2" sx={{ flex: 1 }}>
-                  상품 {rows.length}개 · 선택 이미지 {selectedImageCount}장
-                </Typography>
+                <Stack sx={{ flex: 1, minWidth: 0 }}>
+                  {fileName && (
+                    <Typography variant="caption" color="text.secondary" noWrap>
+                      {fileName}
+                    </Typography>
+                  )}
+                  <Typography variant="subtitle2">
+                    상품 {rows.length}개 · 선택 이미지 {selectedImageCount}장
+                  </Typography>
+                </Stack>
                 <Button size="small" onClick={() => setSelectedIndexes(new Set(rows.map((_, i) => i)))}>
                   전체 선택
                 </Button>
                 <Button size="small" onClick={() => setSelectedIndexes(new Set())}>
                   전체 해제
+                </Button>
+                <Button
+                  size="small"
+                  color="inherit"
+                  startIcon={<RestartAltIcon />}
+                  onClick={handleReset}
+                  disabled={isBusy}
+                >
+                  처음부터
                 </Button>
               </Stack>
 

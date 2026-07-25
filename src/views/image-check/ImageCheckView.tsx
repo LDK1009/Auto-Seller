@@ -14,6 +14,8 @@ import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
 import ImageDropzone from '@/shared/components/ImageDropzone';
 import StatBox from '@/shared/components/StatBox';
+import WizardSteps from '@/shared/components/WizardSteps';
+import NextActionBubble from '@/shared/components/NextActionBubble';
 import { CHECK_DISCLAIMER } from './_constants/imageCheck';
 import { useImageCheck } from './_hooks/useImageCheck';
 import CheckResultCard from './_components/CheckResultCard';
@@ -28,7 +30,7 @@ export default function ImageCheckView() {
   return (
     <PageLayout
       title="규정 검사"
-      description="상품 대표이미지가 마켓 규정에 맞는지 업로드 즉시 검사해요. 처리는 브라우저에서 진행돼요."
+      description="등록했다가 반려당하기 전에, 대표이미지 문제를 미리 걸러내요."
       help={
         <HelpPanel storageKey="image-check">
           <Stack spacing={0.75}>
@@ -42,12 +44,23 @@ export default function ImageCheckView() {
       }
     >
       <Stack spacing={3}>
-        {/* 업로드 (이미지가 없을 때만) */}
-        {!hasJobs && <ImageDropzone onFilesAdded={addFiles} />}
+        {/* 위저드 스텝 — 업로드 즉시 검사되는 구조라 2스텝 (빈 상태=①, 결과=②) */}
+        <WizardSteps
+          steps={[{ title: '이미지 올리기' }, { title: '검사 결과' }]}
+          activeStep={hasJobs ? 1 : 0}
+        />
+
+        {/* ① 이미지 올리기 — 업로드존은 이 스텝에서만, 빈 상태엔 다음 행동 말풍선 */}
+        {!hasJobs && (
+          <Stack spacing={1.5}>
+            <NextActionBubble hint="올리면 바로 검사돼요">검사할 대표이미지를 올려주세요</NextActionBubble>
+            <ImageDropzone onFilesAdded={addFiles} />
+          </Stack>
+        )}
 
         {hasJobs && (
           <>
-            {/* 파이프라인 연결 */}
+            {/* ② 검사 결과 — 파이프라인 연결 */}
             {needsFix && (
               <Button fullWidth variant="contained" startIcon={<AspectRatioIcon />} onClick={sendToResize}>
                 규격 변환으로 보내기

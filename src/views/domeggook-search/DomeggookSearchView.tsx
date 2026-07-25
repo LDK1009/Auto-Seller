@@ -17,7 +17,7 @@ export default function DomeggookSearchView() {
   return (
     <PageLayout
       title="도매꾹 검색"
-      description="링크 없이, 검색으로 소싱을 시작해요."
+      description="뭘 팔지 못 정했다면 인기 상품부터 훑어보세요. 클릭하면 등록 준비까지 이어져요."
       help={
         <HelpPanel storageKey="domeggook-search">
           <Stack spacing={0.75}>

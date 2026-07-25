@@ -39,7 +39,7 @@ export default function VatCalculatorView() {
   return (
     <PageLayout
       title="부가세 계산"
-      description="매출·매입으로 부가세 납부 예상액을 대략 계산해요 (신고 기준은 홈택스가 우선)."
+      description="신고 시즌에 놀라지 않게, 낼 부가세를 미리 알아둬요."
       maxWidth="md"
       help={
         <HelpPanel storageKey="vat-calculator">

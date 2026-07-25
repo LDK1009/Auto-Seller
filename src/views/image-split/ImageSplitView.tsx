@@ -18,6 +18,8 @@ import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
 import ImageDropzone from '@/shared/components/ImageDropzone';
 import StatBox from '@/shared/components/StatBox';
+import WizardSteps from '@/shared/components/WizardSteps';
+import NextActionBubble from '@/shared/components/NextActionBubble';
 import {
   HEIGHT_PRESETS,
   MIN_PIECE_HEIGHT,
@@ -53,10 +55,13 @@ export default function ImageSplitView() {
 
   const hasJobs = jobs.length > 0;
 
+  // 작업 단계: 올리기 전 / 높이 설정 / 분할 중 / 분할 완료
+  const phase = !hasJobs ? 'before' : isProcessing ? 'processing' : doneCount > 0 ? 'done' : 'setup';
+
   return (
     <PageLayout
       title="상세 분할"
-      description="세로로 긴 상세페이지 이미지를 지정 높이로 잘라 순서대로 저장해요. 처리는 브라우저에서 진행돼요."
+      description="긴 상세 이미지가 에디터에서 잘리는 문제, 자동 분할로 끝내요."
       help={
         <HelpPanel storageKey="image-split">
           <Stack spacing={0.75}>
@@ -68,11 +73,25 @@ export default function ImageSplitView() {
       }
     >
       <Stack spacing={3}>
-        {!hasJobs && <ImageDropzone onFilesAdded={addFiles} disabled={isProcessing} />}
+        {/* 위저드 스텝 — phase에서 유도 (before=①, setup·processing=②, done=③) */}
+        <WizardSteps
+          steps={[{ title: '이미지 올리기' }, { title: '조각 높이 설정' }, { title: '결과 받기' }]}
+          activeStep={phase === 'before' ? 0 : phase === 'done' ? 2 : 1}
+        />
+
+        {/* ① 이미지 올리기 — 업로드존은 이 스텝에서만, 빈 상태엔 다음 행동 말풍선 */}
+        {phase === 'before' && (
+          <Stack spacing={1.5}>
+            <NextActionBubble hint="여러 장이면 각각 나눠서 처리해요">
+              분할할 긴 상세 이미지를 올려주세요
+            </NextActionBubble>
+            <ImageDropzone onFilesAdded={addFiles} disabled={isProcessing} />
+          </Stack>
+        )}
 
         {hasJobs && (
           <>
-            {/* 조각 높이 설정 */}
+            {/* ② 조각 높이 설정 — 재분할 대비 전 스텝 노출 */}
             <Paper variant="outlined" sx={{ p: 2 }}>
               <Stack spacing={1}>
                 <Typography variant="subtitle2" color="text.secondary">
@@ -128,8 +147,8 @@ export default function ImageSplitView() {
               </Stack>
             </Paper>
 
-            {/* 액션 */}
-            <Stack spacing={1.5}>
+            {/* ② 분할 실행 */}
+            {phase !== 'done' && (
               <Button
                 fullWidth
                 variant="contained"
@@ -137,22 +156,29 @@ export default function ImageSplitView() {
                 onClick={processAll}
                 disabled={isProcessing}
               >
-                {isProcessing ? '분할 중…' : doneCount > 0 ? '다시 분할' : '분할하기'}
+                {isProcessing ? '분할 중…' : '분할하기'}
               </Button>
-              {doneCount > 0 && !isProcessing && (
+            )}
+
+            {/* ③ 결과 받기 — 다운로드·재분할 */}
+            {phase === 'done' && (
+              <Stack spacing={1.5}>
                 <Button
                   fullWidth
-                  variant="outlined"
+                  variant="contained"
                   startIcon={<DownloadIcon />}
                   onClick={downloadAllAsZip}
                   disabled={isZipping}
                 >
                   {isZipping ? '다운로드 중…' : `다운로드 (총 ${totalPieces}조각)`}
                 </Button>
-              )}
-            </Stack>
+                <Button fullWidth variant="outlined" startIcon={<VerticalSplitIcon />} onClick={processAll}>
+                  다시 분할
+                </Button>
+              </Stack>
+            )}
 
-            {/* 작업 아이템 컨테이너 */}
+            {/* 작업 아이템 컨테이너 — 전 스텝 공통 (상태 확인용) */}
             <Paper variant="outlined" sx={{ p: 2 }}>
               <Stack spacing={2}>
                 <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>

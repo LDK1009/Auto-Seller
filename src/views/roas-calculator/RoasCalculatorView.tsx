@@ -37,7 +37,7 @@ export default function RoasCalculatorView() {
   return (
     <PageLayout
       title="광고 손익"
-      description="내 마진 기준으로 광고가 적자로 넘어가는 손익분기 ROAS를 계산해요."
+      description="광고 돌리기 전에, 몇 배를 벌어야 본전인지부터 확인해요."
       maxWidth="md"
       help={
         <HelpPanel storageKey="roas-calculator">

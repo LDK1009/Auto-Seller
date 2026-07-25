@@ -12,6 +12,7 @@ import Paper from '@mui/material/Paper';
 import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
 import DownloadIcon from '@mui/icons-material/Download';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import TuneIcon from '@mui/icons-material/Tune';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import ImagePreviewModal, { type PreviewImage } from '@/shared/components/ImagePreviewModal';
 import { useTransformedPreview } from '@/shared/hooks/useTransformedPreview';
@@ -21,6 +22,8 @@ import HelpPanel from '@/shared/components/HelpPanel';
 import ImageDropzone from '@/shared/components/ImageDropzone';
 import StatBox from '@/shared/components/StatBox';
 import AnimatedProgressBar from '@/shared/components/AnimatedProgressBar';
+import WizardSteps from '@/shared/components/WizardSteps';
+import NextActionBubble from '@/shared/components/NextActionBubble';
 import { useWatermark } from './_hooks/useWatermark';
 import WatermarkSettingsPanel from '@/shared/components/WatermarkSettingsPanel';
 import WatermarkJobCard from './_components/WatermarkJobCard';
@@ -44,6 +47,12 @@ export default function WatermarkView() {
 
   const hasJobs = jobs.length > 0;
   const overallProgress = hasJobs ? processedCount / jobs.length : 0;
+
+  // 재설정 모드 (순수 UI 상태) — 완료 후 설정을 바꿔 다시 적용할 때 ②로 되돌린다
+  const [isReconfiguring, setIsReconfiguring] = useState(false);
+
+  // 작업 단계: 이미지 없음 = ① / 적용 결과 없음·적용 중·재설정 중 = ② / 적용 완료 = ③
+  const phase = !hasJobs ? 'upload' : doneCount === 0 || isProcessing || isReconfiguring ? 'configure' : 'done';
 
   // 미리보기 모달 (순수 UI 상태) — 현재 설정으로 즉석 합성한 "예상 결과"를 보여준다
   const [previewIndex, setPreviewIndex] = useState(-1);
@@ -80,7 +89,7 @@ export default function WatermarkView() {
   return (
     <PageLayout
       title="워터마크"
-      description="여러 상품 이미지에 텍스트/로고 워터마크를 한 번에 넣어요. 처리는 브라우저에서 진행돼요."
+      description="내 이미지 도용당하기 전에, 전 이미지에 한 번에 워터마크를 넣어요."
       help={
         <HelpPanel storageKey="watermark">
           <Stack spacing={0.75}>
@@ -93,11 +102,25 @@ export default function WatermarkView() {
       }
     >
       <Stack spacing={3}>
-        {!hasJobs && <ImageDropzone onFilesAdded={addFiles} disabled={isProcessing} />}
+        {/* 위저드 스텝 — phase에서 유도 (upload=①, configure=②, done=③) */}
+        <WizardSteps
+          steps={[{ title: '이미지 올리기' }, { title: '워터마크 설정' }, { title: '결과 받기' }]}
+          activeStep={phase === 'upload' ? 0 : phase === 'configure' ? 1 : 2}
+        />
 
-        {hasJobs && (
+        {/* ① 이미지 올리기 — 업로드존은 이 스텝에서만, 빈 상태엔 다음 행동 말풍선 */}
+        {phase === 'upload' && (
+          <Stack spacing={1.5}>
+            <NextActionBubble hint="텍스트·로고 모두 가능해요">
+              워터마크를 넣을 이미지를 올려주세요
+            </NextActionBubble>
+            <ImageDropzone onFilesAdded={addFiles} disabled={isProcessing} />
+          </Stack>
+        )}
+
+        {/* ② 워터마크 설정 — 설정 패널 + 미리보기 + 적용 */}
+        {phase === 'configure' && (
           <>
-            {/* 설정 */}
             <Paper variant="outlined" sx={{ p: 2 }}>
               <WatermarkSettingsPanel
                 settings={settings}
@@ -107,7 +130,6 @@ export default function WatermarkView() {
               />
             </Paper>
 
-            {/* 액션 — 설정 → 미리보기 → 적용 흐름 */}
             <Stack spacing={1.5}>
               <Button
                 fullWidth
@@ -122,25 +144,17 @@ export default function WatermarkView() {
                 fullWidth
                 variant="contained"
                 startIcon={<BrandingWatermarkIcon />}
-                onClick={processAll}
+                onClick={() => {
+                  setIsReconfiguring(false);
+                  processAll();
+                }}
                 disabled={isProcessing}
               >
                 {isProcessing ? '적용 중…' : doneCount > 0 ? '다시 적용' : '워터마크 적용'}
               </Button>
-              {doneCount > 0 && !isProcessing && (
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  startIcon={<DownloadIcon />}
-                  onClick={downloadAllAsZip}
-                  disabled={isZipping}
-                >
-                  {isZipping ? '다운로드 중…' : '다운로드'}
-                </Button>
-              )}
             </Stack>
 
-            {/* 진행률 */}
+            {/* 진행률 (적용 중에만) */}
             {isProcessing && (
               <Stack spacing={0.5}>
                 <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
@@ -154,34 +168,59 @@ export default function WatermarkView() {
                 <AnimatedProgressBar value={overallProgress} durationMs={150} />
               </Stack>
             )}
-
-            {/* 작업 아이템 컨테이너 */}
-            <Paper variant="outlined" sx={{ p: 2 }}>
-              <Stack spacing={2}>
-                <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Stack direction="row" spacing={1}>
-                    <StatBox label="전체" value={jobs.length} />
-                    <StatBox label="완료" value={doneCount} />
-                  </Stack>
-                  <Button
-                    variant="outlined"
-                    color="inherit"
-                    size="small"
-                    startIcon={<RestartAltIcon />}
-                    onClick={clearAll}
-                    disabled={isProcessing}
-                  >
-                    초기화
-                  </Button>
-                </Stack>
-                <Grid>
-                  {jobs.map((job) => (
-                    <WatermarkJobCard key={job.id} job={job} onRemove={removeJob} />
-                  ))}
-                </Grid>
-              </Stack>
-            </Paper>
           </>
+        )}
+
+        {/* ③ 결과 받기 — 다운로드 + 재설정 진입 */}
+        {phase === 'done' && (
+          <Stack spacing={1.5}>
+            <Button
+              fullWidth
+              variant="contained"
+              startIcon={<DownloadIcon />}
+              onClick={downloadAllAsZip}
+              disabled={isZipping}
+            >
+              {isZipping ? '다운로드 중…' : '다운로드'}
+            </Button>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<TuneIcon />}
+              onClick={() => setIsReconfiguring(true)}
+            >
+              설정 바꿔 다시 적용
+            </Button>
+          </Stack>
+        )}
+
+        {/* 작업 아이템 컨테이너 — 전 스텝 공통 (상태 확인용) */}
+        {hasJobs && (
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Stack spacing={2}>
+              <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                <Stack direction="row" spacing={1}>
+                  <StatBox label="전체" value={jobs.length} />
+                  <StatBox label="완료" value={doneCount} />
+                </Stack>
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  size="small"
+                  startIcon={<RestartAltIcon />}
+                  onClick={clearAll}
+                  disabled={isProcessing}
+                >
+                  처음부터
+                </Button>
+              </Stack>
+              <Grid>
+                {jobs.map((job) => (
+                  <WatermarkJobCard key={job.id} job={job} onRemove={removeJob} />
+                ))}
+              </Grid>
+            </Stack>
+          </Paper>
         )}
       </Stack>
 

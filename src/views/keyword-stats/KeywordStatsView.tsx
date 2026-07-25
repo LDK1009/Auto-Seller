@@ -20,6 +20,7 @@ import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import { useSnackbar } from 'notistack';
 import PageLayout from '@/shared/components/PageLayout';
 import HelpPanel from '@/shared/components/HelpPanel';
+import NextActionBubble from '@/shared/components/NextActionBubble';
 import {
   fetchKeywordStats,
   fetchKeywordDetail,
@@ -286,7 +287,7 @@ export default function KeywordStatsView() {
   return (
     <PageLayout
       title="키워드 분석"
-      description="검색수·경쟁강도부터 트렌드·시장 상황까지 — 팔릴 키워드를 판정해요."
+      description="감으로 고르지 말고, 팔리는 키워드인지 등록 전에 확인해요."
       maxWidth="md"
       help={
         <HelpPanel storageKey="keyword-stats">
@@ -299,6 +300,11 @@ export default function KeywordStatsView() {
       }
     >
       <Stack spacing={3} sx={{ pb: checkedKeywords.size > 0 ? 10 : 0 }}>
+        {/* 첫 행동 말풍선 — 검색 전 시작 화면에서만 */}
+        {!hasResult && !isLoading && (
+          <NextActionBubble hint="예: 지금 팔까 고민 중인 상품명">궁금한 키워드를 검색해보세요</NextActionBubble>
+        )}
+
         {/* 검색바 */}
         <Paper variant="outlined" sx={{ p: 3 }}>
           <Stack direction="row" spacing={1.5}>
