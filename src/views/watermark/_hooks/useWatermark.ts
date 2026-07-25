@@ -49,7 +49,7 @@ export function useWatermark() {
   //////////////////// 로고 설정 ////////////////////
   const setLogo = useCallback((file: File) => {
     if (!file.type.startsWith('image/')) {
-      enqueueSnackbar('이미지 파일만 로고로 사용할 수 있습니다.', { variant: 'warning' });
+      enqueueSnackbar('이미지 파일만 로고로 사용할 수 있어요.', { variant: 'warning' });
       return;
     }
     useWatermarkStore.getState().updateSettings({ logoBlob: file, logoName: file.name, type: 'logo' });
@@ -109,7 +109,7 @@ export function useWatermark() {
     }
 
     useWatermarkStore.getState().setIsProcessing(false);
-    enqueueSnackbar('워터마크 합성이 완료되었습니다.', { variant: 'success' });
+    enqueueSnackbar('워터마크 합성이 완료됐어요.', { variant: 'success' });
   }, []);
 
   //////////////////// ZIP 다운로드 (원본 포맷 유지 → 파일별 확장자) ////////////////////
@@ -117,7 +117,7 @@ export function useWatermark() {
     const store = useWatermarkStore.getState();
     const doneJobs = store.jobs.filter((job) => job.status === 'done' && job.resultBlob);
     if (doneJobs.length === 0) {
-      enqueueSnackbar('다운로드할 완료 이미지가 없습니다.', { variant: 'info' });
+      enqueueSnackbar('다운로드할 완료 이미지가 없어요.', { variant: 'info' });
       return;
     }
 
@@ -142,7 +142,7 @@ export function useWatermark() {
       trackEvent('zip_download', { tool: 'watermark' });
     } catch (error) {
       console.error(error);
-      enqueueSnackbar('ZIP 생성 중 오류가 발생했습니다.', { variant: 'error' });
+      enqueueSnackbar('ZIP 생성 중 오류가 발생했어요.', { variant: 'error' });
     } finally {
       useWatermarkStore.getState().setIsZipping(false);
     }

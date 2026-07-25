@@ -17,13 +17,13 @@ export default function DomeggookSearchView() {
   return (
     <PageLayout
       title="도매꾹 검색"
-      description="링크 없이, 검색으로 소싱을 시작합니다."
+      description="링크 없이, 검색으로 소싱을 시작해요."
       help={
         <HelpPanel storageKey="domeggook-search">
           <Stack spacing={0.75}>
             <Typography variant="body2">① 검색하거나 카테고리를 고르세요</Typography>
             <Typography variant="body2">② 정렬과 필터로 후보를 추리세요</Typography>
-            <Typography variant="body2">③ 상품을 클릭하면 등록 준비가 시작됩니다</Typography>
+            <Typography variant="body2">③ 상품을 클릭하면 등록 준비가 시작돼요</Typography>
           </Stack>
         </HelpPanel>
       }

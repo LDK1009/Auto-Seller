@@ -40,7 +40,7 @@ const JOURNEY_STEPS = [
   {
     step: '1',
     title: '도매꾹 링크 붙여넣기',
-    description: '팔 상품의 링크 하나면 준비 끝. 이미지·가격·옵션·배송 정보를 모아옵니다.',
+    description: '팔 상품의 링크 하나면 준비 끝. 이미지·가격·옵션·배송 정보를 모아와요.',
   },
   {
     step: '2',
@@ -59,17 +59,17 @@ const PROMISES = [
   {
     icon: <MoneyOffIcon color="primary" />,
     title: '무료',
-    description: '지금 제공하는 모든 도구는 장당 과금 없이 무제한입니다.',
+    description: '지금 제공하는 모든 도구는 장당 과금 없이 무제한이에요.',
   },
   {
     icon: <NoAccountsIcon color="primary" />,
     title: '가입 없음',
-    description: '열면 바로 사용 — 계정도 로그인도 없습니다.',
+    description: '열면 바로 사용 — 계정도 로그인도 없어요.',
   },
   {
     icon: <LockOutlinedIcon color="primary" />,
     title: '내 이미지는 브라우저에서',
-    description: '내가 올린 이미지는 서버로 가지 않습니다.',
+    description: '내가 올린 이미지는 서버로 가지 않아요.',
   },
 ];
 
@@ -77,22 +77,22 @@ const PROMISES = [
 const FAQS = [
   {
     question: '정말 무료인가요?',
-    answer: '네. 지금 제공하는 모든 도구는 장당 과금 없이 무료로 쓸 수 있습니다.',
+    answer: '네. 지금 제공하는 모든 도구는 장당 과금 없이 무료로 쓸 수 있어요.',
   },
   {
     question: '가입 없이 어떻게 쓰나요?',
     answer:
-      '이미지 처리가 브라우저 안에서 끝나기 때문에 계정이 필요 없습니다. 페이지를 열면 바로 작업을 시작할 수 있습니다.',
+      '이미지 처리가 브라우저 안에서 끝나기 때문에 계정이 필요 없어요. 페이지를 열면 바로 작업을 시작할 수 있어요.',
   },
   {
     question: '내 이미지는 어디로 가나요?',
     answer:
-      '내가 올린 이미지는 서버로 전송되지 않고 내 브라우저에서만 처리됩니다. 도매꾹 링크로 가져온 상품 이미지는 전달용으로만 서버를 거치며 저장하지 않습니다.',
+      '내가 올린 이미지는 서버로 전송되지 않고 내 브라우저에서만 처리돼요. 도매꾹 링크로 가져온 상품 이미지는 전달용으로만 서버를 거치며 저장하지 않아요.',
   },
   {
     question: '도매꾹 상품 이미지는 마음대로 써도 되나요?',
     answer:
-      '공급사마다 이미지 사용 조건이 다릅니다. 원링크에서 공급사의 사용 조건 원문을 보여드리니, 확인 후 진행하세요.',
+      '공급사마다 이미지 사용 조건이 달라요. 원링크에서 공급사의 사용 조건 원문을 보여드리니, 확인 후 진행하세요.',
   },
 ];
 
@@ -132,7 +132,7 @@ export default function MainView() {
         <Container maxWidth="md">
           <SectionColumn>
             <Typography variant="h5" sx={{ textAlign: 'center' }}>
-              밤에 하던 노가다, 세 단계로 끝냅니다
+              밤에 하던 노가다, 세 단계로 끝내요
             </Typography>
             <Stack>
               {JOURNEY_STEPS.map((item, index) => (
@@ -159,9 +159,9 @@ export default function MainView() {
         <Container maxWidth="md">
           <SectionColumn>
             <Stack spacing={1} sx={{ textAlign: 'center' }}>
-              <Typography variant="h5">필요한 기능만 골라 쓸 수도 있습니다</Typography>
+              <Typography variant="h5">필요한 기능만 골라 쓸 수도 있어요</Typography>
               <Typography variant="body2" color="text.secondary">
-                셀러의 작업 순서 그대로 배치했습니다
+                셀러의 작업 순서 그대로 배치했어요
               </Typography>
             </Stack>
 
@@ -201,7 +201,7 @@ export default function MainView() {
                       <Stack>
                         <Typography variant="subtitle1">등록</Typography>
                         <Typography variant="caption" color="text.secondary">
-                          완성한 이미지로 마켓에 올립니다
+                          완성한 이미지로 마켓에 올려요
                         </Typography>
                       </Stack>
                     </Stack>
@@ -217,7 +217,7 @@ export default function MainView() {
                           <Chip size="small" label="준비 중" />
                         </Stack>
                         <Typography variant="body2" color="text.secondary">
-                          준비된 이미지 세트를 스마트스토어에 바로 등록하는 기능을 만들고 있습니다.
+                          준비된 이미지 세트를 스마트스토어에 바로 등록하는 기능을 만들고 있어요.
                         </Typography>
                       </Stack>
                     </UpcomingRow>
@@ -283,7 +283,7 @@ export default function MainView() {
         <CheckerboardLayer aria-hidden />
         <Container maxWidth="md">
           <Stack spacing={3} sx={{ position: 'relative', alignItems: 'center', textAlign: 'center' }}>
-            <Typography variant="h5">지금 링크 하나면 시작됩니다</Typography>
+            <Typography variant="h5">지금 링크 하나면 시작돼요</Typography>
             <HeroActions />
           </Stack>
         </Container>

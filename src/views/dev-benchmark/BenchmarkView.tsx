@@ -138,7 +138,7 @@ export default function BenchmarkView() {
       })),
     };
     await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
-    setStatus('결과 JSON을 클립보드에 복사했습니다');
+    setStatus('결과 JSON을 클립보드에 복사했어요');
   };
 
   return (
@@ -237,8 +237,8 @@ export default function BenchmarkView() {
         </Stack>
 
         <Typography variant="caption" color="text.disabled">
-          주의: 시나리오 첫 실행(콜드)은 해당 모델 다운로드 시간을 포함합니다. GPU→CPU 순서로 실행하세요.
-          같은 시나리오 재실행 시 캐시로 콜드가 짧아질 수 있습니다 (정확한 콜드 측정은 시크릿 창에서).
+          주의: 시나리오 첫 실행(콜드)은 해당 모델 다운로드 시간을 포함해요. GPU→CPU 순서로 실행하세요.
+          같은 시나리오 재실행 시 캐시로 콜드가 짧아질 수 있어요 (정확한 콜드 측정은 시크릿 창에서).
         </Typography>
       </Stack>
     </Container>

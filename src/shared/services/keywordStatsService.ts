@@ -8,7 +8,7 @@ export async function fetchKeywordStats(keywords: string[]): Promise<KeywordStat
   const response = await fetch(`/api/keyword-stats?keywords=${query}`);
   const body = await response.json();
   if (!response.ok) {
-    throw new Error(body?.error ?? '검색량 조회에 실패했습니다.');
+    throw new Error(body?.error ?? '검색량 조회에 실패했어요.');
   }
   return body as KeywordStatsResponse;
 }
@@ -30,7 +30,7 @@ export async function fetchStarterKeywords(category: string = 'all'): Promise<St
     .maybeSingle();
   if (error) {
     console.error(error);
-    throw new Error('시작 키워드 조회에 실패했습니다.');
+    throw new Error('시작 키워드 조회에 실패했어요.');
   }
   const payload = (data?.payload ?? { seasonal: [], steady: [] }) as {
     seasonal: KeywordStat[];
@@ -46,7 +46,7 @@ export async function fetchKeywordDetail(keyword: string): Promise<KeywordDetail
   const response = await fetch(`/api/keyword-detail?keyword=${encodeURIComponent(keyword)}`);
   const body = await response.json();
   if (!response.ok) {
-    throw new Error(body?.error ?? '상세 분석 조회에 실패했습니다.');
+    throw new Error(body?.error ?? '상세 분석 조회에 실패했어요.');
   }
   return body as KeywordDetail;
 }
@@ -57,7 +57,7 @@ export async function fetchRelatedCompetition(keywords: string[]): Promise<Recor
   const response = await fetch(`/api/keyword-competition?keywords=${query}`);
   const body = await response.json();
   if (!response.ok) {
-    throw new Error(body?.error ?? '연관 키워드 조회에 실패했습니다.');
+    throw new Error(body?.error ?? '연관 키워드 조회에 실패했어요.');
   }
   return (body?.counts ?? {}) as Record<string, number | null>;
 }
@@ -70,7 +70,7 @@ export async function fetchKeywordCompare(keywords: string[]): Promise<KeywordCo
   const response = await fetch(`/api/keyword-compare?keywords=${query}`);
   const body = await response.json();
   if (!response.ok) {
-    throw new Error(body?.error ?? '키워드 비교에 실패했습니다.');
+    throw new Error(body?.error ?? '키워드 비교에 실패했어요.');
   }
   return body as KeywordCompareResponse;
 }
@@ -95,7 +95,7 @@ export async function fetchAiVerdict(params: {
   });
   const body = await response.json();
   if (!response.ok) {
-    throw new Error(body?.error ?? 'AI 판단에 실패했습니다.');
+    throw new Error(body?.error ?? 'AI 판단에 실패했어요.');
   }
   return body as AiVerdictResponse;
 }
@@ -109,7 +109,7 @@ export async function fetchCategorySuggest(
   const response = await fetch(`/api/category-suggest?q=${encodeURIComponent(query)}`);
   const body = await response.json();
   if (!response.ok) {
-    throw new Error(body?.error ?? '카테고리 후보 조회에 실패했습니다.');
+    throw new Error(body?.error ?? '카테고리 후보 조회에 실패했어요.');
   }
   return body;
 }

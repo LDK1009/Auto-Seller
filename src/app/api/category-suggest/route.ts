@@ -35,7 +35,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = (searchParams.get('q') ?? '').trim().slice(0, 100);
   if (query.length === 0) {
-    return NextResponse.json({ error: '검색어(q)가 필요합니다.' }, { status: 400 });
+    return NextResponse.json({ error: '검색어(q)가 필요해요.' }, { status: 400 });
   }
 
   ////////// 캐시
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
   try {
     const items = await searchShop(query, clientId, clientSecret);
     if (items === null) {
-      return NextResponse.json({ error: '카테고리 후보 조회에 실패했습니다.' }, { status: 502 });
+      return NextResponse.json({ error: '카테고리 후보 조회에 실패했어요.' }, { status: 502 });
     }
 
     ////////// 카테고리 경로 최빈값 집계
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: '카테고리 후보 조회에 실패했습니다.' }, { status: 502 });
+    return NextResponse.json({ error: '카테고리 후보 조회에 실패했어요.' }, { status: 502 });
   }
 }
 

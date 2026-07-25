@@ -211,7 +211,7 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
       canvas.width = OUTPUT_SIZE;
       canvas.height = OUTPUT_SIZE;
       const context = canvas.getContext('2d');
-      if (!context) throw new Error('캔버스를 사용할 수 없습니다.');
+      if (!context) throw new Error('캔버스를 사용할 수 없어요.');
       context.fillStyle = '#ffffff';
       context.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
 
@@ -235,7 +235,7 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
       }
 
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
-      if (!blob) throw new Error('이미지 생성에 실패했습니다.');
+      if (!blob) throw new Error('이미지 생성에 실패했어요.');
       onCrop(blob);
       onClose();
     } catch (error) {
@@ -254,7 +254,7 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
           <Stack spacing={0.25}>
             <Typography variant="h6">상세이미지 잘라오기</Typography>
             <Typography variant="caption" color="text.secondary">
-              스크롤로 훑고, 박스를 옮기거나 우하단 모서리로 크기를 조절하세요 — 1:1 정사각으로 잘립니다.
+              스크롤로 훑고, 박스를 옮기거나 우하단 모서리로 크기를 조절하세요 — 1:1 정사각으로 잘려요.
             </Typography>
           </Stack>
           <IconButton size="small" onClick={onClose} aria-label="닫기">

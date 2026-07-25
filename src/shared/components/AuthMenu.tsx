@@ -32,7 +32,7 @@ export default function AuthMenu() {
       await signInWithKakao();
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '로그인에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : '로그인에 실패했어요.', { variant: 'error' });
     }
   };
 
@@ -41,10 +41,10 @@ export default function AuthMenu() {
     setMenuAnchorEl(null);
     try {
       await signOut();
-      enqueueSnackbar('로그아웃했습니다.', { variant: 'success' });
+      enqueueSnackbar('로그아웃했어요.', { variant: 'success' });
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '로그아웃에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : '로그아웃에 실패했어요.', { variant: 'error' });
     }
   };
 

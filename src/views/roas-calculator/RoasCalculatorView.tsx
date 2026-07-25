@@ -37,14 +37,14 @@ export default function RoasCalculatorView() {
   return (
     <PageLayout
       title="광고 손익"
-      description="내 마진 기준으로 광고가 적자로 넘어가는 손익분기 ROAS를 계산합니다."
+      description="내 마진 기준으로 광고가 적자로 넘어가는 손익분기 ROAS를 계산해요."
       maxWidth="md"
       help={
         <HelpPanel storageKey="roas-calculator">
           <Stack spacing={0.75}>
             <Typography variant="body2">① 판매가와 개당 순이익을 입력하세요</Typography>
             <Typography variant="body2">② 손익분기 ROAS를 확인하세요</Typography>
-            <Typography variant="body2">③ 광고비와 광고 매출을 넣으면 광고 손익이 계산됩니다</Typography>
+            <Typography variant="body2">③ 광고비와 광고 매출을 넣으면 광고 손익이 계산돼요</Typography>
           </Stack>
         </HelpPanel>
       }
@@ -94,7 +94,7 @@ export default function RoasCalculatorView() {
                 {result.breakEvenRoas !== null ? `${Math.round(result.breakEvenRoas)}%` : '—'}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                광고 ROAS가 이 값보다 낮으면 광고는 적자입니다
+                광고 ROAS가 이 값보다 낮으면 광고는 적자예요
               </Typography>
             </ResultBox>
 

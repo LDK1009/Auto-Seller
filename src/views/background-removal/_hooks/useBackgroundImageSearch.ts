@@ -40,7 +40,7 @@ export function useBackgroundImageSearch() {
       setHasMore(PAGE_SIZE < totalHits);
     } catch (error) {
       console.error(error);
-      enqueueSnackbar('이미지 검색 중 오류가 발생했습니다.', { variant: 'error' });
+      enqueueSnackbar('이미지 검색 중 오류가 발생했어요.', { variant: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -59,7 +59,7 @@ export function useBackgroundImageSearch() {
       setHasMore(nextPage * PAGE_SIZE < totalHits);
     } catch (error) {
       console.error(error);
-      enqueueSnackbar('이미지를 더 불러오지 못했습니다.', { variant: 'error' });
+      enqueueSnackbar('이미지를 더 불러오지 못했어요.', { variant: 'error' });
     } finally {
       setIsLoading(false);
     }

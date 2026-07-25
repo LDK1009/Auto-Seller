@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   ////////// 1) 로그인 검증 (사용자 토큰으로 Supabase 접근 — RLS가 본인 행만 허용)
   const accessToken = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? '';
   if (!accessToken) {
-    return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
+    return NextResponse.json({ error: '로그인이 필요해요.' }, { status: 401 });
   }
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: `Bearer ${accessToken}` } },
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   });
   const { data: userData, error: userError } = await supabase.auth.getUser(accessToken);
   if (userError || !userData.user) {
-    return NextResponse.json({ error: '로그인이 만료됐습니다. 다시 로그인해주세요.' }, { status: 401 });
+    return NextResponse.json({ error: '로그인이 만료됐어요. 다시 로그인해주세요.' }, { status: 401 });
   }
 
   ////////// 2) 요청 본문 (클라이언트가 로드한 분석 데이터)
@@ -49,11 +49,11 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: '요청 형식이 올바르지 않습니다.' }, { status: 400 });
+    return NextResponse.json({ error: '요청 형식이 올바르지 않아요.' }, { status: 400 });
   }
   const keyword = String(body.keyword ?? '').trim();
   if (keyword.length === 0 || !body.stat) {
-    return NextResponse.json({ error: '분석 데이터(keyword, stat)가 필요합니다.' }, { status: 400 });
+    return NextResponse.json({ error: '분석 데이터(keyword, stat)가 필요해요.' }, { status: 400 });
   }
 
   try {
@@ -66,12 +66,12 @@ export async function POST(request: Request) {
       .gte('created_at', kstDayStartUtc);
     if (countError) {
       console.error('사용량 조회 실패 (테이블 미생성 가능성 — docs/개발/ROADMAP.md "AI 판단 가동 절차"):', countError);
-      return NextResponse.json({ error: 'AI 판단 준비 중입니다. 잠시 후 다시 시도해주세요.' }, { status: 503 });
+      return NextResponse.json({ error: 'AI 판단 준비 중이에요. 잠시 후 다시 시도해주세요.' }, { status: 503 });
     }
     const usedToday = count ?? 0;
     if (usedToday >= AI_VERDICT_DAILY_LIMIT) {
       return NextResponse.json(
-        { error: `오늘 무료 횟수(${AI_VERDICT_DAILY_LIMIT}회)를 모두 사용했어요. 내일 다시 이용할 수 있습니다.` },
+        { error: `오늘 무료 횟수(${AI_VERDICT_DAILY_LIMIT}회)를 모두 사용했어요. 내일 다시 이용할 수 있어요.` },
         { status: 429 },
       );
     }
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ configured: true, verdict } satisfies AiVerdictResponse);
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: 'AI 판단에 실패했습니다. 잠시 후 다시 시도해주세요.' }, { status: 502 });
+    return NextResponse.json({ error: 'AI 판단에 실패했어요. 잠시 후 다시 시도해주세요.' }, { status: 502 });
   }
 }
 

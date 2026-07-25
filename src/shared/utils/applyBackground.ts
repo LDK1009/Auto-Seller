@@ -124,7 +124,7 @@ export async function applyBackground(
   const context = canvas.getContext('2d');
   if (!context) {
     foreground.close();
-    throw new Error('Canvas 2D 컨텍스트를 생성할 수 없습니다.');
+    throw new Error('Canvas 2D 컨텍스트를 생성할 수 없어요.');
   }
 
   //////////////////// 배경 그리기 ////////////////////
@@ -141,7 +141,7 @@ export async function applyBackground(
     // 이미지 배경: cover-fit(비율 유지, 짧은 변 기준 확대, 중앙 크롭)
     if (!backgroundImageBlob) {
       foreground.close();
-      throw new Error('배경 이미지 데이터가 없습니다.');
+      throw new Error('배경 이미지 데이터가 없어요.');
     }
     const background = await createImageBitmap(backgroundImageBlob);
     const scale = Math.max(canvas.width / background.width, canvas.height / background.height);
@@ -162,7 +162,7 @@ export async function applyBackground(
   });
 
   if (!composedBlob) {
-    throw new Error('배경 합성 결과를 생성하지 못했습니다.');
+    throw new Error('배경 합성 결과를 생성하지 못했어요.');
   }
 
   return composedBlob;

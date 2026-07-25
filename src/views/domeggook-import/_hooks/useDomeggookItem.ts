@@ -34,7 +34,7 @@ export function useDomeggookItem() {
       return fetched;
     } catch (error) {
       console.error(error);
-      setErrorMessage(error instanceof Error ? error.message : '상품 정보를 불러오지 못했습니다.');
+      setErrorMessage(error instanceof Error ? error.message : '상품 정보를 불러오지 못했어요.');
       setStatus('error');
       return null;
     }

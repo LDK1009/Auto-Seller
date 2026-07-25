@@ -57,7 +57,7 @@ export default function AiVerdictCard({ keyword, stat, detail }: PropsType) {
       }
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : 'AI 판단에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : 'AI 판단에 실패했어요.', { variant: 'error' });
     } finally {
       setIsJudging(false);
     }
@@ -69,7 +69,7 @@ export default function AiVerdictCard({ keyword, stat, detail }: PropsType) {
       await signInWithKakao();
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '로그인에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : '로그인에 실패했어요.', { variant: 'error' });
     }
   };
 
@@ -86,7 +86,7 @@ export default function AiVerdictCard({ keyword, stat, detail }: PropsType) {
       {/* 키·인증 인프라 미설정 (운영자 안내) */}
       {(!isConfigured || !isAuthConfigured) && (
         <Typography variant="caption" color="text.secondary">
-          AI 판단은 준비 중입니다. (운영자: docs/개발/ROADMAP.md의 AI 판단 가동 절차)
+          AI 판단은 준비 중이에요. (운영자: docs/개발/ROADMAP.md의 AI 판단 가동 절차)
         </Typography>
       )}
 

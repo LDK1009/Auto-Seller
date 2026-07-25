@@ -77,14 +77,14 @@ export default function ImageResizeView() {
   return (
     <PageLayout
       title="규격 맞추기"
-      description="마켓별 대표이미지 규격에 맞춰 여러 이미지를 한 번에 변환합니다. 처리는 브라우저에서 진행되어 이미지가 서버로 전송되지 않습니다."
+      description="마켓별 대표이미지 규격에 맞춰 여러 이미지를 한 번에 변환해요. 처리는 브라우저에서 진행되어 이미지가 서버로 전송되지 않아요."
       help={
         <HelpPanel storageKey="image-resize">
           <Stack spacing={0.75}>
-            <Typography variant="body2">① 이미지를 업로드하거나, 누끼 페이지에서 [규격 변환으로 보내기]로 이어받습니다</Typography>
-            <Typography variant="body2">② 목표 크기(프리셋/직접 입력)와 맞춤 방식(여백/크롭), 출력 포맷을 정합니다</Typography>
-            <Typography variant="body2">③ [규격 변환]을 누르면 전체가 일괄 변환됩니다 — 설정을 바꾸고 다시 변환할 수도 있어요</Typography>
-            <Typography variant="body2">④ [다운로드]로 전체 결과를 ZIP으로 저장합니다</Typography>
+            <Typography variant="body2">① 이미지를 업로드하거나, 누끼 페이지에서 [규격 변환으로 보내기]로 이어받아요</Typography>
+            <Typography variant="body2">② 목표 크기(프리셋/직접 입력)와 맞춤 방식(여백/크롭), 출력 포맷을 정해요</Typography>
+            <Typography variant="body2">③ [규격 변환]을 누르면 전체가 일괄 변환돼요 — 설정을 바꾸고 다시 변환할 수도 있어요</Typography>
+            <Typography variant="body2">④ [다운로드]로 전체 결과를 ZIP으로 저장해요</Typography>
           </Stack>
         </HelpPanel>
       }

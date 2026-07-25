@@ -36,7 +36,7 @@ export function useSubscription() {
       setSubscription(await fetchMySubscription());
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '구독 조회에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : '구독 조회에 실패했어요.', { variant: 'error' });
     }
   };
 
@@ -51,7 +51,7 @@ export function useSubscription() {
       })
       .catch((error) => {
         console.error(error);
-        if (!cancelled) enqueueSnackbar('구독 조회에 실패했습니다.', { variant: 'error' });
+        if (!cancelled) enqueueSnackbar('구독 조회에 실패했어요.', { variant: 'error' });
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -71,7 +71,7 @@ export function useSubscription() {
 
     if (result === 'fail') {
       issueHandledRef.current = true;
-      enqueueSnackbar(searchParams.get('message') ?? '카드 등록이 취소됐습니다.', { variant: 'info' });
+      enqueueSnackbar(searchParams.get('message') ?? '카드 등록이 취소됐어요.', { variant: 'info' });
       router.replace('/pricing');
       return;
     }
@@ -82,11 +82,11 @@ export function useSubscription() {
       setIsProcessing(true);
       try {
         await issueBillingKey({ accessToken, authKey, customerKey });
-        enqueueSnackbar('구독이 시작됐습니다.', { variant: 'success' });
+        enqueueSnackbar('구독이 시작됐어요.', { variant: 'success' });
         await reload();
       } catch (error) {
         console.error(error);
-        enqueueSnackbar(error instanceof Error ? error.message : '결제 처리에 실패했습니다.', { variant: 'error' });
+        enqueueSnackbar(error instanceof Error ? error.message : '결제 처리에 실패했어요.', { variant: 'error' });
       } finally {
         setIsProcessing(false);
         router.replace('/pricing'); // 쿼리 제거 — 새로고침 재실행 방지
@@ -98,7 +98,7 @@ export function useSubscription() {
   ////////// 카드 등록 시작 (구독 시작)
   const subscribe = async () => {
     if (!session) {
-      enqueueSnackbar('로그인 후 이용할 수 있습니다.', { variant: 'info' });
+      enqueueSnackbar('로그인 후 이용할 수 있어요.', { variant: 'info' });
       return;
     }
     setIsProcessing(true);
@@ -123,11 +123,11 @@ export function useSubscription() {
     setIsProcessing(true);
     try {
       await cancelSubscription(accessToken);
-      enqueueSnackbar('구독을 해지했습니다. 남은 기간까지는 계속 이용할 수 있습니다.', { variant: 'success' });
+      enqueueSnackbar('구독을 해지했어요. 남은 기간까지는 계속 이용할 수 있어요.', { variant: 'success' });
       await reload();
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '해지 처리에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : '해지 처리에 실패했어요.', { variant: 'error' });
     } finally {
       setIsProcessing(false);
     }

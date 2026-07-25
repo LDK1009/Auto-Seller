@@ -53,7 +53,7 @@ export async function GET(request: Request) {
   const warmToken = process.env.WARM_TOKEN;
   const authorization = request.headers.get('authorization') ?? '';
   if (!warmToken || authorization !== `Bearer ${warmToken}`) {
-    return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 });
+    return NextResponse.json({ error: '인증이 필요해요.' }, { status: 401 });
   }
 
   const adApiKey = process.env.NAVER_SEARCHAD_API_KEY;

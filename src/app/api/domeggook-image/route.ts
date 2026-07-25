@@ -45,32 +45,32 @@ function resolveImageContentType(upstreamType: string | null, url: string): stri
 export async function GET(request: Request) {
   const apiKey = process.env.DOMEGGOOK_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: '서버에 도매꾹 API 키가 설정되지 않았습니다.' }, { status: 500 });
+    return NextResponse.json({ error: '서버에 도매꾹 API 키가 설정되지 않았어요.' }, { status: 500 });
   }
 
   const { searchParams } = new URL(request.url);
   const url = searchParams.get('url');
   const signature = searchParams.get('sig');
   if (!url) {
-    return NextResponse.json({ error: '이미지 URL(url)이 필요합니다.' }, { status: 400 });
+    return NextResponse.json({ error: '이미지 URL(url)이 필요해요.' }, { status: 400 });
   }
 
   // 통과 조건: ① 도매꾹 CDN 호스트(P-2 엑셀 URL — 서명 불필요) 또는 ② domeggook-item이 발급한 HMAC 서명
   if (!isTrustedHost(url)) {
     if (!signature || signDomeggookImageUrl(url, apiKey) !== signature) {
-      return NextResponse.json({ error: '허용되지 않은 이미지 요청입니다.' }, { status: 403 });
+      return NextResponse.json({ error: '허용되지 않은 이미지 요청이에요.' }, { status: 403 });
     }
   }
 
   try {
     const upstream = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (!upstream.ok || !upstream.body) {
-      return NextResponse.json({ error: '이미지를 불러오지 못했습니다.' }, { status: 502 });
+      return NextResponse.json({ error: '이미지를 불러오지 못했어요.' }, { status: 502 });
     }
 
     const contentLength = Number(upstream.headers.get('content-length') ?? 0);
     if (contentLength > MAX_BYTES) {
-      return NextResponse.json({ error: '이미지가 너무 큽니다 (20MB 초과).' }, { status: 413 });
+      return NextResponse.json({ error: '이미지가 너무 커요 (20MB 초과).' }, { status: 413 });
     }
 
     return new Response(upstream.body, {
@@ -81,6 +81,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: '이미지를 불러오지 못했습니다.' }, { status: 502 });
+    return NextResponse.json({ error: '이미지를 불러오지 못했어요.' }, { status: 502 });
   }
 }

@@ -25,9 +25,9 @@ export default function LicenseGate({ license, itemUrl }: LicenseGateProps) {
   if (!license.usable) {
     return (
       <Alert severity="error">
-        <AlertTitle>이미지 사용이 허용되지 않은 상품입니다</AlertTitle>
+        <AlertTitle>이미지 사용이 허용되지 않은 상품이에요</AlertTitle>
         <Typography variant="body2">
-          공급사가 이 상품의 이미지 사용을 허용하지 않았습니다. 이미지를 가져올 수 없습니다. 다른 상품을
+          공급사가 이 상품의 이미지 사용을 허용하지 않았어요. 이미지를 가져올 수 없어요. 다른 상품을
           찾아보시거나,{' '}
           <Link href={itemUrl} target="_blank" rel="noopener noreferrer">
             상품 페이지
@@ -49,7 +49,7 @@ export default function LicenseGate({ license, itemUrl }: LicenseGateProps) {
           {license.msg}
         </Typography>
         <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
-          이 공급사는 이미지 사용을 제한하는 것으로 보입니다. 사용 전 공급사에 직접 확인하세요.
+          이 공급사는 이미지 사용을 제한하는 것으로 보여요. 사용 전 공급사에 직접 확인하세요.
         </Typography>
       </Alert>
     );

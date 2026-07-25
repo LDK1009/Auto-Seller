@@ -52,7 +52,7 @@ export async function GET(request: Request) {
   ).slice(0, MAX_COMPARE_KEYWORDS);
 
   if (keywords.length < 2) {
-    return NextResponse.json({ error: '비교할 키워드가 2개 이상 필요합니다.' }, { status: 400 });
+    return NextResponse.json({ error: '비교할 키워드가 2개 이상 필요해요.' }, { status: 400 });
   }
 
   // 캐시 키 = 정렬된 집합 (스케일이 집합에 종속되므로 순서 무관 동일 집합만 재사용)
@@ -128,7 +128,7 @@ export async function GET(request: Request) {
     return NextResponse.json(response, { headers: { 'Cache-Control': 'public, max-age=3600' } });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: '키워드 비교에 실패했습니다. 잠시 후 다시 시도해주세요.' }, { status: 502 });
+    return NextResponse.json({ error: '키워드 비교에 실패했어요. 잠시 후 다시 시도해주세요.' }, { status: 502 });
   }
 }
 

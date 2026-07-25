@@ -25,7 +25,7 @@ export async function fetchDomeggookSearch(params: DomeggookSearchParams): Promi
   const response = await fetch(`/api/domeggook-search?${query.toString()}`);
   const body = await response.json();
   if (!response.ok) {
-    throw new Error(body?.error ?? '검색에 실패했습니다.');
+    throw new Error(body?.error ?? '검색에 실패했어요.');
   }
   return body as DomeggookSearchResponse;
 }
@@ -34,7 +34,7 @@ export async function fetchDomeggookCategories(): Promise<DomeggookCategoriesRes
   const response = await fetch('/api/domeggook-categories');
   const body = await response.json();
   if (!response.ok) {
-    throw new Error(body?.error ?? '카테고리 조회에 실패했습니다.');
+    throw new Error(body?.error ?? '카테고리 조회에 실패했어요.');
   }
   return body as DomeggookCategoriesResponse;
 }

@@ -48,7 +48,7 @@ export async function applyWatermark(source: Blob, settings: WatermarkSettings):
   const context = canvas.getContext('2d');
   if (!context) {
     bitmap.close();
-    throw new Error('Canvas 2D 컨텍스트를 생성할 수 없습니다.');
+    throw new Error('Canvas 2D 컨텍스트를 생성할 수 없어요.');
   }
 
   context.drawImage(bitmap, 0, 0);
@@ -91,7 +91,7 @@ export async function applyWatermark(source: Blob, settings: WatermarkSettings):
   });
 
   if (!resultBlob) {
-    throw new Error('워터마크 합성 결과를 생성하지 못했습니다.');
+    throw new Error('워터마크 합성 결과를 생성하지 못했어요.');
   }
   return resultBlob;
 }

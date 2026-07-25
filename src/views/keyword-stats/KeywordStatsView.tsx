@@ -111,7 +111,7 @@ export default function KeywordStatsView() {
       .then((result) => setDetail(result))
       .catch((error) => {
         console.error(error);
-        enqueueSnackbar(error instanceof Error ? error.message : '상세 분석에 실패했습니다.', { variant: 'error' });
+        enqueueSnackbar(error instanceof Error ? error.message : '상세 분석에 실패했어요.', { variant: 'error' });
       })
       .finally(() => setIsDetailLoading(false));
 
@@ -127,7 +127,7 @@ export default function KeywordStatsView() {
       }
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '조회에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : '조회에 실패했어요.', { variant: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -275,7 +275,7 @@ export default function KeywordStatsView() {
       });
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '키워드 비교에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : '키워드 비교에 실패했어요.', { variant: 'error' });
     } finally {
       setIsComparing(false);
     }
@@ -286,13 +286,13 @@ export default function KeywordStatsView() {
   return (
     <PageLayout
       title="키워드 분석"
-      description="검색수·경쟁강도부터 트렌드·시장 상황까지 — 팔릴 키워드를 판정합니다."
+      description="검색수·경쟁강도부터 트렌드·시장 상황까지 — 팔릴 키워드를 판정해요."
       maxWidth="md"
       help={
         <HelpPanel storageKey="keyword-stats">
           <Stack spacing={0.75}>
             <Typography variant="body2">① 키워드를 입력하고 [분석]을 누르세요</Typography>
-            <Typography variant="body2">② 연관 키워드를 클릭하면 그 키워드로 다시 분석됩니다</Typography>
+            <Typography variant="body2">② 연관 키워드를 클릭하면 그 키워드로 다시 분석돼요</Typography>
             <Typography variant="body2">③ 비교할 키워드를 체크하고 [키워드 비교]를 누르세요</Typography>
           </Stack>
         </HelpPanel>
@@ -328,7 +328,7 @@ export default function KeywordStatsView() {
         {/* 키 미설정 안내 */}
         {!isConfigured && (
           <Alert severity="info">
-            아직 준비 중인 기능입니다. (운영자: 네이버 API 키 발급 후 환경변수 설정 —
+            아직 준비 중인 기능이에요. (운영자: 네이버 API 키 발급 후 환경변수 설정 —
             docs/개발/ROADMAP.md 운영 메모)
           </Alert>
         )}

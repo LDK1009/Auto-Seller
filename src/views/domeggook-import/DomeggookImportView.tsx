@@ -175,7 +175,7 @@ export default function DomeggookImportView() {
     } else {
       setExtraImages((previous) => {
         if (previous.length >= MAX_EXTRA_IMAGES) {
-          enqueueSnackbar(`추가이미지는 최대 ${MAX_EXTRA_IMAGES}장입니다.`, { variant: 'info' });
+          enqueueSnackbar(`추가이미지는 최대 ${MAX_EXTRA_IMAGES}장이에요.`, { variant: 'info' });
           return previous;
         }
         return [...previous, picked];
@@ -237,10 +237,10 @@ export default function DomeggookImportView() {
       const zipBlob = await buildZipWithNames(files);
       downloadBlob(zipBlob, `상품이미지_${item.no}.zip`);
       trackEvent('zip_download', { tool: 'image-slots' });
-      enqueueSnackbar('상품이미지를 압축해 내려받았습니다.', { variant: 'success' });
+      enqueueSnackbar('상품이미지를 압축해 내려받았어요.', { variant: 'success' });
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '다운로드에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : '다운로드에 실패했어요.', { variant: 'error' });
     } finally {
       setDownloadProgress(null);
     }
@@ -260,10 +260,10 @@ export default function DomeggookImportView() {
         }),
       ]);
       trackEvent('copy', { tool: 'detail-html' });
-      enqueueSnackbar('상세설명 HTML을 복사했습니다 — 스마트스토어 [HTML 작성]에 붙여넣으세요.', { variant: 'success' });
+      enqueueSnackbar('상세설명 HTML을 복사했어요 — 스마트스토어 [HTML 작성]에 붙여넣으세요.', { variant: 'success' });
     } catch (error) {
       console.error(error);
-      enqueueSnackbar('복사에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar('복사에 실패했어요.', { variant: 'error' });
     }
   };
 
@@ -278,10 +278,10 @@ export default function DomeggookImportView() {
       await saveProduct(item);
       setIsProductSaved(true);
       trackEvent('save_product');
-      enqueueSnackbar('내 목록에 저장했습니다.', { variant: 'success' });
+      enqueueSnackbar('내 목록에 저장했어요.', { variant: 'success' });
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '저장에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : '저장에 실패했어요.', { variant: 'error' });
     }
   };
 
@@ -290,7 +290,7 @@ export default function DomeggookImportView() {
   return (
     <PageLayout
       title="원링크"
-      description="도매꾹 링크 하나로 — 이미지 완성까지 자동으로 준비합니다."
+      description="도매꾹 링크 하나로 — 이미지 완성까지 자동으로 준비해요."
       maxWidth="md"
       help={
         <HelpPanel storageKey="domeggook-import">
@@ -299,7 +299,7 @@ export default function DomeggookImportView() {
             <Typography variant="body2">② 이미지를 클릭해 편집(누끼·워터마크)하고 내려받으세요</Typography>
             <Typography variant="body2">③ 등록 정보를 위에서 아래로 스마트스토어에 붙여넣으세요</Typography>
             <Typography variant="caption" color="text.secondary">
-              상품 이미지는 공급사 소유입니다. 사용 조건은 상품마다 다르니 반드시 확인하세요.
+              상품 이미지는 공급사 소유예요. 사용 조건은 상품마다 다르니 반드시 확인하세요.
             </Typography>
           </Stack>
         </HelpPanel>
@@ -346,8 +346,8 @@ export default function DomeggookImportView() {
             {/* MOQ 안내 — 묶음 판매 필요 여부는 가장 먼저 알아야 할 정보라 최상단 배치 */}
             {item.moq >= 2 && (
               <Alert severity={item.moq > 2 ? 'warning' : 'info'}>
-                이 상품의 도매꾹 최소 구매수량은 <b>{item.moq}개</b>입니다. 고객 1주문마다 {item.moq}개를
-                구매해야 하므로 <b>{item.moq === 2 ? '1+1' : `${item.moq}개 묶음`} 구성 판매</b>를 권장합니다.
+                이 상품의 도매꾹 최소 구매수량은 <b>{item.moq}개</b>예요. 고객 1주문마다 {item.moq}개를
+                구매해야 하므로 <b>{item.moq === 2 ? '1+1' : `${item.moq}개 묶음`} 구성 판매</b>를 권장해요.
               </Alert>
             )}
 
@@ -510,7 +510,7 @@ export default function DomeggookImportView() {
                   item={item}
                   imageSection={
                     item.images.length === 0 ? (
-                      <Alert severity="info">이 상품에서 가져올 수 있는 이미지를 찾지 못했습니다.</Alert>
+                      <Alert severity="info">이 상품에서 가져올 수 있는 이미지를 찾지 못했어요.</Alert>
                     ) : (
                       <>
                         {/* 대표이미지 — 기본 = 도매꾹 대표, 크롭으로 교체 가능. 클릭 = 1000×1000 미리보기 */}
@@ -643,7 +643,7 @@ export default function DomeggookImportView() {
                   detailSection={
                     detailImages.length === 0 ? (
                       <Typography variant="body2" color="text.secondary">
-                        이 상품은 상세 이미지가 없습니다 — 에디터에 직접 내용을 작성하세요.
+                        이 상품은 상세 이미지가 없어요 — 에디터에 직접 내용을 작성하세요.
                       </Typography>
                     ) : (
                       <>

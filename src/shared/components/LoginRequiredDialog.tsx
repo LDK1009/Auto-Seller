@@ -25,7 +25,7 @@ export default function LoginRequiredDialog({ open, description, onClose }: Logi
       await signInWithKakao();
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '로그인에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : '로그인에 실패했어요.', { variant: 'error' });
     }
   };
 

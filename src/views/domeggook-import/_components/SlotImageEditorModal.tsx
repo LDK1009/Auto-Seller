@@ -90,7 +90,7 @@ export default function SlotImageEditorModal({
       return imageBlob;
     }
     const response = await fetch(imageUrl);
-    if (!response.ok) throw new Error('이미지를 불러오지 못했습니다.');
+    if (!response.ok) throw new Error('이미지를 불러오지 못했어요.');
     const blob = await response.blob();
     sourceBlobRef.current = blob;
     return blob;
@@ -121,7 +121,7 @@ export default function SlotImageEditorModal({
       });
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '배경 처리에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : '배경 처리에 실패했어요.', { variant: 'error' });
     } finally {
       setBusyLabel(null);
     }
@@ -154,7 +154,7 @@ export default function SlotImageEditorModal({
           });
         } catch (error) {
           console.error(error);
-          if (!cancelled) enqueueSnackbar('워터마크 합성에 실패했습니다.', { variant: 'error' });
+          if (!cancelled) enqueueSnackbar('워터마크 합성에 실패했어요.', { variant: 'error' });
         } finally {
           if (!cancelled) setIsWatermarkComposing(false);
         }
@@ -303,7 +303,7 @@ export default function SlotImageEditorModal({
                     }
                   />
                   <Typography variant="caption" color="text.secondary">
-                    설정을 바꾸면 미리보기에 자동 반영됩니다.
+                    설정을 바꾸면 미리보기에 자동 반영돼요.
                   </Typography>
                 </Stack>
               </Collapse>

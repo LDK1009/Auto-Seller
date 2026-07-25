@@ -22,14 +22,14 @@ type PixabayResponse = {
 export async function GET(request: Request) {
   const apiKey = process.env.PIXABAY_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: 'PIXABAY_API_KEY가 설정되지 않았습니다.' }, { status: 500 });
+    return NextResponse.json({ error: 'PIXABAY_API_KEY가 설정되지 않았어요.' }, { status: 500 });
   }
 
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query')?.trim();
   const page = Number(searchParams.get('page') ?? '1');
   if (!query) {
-    return NextResponse.json({ error: '검색어(query)가 필요합니다.' }, { status: 400 });
+    return NextResponse.json({ error: '검색어(query)가 필요해요.' }, { status: 400 });
   }
 
   const upstreamParams = new URLSearchParams({
@@ -55,7 +55,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ items: [], totalHits: 0 });
       }
       console.error('Pixabay 응답 오류:', upstream.status, body);
-      return NextResponse.json({ error: '이미지 검색에 실패했습니다.' }, { status: 502 });
+      return NextResponse.json({ error: '이미지 검색에 실패했어요.' }, { status: 502 });
     }
 
     const data = (await upstream.json()) as PixabayResponse;
@@ -68,6 +68,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ items, totalHits: data.totalHits });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: '이미지 검색에 실패했습니다.' }, { status: 502 });
+    return NextResponse.json({ error: '이미지 검색에 실패했어요.' }, { status: 502 });
   }
 }

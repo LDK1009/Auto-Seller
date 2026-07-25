@@ -41,7 +41,7 @@ export default function DetailPreviewModal({ open, images, onClose }: DetailPrev
         </ScrollArea>
 
         <Typography variant="caption" color="text.secondary">
-          HTML 복사를 붙여넣으면 이 순서 그대로 상세설명에 들어갑니다.
+          HTML 복사를 붙여넣으면 이 순서 그대로 상세설명에 들어가요.
         </Typography>
       </Stack>
     </Dialog>

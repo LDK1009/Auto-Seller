@@ -96,7 +96,7 @@ export function useImageSplit() {
       }
     }
     useImageSplitStore.getState().setIsProcessing(false);
-    enqueueSnackbar('이미지 분할이 완료되었습니다.', { variant: 'success' });
+    enqueueSnackbar('이미지 분할이 완료됐어요.', { variant: 'success' });
   }, []);
 
   //////////////////// ZIP 다운로드 (조각별 번호) ////////////////////
@@ -104,7 +104,7 @@ export function useImageSplit() {
     const store = useImageSplitStore.getState();
     const doneJobs = store.jobs.filter((job) => job.status === 'done' && job.pieceBlobs.length > 0);
     if (doneJobs.length === 0) {
-      enqueueSnackbar('다운로드할 분할 결과가 없습니다.', { variant: 'info' });
+      enqueueSnackbar('다운로드할 분할 결과가 없어요.', { variant: 'info' });
       return;
     }
 
@@ -123,7 +123,7 @@ export function useImageSplit() {
       trackEvent('zip_download', { tool: 'image-split' });
     } catch (error) {
       console.error(error);
-      enqueueSnackbar('ZIP 생성 중 오류가 발생했습니다.', { variant: 'error' });
+      enqueueSnackbar('ZIP 생성 중 오류가 발생했어요.', { variant: 'error' });
     } finally {
       useImageSplitStore.getState().setIsZipping(false);
     }

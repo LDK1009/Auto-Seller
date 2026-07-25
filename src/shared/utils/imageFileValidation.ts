@@ -62,20 +62,20 @@ export function filterAcceptedImageFiles(
 ////////// 제외 사유별 토스트 안내
 export function notifyRejectedImageFiles(rejected: RejectedCounts): void {
   if (rejected.type > 0) {
-    enqueueSnackbar(`이미지가 아닌 파일 ${rejected.type}개는 제외했습니다.`, { variant: 'warning' });
+    enqueueSnackbar(`이미지가 아닌 파일 ${rejected.type}개는 제외했어요.`, { variant: 'warning' });
   }
   if (rejected.size > 0) {
-    enqueueSnackbar(`${formatMegabytes(MAX_FILE_SIZE)}MB를 초과한 파일 ${rejected.size}개는 제외했습니다.`, {
+    enqueueSnackbar(`${formatMegabytes(MAX_FILE_SIZE)}MB를 초과한 파일 ${rejected.size}개는 제외했어요.`, {
       variant: 'warning',
     });
   }
   if (rejected.count > 0) {
-    enqueueSnackbar(`최대 ${MAX_FILE_COUNT}장까지 처리할 수 있어 ${rejected.count}개는 제외했습니다.`, {
+    enqueueSnackbar(`최대 ${MAX_FILE_COUNT}장까지 처리할 수 있어 ${rejected.count}개는 제외했어요.`, {
       variant: 'warning',
     });
   }
   if (rejected.total > 0) {
-    enqueueSnackbar(`총 ${formatMegabytes(MAX_TOTAL_SIZE)}MB를 초과해 ${rejected.total}개는 제외했습니다.`, {
+    enqueueSnackbar(`총 ${formatMegabytes(MAX_TOTAL_SIZE)}MB를 초과해 ${rejected.total}개는 제외했어요.`, {
       variant: 'warning',
     });
   }

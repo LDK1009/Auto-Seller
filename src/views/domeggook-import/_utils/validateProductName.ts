@@ -39,16 +39,16 @@ export function validateProductName(rawName: string): NameCheckResult[] {
     results.push({
       level: 'fail',
       label: '길이',
-      message: `${name.length}자 — 최대 ${NAME_MAX_LENGTH}자를 넘어 등록이 거부됩니다.`,
+      message: `${name.length}자 — 최대 ${NAME_MAX_LENGTH}자를 넘어 등록이 거부돼요.`,
     });
   } else if (name.length > NAME_RECOMMENDED_LENGTH) {
     results.push({
       level: 'warn',
       label: '길이',
-      message: `${name.length}자 — ${NAME_RECOMMENDED_LENGTH}자 이내가 검색 노출에 유리합니다.`,
+      message: `${name.length}자 — ${NAME_RECOMMENDED_LENGTH}자 이내가 검색 노출에 유리해요.`,
     });
   } else {
-    results.push({ level: 'pass', label: '길이', message: `${name.length}자 — 적정 길이입니다.` });
+    results.push({ level: 'pass', label: '길이', message: `${name.length}자 — 적정 길이예요.` });
   }
 
   ////////// 2) 특수문자
@@ -60,7 +60,7 @@ export function validateProductName(rawName: string): NameCheckResult[] {
       message: `사용 불가 문자 감지: ${invalidChars.join(' ')} — 제거하세요.`,
     });
   } else {
-    results.push({ level: 'pass', label: '특수문자', message: '문제되는 특수문자가 없습니다.' });
+    results.push({ level: 'pass', label: '특수문자', message: '문제되는 특수문자가 없어요.' });
   }
 
   ////////// 3) 홍보성 문구
@@ -70,10 +70,10 @@ export function validateProductName(rawName: string): NameCheckResult[] {
     results.push({
       level: 'warn',
       label: '홍보 문구',
-      message: `"${foundPromo.join(', ')}" — 상품명 속 홍보 문구는 검색 노출에 불이익입니다. 상세페이지로 옮기세요.`,
+      message: `"${foundPromo.join(', ')}" — 상품명 속 홍보 문구는 검색 노출에 불이익이에요. 상세페이지로 옮기세요.`,
     });
   } else {
-    results.push({ level: 'pass', label: '홍보 문구', message: '홍보성 문구가 없습니다.' });
+    results.push({ level: 'pass', label: '홍보 문구', message: '홍보성 문구가 없어요.' });
   }
 
   ////////// 4) 브랜드 도용 위험
@@ -83,7 +83,7 @@ export function validateProductName(rawName: string): NameCheckResult[] {
     results.push({
       level: 'warn',
       label: '지재권 위험',
-      message: `"${foundRisk.join(', ')}" — 브랜드 도용으로 해석될 수 있는 표현입니다. 삭제를 권장합니다.`,
+      message: `"${foundRisk.join(', ')}" — 브랜드 도용으로 해석될 수 있는 표현이에요. 삭제를 권장해요.`,
     });
   }
 
@@ -100,10 +100,10 @@ export function validateProductName(rawName: string): NameCheckResult[] {
     results.push({
       level: 'warn',
       label: '중복 단어',
-      message: `"${duplicated.join(', ')}" 반복 — 같은 단어 반복은 노출에 불이익입니다. 한 번만 쓰세요.`,
+      message: `"${duplicated.join(', ')}" 반복 — 같은 단어 반복은 노출에 불이익이에요. 한 번만 쓰세요.`,
     });
   } else if (name.length > 0) {
-    results.push({ level: 'pass', label: '중복 단어', message: '반복 단어가 없습니다.' });
+    results.push({ level: 'pass', label: '중복 단어', message: '반복 단어가 없어요.' });
   }
 
   ////////// 6) 동의어 나열 (한 토큰이 다른 토큰에 포함 — 모기채·전기모기채·전자모기채식 반복은 스팸 처리 위험)
@@ -120,10 +120,10 @@ export function validateProductName(rawName: string): NameCheckResult[] {
     results.push({
       level: 'warn',
       label: '동의어 반복',
-      message: `유사 키워드 나열 감지 (${synonymPairs.slice(0, 3).join(', ')}) — 동의어 반복은 스팸으로 분류될 수 있습니다. 하나만 남기세요.`,
+      message: `유사 키워드 나열 감지 (${synonymPairs.slice(0, 3).join(', ')}) — 동의어 반복은 스팸으로 분류될 수 있어요. 하나만 남기세요.`,
     });
   } else if (name.length > 0) {
-    results.push({ level: 'pass', label: '동의어 반복', message: '유사 키워드 나열이 없습니다.' });
+    results.push({ level: 'pass', label: '동의어 반복', message: '유사 키워드 나열이 없어요.' });
   }
 
   return results;

@@ -13,7 +13,7 @@ export async function resizeImage(source: Blob, settings: ResizeSettings): Promi
   const context = canvas.getContext('2d');
   if (!context) {
     bitmap.close();
-    throw new Error('Canvas 2D 컨텍스트를 생성할 수 없습니다.');
+    throw new Error('Canvas 2D 컨텍스트를 생성할 수 없어요.');
   }
 
   //////////////////// 배경 채움 ////////////////////
@@ -50,7 +50,7 @@ export async function resizeImage(source: Blob, settings: ResizeSettings): Promi
   });
 
   if (!resultBlob) {
-    throw new Error('규격 변환 결과를 생성하지 못했습니다.');
+    throw new Error('규격 변환 결과를 생성하지 못했어요.');
   }
   return resultBlob;
 }

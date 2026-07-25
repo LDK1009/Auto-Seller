@@ -27,7 +27,7 @@ export async function fetchSavedProducts(): Promise<SavedProduct[]> {
     .order('created_at', { ascending: false });
   if (error) {
     console.error(error);
-    throw new Error('저장 목록을 불러오지 못했습니다.');
+    throw new Error('저장 목록을 불러오지 못했어요.');
   }
   return (data ?? []) as SavedProduct[];
 }
@@ -35,22 +35,22 @@ export async function fetchSavedProducts(): Promise<SavedProduct[]> {
 ////////// 저장 (중복 = 도매꾹 상품번호 기준 무시, 한도 검사)
 export async function saveProduct(item: DomeggookItem): Promise<void> {
   const supabase = getSupabaseClient();
-  if (!supabase) throw new Error('저장 기능 준비 중입니다.');
+  if (!supabase) throw new Error('저장 기능 준비 중이에요.');
 
   const { count, error: countError } = await supabase
     .from('saved_products')
     .select('id', { count: 'exact', head: true });
   if (countError) {
     console.error(countError);
-    throw new Error('저장에 실패했습니다.');
+    throw new Error('저장에 실패했어요.');
   }
   if ((count ?? 0) >= SAVED_PRODUCTS_FREE_LIMIT) {
-    throw new Error(`저장은 최대 ${SAVED_PRODUCTS_FREE_LIMIT}개까지 가능합니다. 목록에서 안 쓰는 상품을 정리해주세요.`);
+    throw new Error(`저장은 최대 ${SAVED_PRODUCTS_FREE_LIMIT}개까지 가능해요. 목록에서 안 쓰는 상품을 정리해주세요.`);
   }
 
   const thumb = item.images.find((image) => image.kind === 'thumb');
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) throw new Error('로그인이 필요합니다.');
+  if (!userData.user) throw new Error('로그인이 필요해요.');
 
   const { error } = await supabase.from('saved_products').upsert(
     {
@@ -64,7 +64,7 @@ export async function saveProduct(item: DomeggookItem): Promise<void> {
   );
   if (error) {
     console.error(error);
-    throw new Error('저장에 실패했습니다.');
+    throw new Error('저장에 실패했어요.');
   }
 }
 
@@ -75,7 +75,7 @@ export async function removeSavedProduct(id: string): Promise<void> {
   const { error } = await supabase.from('saved_products').delete().eq('id', id);
   if (error) {
     console.error(error);
-    throw new Error('삭제에 실패했습니다.');
+    throw new Error('삭제에 실패했어요.');
   }
 }
 

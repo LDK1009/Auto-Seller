@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   }
   const serverClient = getSupabaseServerClient();
   if (!serverClient || !isTossConfigured()) {
-    return NextResponse.json({ error: '결제 기능이 아직 준비되지 않았습니다.' }, { status: 503 });
+    return NextResponse.json({ error: '결제 기능이 아직 준비되지 않았어요.' }, { status: 503 });
   }
 
   ////////// 결제일 도래 구독 조회 (active + 재시도 대상 past_due)

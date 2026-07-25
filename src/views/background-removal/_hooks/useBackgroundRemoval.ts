@@ -151,9 +151,9 @@ export function useBackgroundRemoval() {
     endStore.setIsModelLoading(false);
     endStore.setIsProcessing(false);
     if (wasCancelled) {
-      enqueueSnackbar('누끼 처리를 중지했습니다. 남은 이미지는 대기 상태입니다.', { variant: 'info' });
+      enqueueSnackbar('누끼 처리를 중지했어요. 남은 이미지는 대기 상태예요.', { variant: 'info' });
     } else {
-      enqueueSnackbar('누끼 처리가 완료되었습니다.', { variant: 'success' });
+      enqueueSnackbar('누끼 처리가 완료됐어요.', { variant: 'success' });
     }
   }, []);
 
@@ -168,10 +168,10 @@ export function useBackgroundRemoval() {
     );
     addFiles(files);
     if (autoStart) {
-      enqueueSnackbar(`이미지 ${files.length}장을 이어받아 배경 제거를 시작합니다.`, { variant: 'info' });
+      enqueueSnackbar(`이미지 ${files.length}장을 이어받아 배경 제거를 시작해요.`, { variant: 'info' });
       start();
     } else {
-      enqueueSnackbar(`이미지 ${files.length}장을 이어받았습니다.`, { variant: 'info' });
+      enqueueSnackbar(`이미지 ${files.length}장을 이어받았어요.`, { variant: 'info' });
     }
   }, [addFiles, start]);
 
@@ -182,7 +182,7 @@ export function useBackgroundRemoval() {
     if (!store.isProcessing || cancelRequestedRef.current) return;
     cancelRequestedRef.current = true;
     store.setIsCancelling(true);
-    enqueueSnackbar('현재 이미지를 마친 뒤 중지합니다.', { variant: 'warning' });
+    enqueueSnackbar('현재 이미지를 마친 뒤 중지해요.', { variant: 'warning' });
   }, []);
 
   //////////////////// 배경옵션 변경 시 완료 job 재합성 ////////////////////
@@ -194,7 +194,7 @@ export function useBackgroundRemoval() {
         backgroundImageBlob = await fetchBackgroundImage(option.url);
       } catch (error) {
         console.error(error);
-        enqueueSnackbar('배경 이미지를 불러오지 못했습니다.', { variant: 'error' });
+        enqueueSnackbar('배경 이미지를 불러오지 못했어요.', { variant: 'error' });
         return;
       }
     }
@@ -223,7 +223,7 @@ export function useBackgroundRemoval() {
     const store = useBackgroundRemovalStore.getState();
     const doneJobs = store.jobs.filter((job) => job.status === 'done' && job.resultBlob);
     if (doneJobs.length === 0) {
-      enqueueSnackbar('다운로드할 완료 이미지가 없습니다.', { variant: 'info' });
+      enqueueSnackbar('다운로드할 완료 이미지가 없어요.', { variant: 'info' });
       return;
     }
 
@@ -237,7 +237,7 @@ export function useBackgroundRemoval() {
       trackEvent('zip_download', { tool: 'background-removal' });
     } catch (error) {
       console.error(error);
-      enqueueSnackbar('ZIP 생성 중 오류가 발생했습니다.', { variant: 'error' });
+      enqueueSnackbar('ZIP 생성 중 오류가 발생했어요.', { variant: 'error' });
     } finally {
       useBackgroundRemovalStore.getState().setIsZipping(false);
     }

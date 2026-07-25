@@ -274,14 +274,14 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     try {
       const response = await fetchKeywordStats(seeds);
       if (!response.configured) {
-        enqueueSnackbar('검색량 기능이 아직 준비되지 않았습니다. (API 키 미설정)', { variant: 'info' });
+        enqueueSnackbar('검색량 기능이 아직 준비되지 않았어요. (API 키 미설정)', { variant: 'info' });
         return;
       }
       setTagStats(new Map(response.stats.map((stat) => [stat.keyword, stat])));
       setRelatedKeywords(response.related ?? []); // 연관 키워드 — 네이버 인기 키워드 칩 재료
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '검색량 조회에 실패했습니다.', {
+      enqueueSnackbar(error instanceof Error ? error.message : '검색량 조회에 실패했어요.', {
         variant: 'error',
       });
     } finally {
@@ -312,13 +312,13 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     try {
       const detail = await fetchKeywordDetail(seedKeyword);
       if (!detail.configured) {
-        enqueueSnackbar('시장 분석 기능이 아직 준비되지 않았습니다. (API 키 미설정)', { variant: 'info' });
+        enqueueSnackbar('시장 분석 기능이 아직 준비되지 않았어요. (API 키 미설정)', { variant: 'info' });
         return;
       }
       setMarketDetail(detail);
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '시장 분석에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : '시장 분석에 실패했어요.', { variant: 'error' });
     } finally {
       setIsLoadingMarket(false);
     }
@@ -330,18 +330,18 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     try {
       const response = await fetchCategorySuggest(productName);
       if (!response.configured) {
-        enqueueSnackbar('카테고리 추천 기능이 아직 준비되지 않았습니다. (API 키 미설정)', { variant: 'info' });
+        enqueueSnackbar('카테고리 추천 기능이 아직 준비되지 않았어요. (API 키 미설정)', { variant: 'info' });
         return;
       }
       setCategoryCandidates(response.candidates);
       if (response.candidates.length === 0) {
-        enqueueSnackbar('이 상품명으로는 카테고리 후보를 찾지 못했습니다. 상품명을 다듬어보세요.', {
+        enqueueSnackbar('이 상품명으로는 카테고리 후보를 찾지 못했어요. 상품명을 다듬어보세요.', {
           variant: 'info',
         });
       }
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '카테고리 후보 조회에 실패했습니다.', {
+      enqueueSnackbar(error instanceof Error ? error.message : '카테고리 후보 조회에 실패했어요.', {
         variant: 'error',
       });
     } finally {
@@ -363,7 +363,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   const copyText = async (label: string, value: string) => {
     if (!value) return;
     await navigator.clipboard.writeText(value);
-    enqueueSnackbar(`${label}을(를) 복사했습니다.`, { variant: 'success' });
+    enqueueSnackbar(`${label}을(를) 복사했어요.`, { variant: 'success' });
   };
 
   return (
@@ -374,7 +374,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
       {/* 인증·인허가 지뢰 경고 */}
       {complianceRisks.map((risk) => (
         <Alert key={risk.type} severity="warning">
-          <b>{risk.type} 대상일 수 있습니다</b> (감지: {risk.matched.join(', ')}) — {risk.guide}
+          <b>{risk.type} 대상일 수 있어요</b> (감지: {risk.matched.join(', ')}) — {risk.guide}
         </Alert>
       ))}
 
@@ -405,7 +405,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           </Stack>
         ) : (
           <Typography variant="body2" color="text.secondary">
-            추천 카테고리를 찾지 못했습니다 — 등록 화면에서 상품명 키워드로 직접 검색해 선택하세요.
+            추천 카테고리를 찾지 못했어요 — 등록 화면에서 상품명 키워드로 직접 검색해 선택하세요.
           </Typography>
         )}
       </SectionBlock>
@@ -687,7 +687,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 배송비
               </Typography>
               <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
-                <Tooltip title="고객에게 배송비를 별도로 받습니다 — 판매가는 상품값만">
+                <Tooltip title="고객에게 배송비를 별도로 받아요 — 판매가는 상품값만">
                   <Chip
                     size="small"
                     label="별도"
@@ -709,8 +709,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             </Stack>
             {isFlooredByResale && item.resaleMinimum !== null && (
               <Alert severity="info">
-                공급사 최소 재판매가 <b>{KRW(item.resaleMinimum)}</b> 규정에 맞춰 추천가를 올렸습니다 —
-                목표 마진보다 이익이 커집니다.
+                공급사 최소 재판매가 <b>{KRW(item.resaleMinimum)}</b> 규정에 맞춰 추천가를 올렸어요 —
+                목표 마진보다 이익이 커져요.
               </Alert>
             )}
 
@@ -730,7 +730,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           </>
         ) : (
           <Alert severity="warning">
-            {reverseResult.achievable === false ? reverseResult.reason : '가격 정보를 불러오지 못했습니다.'}
+            {reverseResult.achievable === false ? reverseResult.reason : '가격 정보를 불러오지 못했어요.'}
           </Alert>
         )}
         {/* 시장 가격 비교 — 시드 키워드 기준, 밴드 시각화 */}
@@ -784,8 +784,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             {marketDetail.trendDirection === 'up' && (
               <Tooltip
                 title={multilineTooltip([
-                  '최근 검색량이 상승 추세입니다.',
-                  '수요가 커지는 중 — 진입 타이밍이 유리합니다.',
+                  '최근 검색량이 상승 추세예요.',
+                  '수요가 커지는 중 — 진입 타이밍이 유리해요.',
                 ])}
               >
                 <MarketChip size="small" variant="outlined" color="success" icon={<TrendingUpOutlinedIcon />} label="수요 상승" />
@@ -794,7 +794,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             {marketDetail.trendDirection === 'down' && (
               <Tooltip
                 title={multilineTooltip([
-                  '최근 검색량이 하락 추세입니다.',
+                  '최근 검색량이 하락 추세예요.',
                   '시즌 종료·수요 감소일 수 있으니 주의하세요.',
                 ])}
               >
@@ -806,7 +806,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 title={multilineTooltip([
                   `검색량이 몰리는 시기: ${marketDetail.seasonality.label}`,
                   marketDetail.seasonality.isInSeason
-                    ? '지금이 그 시즌입니다 — 시즌 안에 팔고 빠지세요.'
+                    ? '지금이 그 시즌이에요 — 시즌 안에 팔고 빠지세요.'
                     : '시즌에 맞춰 등록하세요.',
                 ])}
               >
@@ -822,8 +822,8 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
             {marketDetail.brandShare !== null && (
               <Tooltip
                 title={multilineTooltip([
-                  `검색 상위 상품 중 ${marketDetail.brandShare}%가 브랜드 상품입니다.`,
-                  '높을수록 무명 위탁 상품이 노출되기 어렵습니다.',
+                  `검색 상위 상품 중 ${marketDetail.brandShare}%가 브랜드 상품이에요.`,
+                  '높을수록 무명 위탁 상품이 노출되기 어려워요.',
                   ...(marketDetail.brandShare >= 60 ? ['60% 이상 — 진입 비추천.'] : []),
                 ])}
               >
@@ -837,7 +837,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               </Tooltip>
             )}
             {marketDetail.categorySeason && marketDetail.categoryName && (
-              <Tooltip title={multilineTooltip([`"${marketDetail.categoryName}" 카테고리 전체의 계절성입니다.`])}>
+              <Tooltip title={multilineTooltip([`"${marketDetail.categoryName}" 카테고리 전체의 계절성이에요.`])}>
                 <MarketChip
                   size="small"
                   variant="outlined"
@@ -869,7 +869,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           </Stack>
           {bundleStock === 0 && (
             <Typography variant="caption" color="text.secondary">
-              재고가 없습니다 — 공급사 재입고 확인 후 등록하세요
+              재고가 없어요 — 공급사 재입고 확인 후 등록하세요
             </Typography>
           )}
         </RowBox>
@@ -913,7 +913,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           </>
         ) : (
           <Typography variant="body2" color="text.secondary">
-            옵션 없는 단일 상품입니다 — 등록 화면에서 옵션 &quot;설정 안 함&quot;을 선택하세요.
+            옵션 없는 단일 상품이에요 — 등록 화면에서 옵션 &quot;설정 안 함&quot;을 선택하세요.
           </Typography>
         )}
       </SectionBlock>

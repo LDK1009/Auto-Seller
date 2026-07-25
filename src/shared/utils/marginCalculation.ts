@@ -81,7 +81,7 @@ export function calculateReversePrice(input: ReversePriceInput): ReversePriceRes
   if (denominator <= 0) {
     return {
       achievable: false,
-      reason: '수수료율과 목표 마진율을 합치면 100%를 넘어 판매가로 만들 수 없습니다. 목표 마진율을 낮춰보세요.',
+      reason: '수수료율과 목표 마진율을 합치면 100%를 넘어 판매가로 만들 수 없어요. 목표 마진율을 낮춰보세요.',
     };
   }
 

@@ -57,7 +57,7 @@ export function useImageCheck() {
         console.error(error);
         patchJob(job.id, {
           overall: 'fail',
-          checks: [{ key: 'decode', label: '이미지 판독', status: 'fail', message: '이미지를 읽을 수 없습니다.' }],
+          checks: [{ key: 'decode', label: '이미지 판독', status: 'fail', message: '이미지를 읽을 수 없어요.' }],
         });
       }
     });

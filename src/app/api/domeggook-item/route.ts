@@ -55,13 +55,13 @@ async function fetchItemView(no: string, apiKey: string): Promise<Record<string,
 export async function GET(request: Request) {
   const apiKey = process.env.DOMEGGOOK_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: '서버에 도매꾹 API 키가 설정되지 않았습니다.' }, { status: 500 });
+    return NextResponse.json({ error: '서버에 도매꾹 API 키가 설정되지 않았어요.' }, { status: 500 });
   }
 
   const { searchParams } = new URL(request.url);
   const no = searchParams.get('no');
   if (!no || !/^\d{4,12}$/.test(no)) {
-    return NextResponse.json({ error: '올바른 상품번호(no)가 필요합니다.' }, { status: 400 });
+    return NextResponse.json({ error: '올바른 상품번호(no)가 필요해요.' }, { status: 400 });
   }
 
   // 캐시 확인
@@ -79,7 +79,7 @@ export async function GET(request: Request) {
     if (!root || !root.basis) {
       // 도매꾹 오류 응답 (상품 없음·판매 종료 등)
       const reason =
-        (parsed as any)?.errors?.message ?? (root as any)?.errors?.message ?? '상품을 찾지 못했습니다.';
+        (parsed as any)?.errors?.message ?? (root as any)?.errors?.message ?? '상품을 찾지 못했어요.';
       return NextResponse.json({ error: String(reason) }, { status: 404 });
     }
 
@@ -167,7 +167,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { error: '도매꾹 상품 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.' },
+      { error: '도매꾹 상품 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.' },
       { status: 502 },
     );
   }

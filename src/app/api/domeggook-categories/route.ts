@@ -28,7 +28,7 @@ export async function GET() {
     const body = await upstreamResponse.json();
     if (body?.errors) {
       console.error('도매꾹 카테고리 오류:', body.errors);
-      return NextResponse.json({ error: '카테고리 조회에 실패했습니다.' }, { status: 502 });
+      return NextResponse.json({ error: '카테고리 조회에 실패했어요.' }, { status: 502 });
     }
 
     // 응답 형태: items.item = { "0": "패션잡화", "@0": {no,id,depth,itemCnt}, "1": ... } 평탄 나열 (실측)
@@ -58,6 +58,6 @@ export async function GET() {
     return NextResponse.json(response, { headers: { 'Cache-Control': 'public, max-age=3600' } });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: '카테고리 조회에 실패했습니다.' }, { status: 502 });
+    return NextResponse.json({ error: '카테고리 조회에 실패했어요.' }, { status: 502 });
   }
 }

@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const keyword = (searchParams.get('keyword') ?? '').trim().replace(/\s+/g, '');
   if (keyword.length === 0) {
-    return NextResponse.json({ error: '키워드(keyword)가 필요합니다.' }, { status: 400 });
+    return NextResponse.json({ error: '키워드(keyword)가 필요해요.' }, { status: 400 });
   }
 
   const cached = cache.get(keyword);
@@ -119,7 +119,7 @@ export async function GET(request: Request) {
     return NextResponse.json(detail, { headers: { 'Cache-Control': 'public, max-age=3600' } });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: '상세 분석 조회에 실패했습니다.' }, { status: 502 });
+    return NextResponse.json({ error: '상세 분석 조회에 실패했어요.' }, { status: 502 });
   }
 }
 

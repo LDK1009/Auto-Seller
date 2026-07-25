@@ -34,7 +34,7 @@ export function useSavedProducts() {
       })
       .catch((error) => {
         console.error(error);
-        if (!cancelled) enqueueSnackbar('저장 목록을 불러오지 못했습니다.', { variant: 'error' });
+        if (!cancelled) enqueueSnackbar('저장 목록을 불러오지 못했어요.', { variant: 'error' });
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -52,7 +52,7 @@ export function useSavedProducts() {
       setProducts((previous) => previous.filter((product) => product.id !== id));
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '삭제에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : '삭제에 실패했어요.', { variant: 'error' });
     }
   };
 
@@ -68,12 +68,12 @@ export function useSavedProducts() {
       setStockResults(results);
       const soldOutCount = Array.from(results.values()).filter((entry) => entry.isSoldOut || entry.failed).length;
       enqueueSnackbar(
-        soldOutCount > 0 ? `주의가 필요한 상품 ${soldOutCount}개를 찾았습니다.` : '모든 상품이 판매 가능 상태입니다.',
+        soldOutCount > 0 ? `주의가 필요한 상품 ${soldOutCount}개를 찾았어요.` : '모든 상품이 판매 가능 상태예요.',
         { variant: soldOutCount > 0 ? 'warning' : 'success' },
       );
     } catch (error) {
       console.error(error);
-      enqueueSnackbar('품절 확인에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar('품절 확인에 실패했어요.', { variant: 'error' });
     } finally {
       setCheckProgress(null);
     }

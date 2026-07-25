@@ -39,16 +39,16 @@ export default function VatCalculatorView() {
   return (
     <PageLayout
       title="부가세 계산"
-      description="매출·매입으로 부가세 납부 예상액을 대략 계산합니다 (신고 기준은 홈택스가 우선)."
+      description="매출·매입으로 부가세 납부 예상액을 대략 계산해요 (신고 기준은 홈택스가 우선)."
       maxWidth="md"
       help={
         <HelpPanel storageKey="vat-calculator">
           <Stack spacing={0.75}>
-            <Typography variant="body2">① 과세 유형을 고르세요 — 초보 위탁 셀러는 대부분 간이과세로 시작합니다</Typography>
+            <Typography variant="body2">① 과세 유형을 고르세요 — 초보 위탁 셀러는 대부분 간이과세로 시작해요</Typography>
             <Typography variant="body2">② 기간 매출(공급대가)과 매입(증빙 수취분)을 입력하세요</Typography>
             <Typography variant="body2">③ 납부 예상액을 확인하세요</Typography>
             <Typography variant="caption" color="text.secondary">
-              소매(통신판매) 부가가치율 기준의 대략 계산입니다. 실제 신고액은 홈택스·세무사 기준을 따르세요.
+              소매(통신판매) 부가가치율 기준의 대략 계산이에요. 실제 신고액은 홈택스·세무사 기준을 따르세요.
             </Typography>
           </Stack>
         </HelpPanel>
@@ -101,7 +101,7 @@ export default function VatCalculatorView() {
               </Typography>
               {input.taxType === 'general' && result.payable < 0 && (
                 <Typography variant="body2" color="success.main">
-                  환급 예상 구간입니다
+                  환급 예상 구간이에요
                 </Typography>
               )}
             </ResultBox>
@@ -115,7 +115,7 @@ export default function VatCalculatorView() {
             {result.isExemptCandidate && input.salesAmount > 0 && (
               <Alert severity="success">
                 연 공급대가 {KRW(SIMPLIFIED_EXEMPT_THRESHOLD)} 미만 — 간이과세 납부 면제 대상일 수
-                있습니다 (신고는 해야 합니다).
+                있어요 (신고는 해야 해요).
               </Alert>
             )}
           </Stack>

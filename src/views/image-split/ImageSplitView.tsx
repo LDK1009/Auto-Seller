@@ -56,13 +56,13 @@ export default function ImageSplitView() {
   return (
     <PageLayout
       title="상세 분할"
-      description="세로로 긴 상세페이지 이미지를 지정 높이로 잘라 순서대로 저장합니다. 처리는 브라우저에서 진행됩니다."
+      description="세로로 긴 상세페이지 이미지를 지정 높이로 잘라 순서대로 저장해요. 처리는 브라우저에서 진행돼요."
       help={
         <HelpPanel storageKey="image-split">
           <Stack spacing={0.75}>
-            <Typography variant="body2">① 긴 상세페이지 이미지를 업로드합니다 (여러 장 가능)</Typography>
-            <Typography variant="body2">② 조각 높이를 정합니다 — 마켓 에디터의 이미지 높이 제한에 맞추세요</Typography>
-            <Typography variant="body2">③ [분할하기] 후 [다운로드]하면 파일명_01, 02… 순서로 ZIP에 담깁니다</Typography>
+            <Typography variant="body2">① 긴 상세페이지 이미지를 업로드해요 (여러 장 가능)</Typography>
+            <Typography variant="body2">② 조각 높이를 정해요 — 마켓 에디터의 이미지 높이 제한에 맞추세요</Typography>
+            <Typography variant="body2">③ [분할하기] 후 [다운로드]하면 파일명_01, 02… 순서로 ZIP에 담겨요</Typography>
           </Stack>
         </HelpPanel>
       }
@@ -123,7 +123,7 @@ export default function ImageSplitView() {
                     onClick={() => setOutputMode('original')}
                   />
                   <Typography variant="caption" color="text.secondary">
-                    JPG 압축은 업로드 용량 제한 걸림을 줄여줍니다 (상세 이미지는 투명도가 필요 없음)
+                    JPG 압축은 업로드 용량 제한 걸림을 줄여줘요 (상세 이미지는 투명도가 필요 없음)
                   </Typography>
                 </Stack>
               </Stack>

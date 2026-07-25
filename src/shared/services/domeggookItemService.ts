@@ -8,7 +8,7 @@ export async function fetchDomeggookItem(productNo: string): Promise<DomeggookIt
   const response = await fetch(`/api/domeggook-item?no=${productNo}`);
   const body = await response.json();
   if (!response.ok) {
-    throw new Error(body?.error ?? '도매꾹 상품 정보를 불러오지 못했습니다.');
+    throw new Error(body?.error ?? '도매꾹 상품 정보를 불러오지 못했어요.');
   }
   return body as DomeggookItem;
 }
@@ -25,7 +25,7 @@ export async function downloadDomeggookImages(
     const image = images[index];
     const response = await fetch(image.proxyUrl);
     if (!response.ok) {
-      throw new Error(`이미지 ${index + 1}번을 불러오지 못했습니다.`);
+      throw new Error(`이미지 ${index + 1}번을 불러오지 못했어요.`);
     }
     const blob = await response.blob();
 

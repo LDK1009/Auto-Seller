@@ -20,27 +20,27 @@ export async function POST(request: Request) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const serverClient = getSupabaseServerClient();
   if (!supabaseUrl || !supabaseAnonKey || !serverClient || !isTossConfigured()) {
-    return NextResponse.json({ error: '결제 기능이 아직 준비되지 않았습니다.' }, { status: 503 });
+    return NextResponse.json({ error: '결제 기능이 아직 준비되지 않았어요.' }, { status: 503 });
   }
 
   ////////// 1) 로그인 검증
   const accessToken = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? '';
   if (!accessToken) {
-    return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 });
+    return NextResponse.json({ error: '로그인이 필요해요.' }, { status: 401 });
   }
   const authClient = createClient(supabaseUrl, supabaseAnonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const { data: userData, error: userError } = await authClient.auth.getUser(accessToken);
   if (userError || !userData.user) {
-    return NextResponse.json({ error: '로그인이 만료됐습니다. 다시 로그인해주세요.' }, { status: 401 });
+    return NextResponse.json({ error: '로그인이 만료됐어요. 다시 로그인해주세요.' }, { status: 401 });
   }
   const userId = userData.user.id;
 
   ////////// 2) 요청 검증
   const body = (await request.json().catch(() => null)) as { authKey?: string; customerKey?: string } | null;
   if (!body?.authKey || !body?.customerKey) {
-    return NextResponse.json({ error: '잘못된 요청입니다.' }, { status: 400 });
+    return NextResponse.json({ error: '잘못된 요청이에요.' }, { status: 400 });
   }
 
   try {
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       .single();
     if (upsertError || !subscription) {
       console.error(upsertError);
-      throw new Error('구독 정보를 저장하지 못했습니다.');
+      throw new Error('구독 정보를 저장하지 못했어요.');
     }
 
     ////////// 5) 첫 결제 승인 + 이력 기록
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : '결제 처리에 실패했습니다.' },
+      { error: error instanceof Error ? error.message : '결제 처리에 실패했어요.' },
       { status: 502 },
     );
   }

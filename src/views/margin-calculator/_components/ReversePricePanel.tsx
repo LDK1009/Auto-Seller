@@ -49,7 +49,7 @@ export default function ReversePricePanel({ result, targetMarginRate }: ReverseP
       </Stack>
 
       <Typography variant="caption" color="text.secondary">
-        판매가는 10원 단위로 올림해 목표 마진율을 보장합니다. 이보다 낮게 팔면 목표 마진이 깨집니다.
+        판매가는 10원 단위로 올림해 목표 마진율을 보장해요. 이보다 낮게 팔면 목표 마진이 깨져요.
       </Typography>
     </Stack>
   );

@@ -28,7 +28,7 @@ import { HEADER_HEIGHT, SIDEBAR_WIDTH, SIDEBAR_WIDTH_COLLAPSED } from '@/shared/
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
 
 const COLLAPSE_STORAGE_KEY = 'sidebar-collapsed';
-const UPCOMING_MESSAGE = '원클릭 등록은 준비 중이에요. 완성되면 여기서 열립니다.';
+const UPCOMING_MESSAGE = '원클릭 등록은 준비 중이에요. 완성되면 여기서 열려요.';
 
 ////////// 도구 아이콘을 사이드바 크기로 (tools.tsx의 large 아이콘 재사용)
 function toNavIcon(icon: unknown, isActive: boolean) {

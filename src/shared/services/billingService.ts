@@ -17,7 +17,7 @@ export async function fetchMySubscription(): Promise<Subscription | null> {
     .maybeSingle();
   if (error) {
     console.error(error);
-    throw new Error('구독 정보를 불러오지 못했습니다.');
+    throw new Error('구독 정보를 불러오지 못했어요.');
   }
   return data as Subscription | null;
 }
@@ -25,7 +25,7 @@ export async function fetchMySubscription(): Promise<Subscription | null> {
 ////////// 카드 등록 시작 — 토스 카드 등록창 → successUrl로 authKey 복귀
 export async function startCardRegistration(customerKey: string): Promise<void> {
   const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
-  if (!clientKey) throw new Error('결제 기능이 아직 준비되지 않았습니다.');
+  if (!clientKey) throw new Error('결제 기능이 아직 준비되지 않았어요.');
 
   const tossPayments = await loadTossPayments(clientKey);
   const payment = tossPayments.payment({ customerKey });
@@ -48,7 +48,7 @@ export async function issueBillingKey(params: {
     body: JSON.stringify({ authKey: params.authKey, customerKey: params.customerKey }),
   });
   const body = await response.json();
-  if (!response.ok) throw new Error(body?.error ?? '결제 처리에 실패했습니다.');
+  if (!response.ok) throw new Error(body?.error ?? '결제 처리에 실패했어요.');
 }
 
 ////////// 구독 해지
@@ -58,5 +58,5 @@ export async function cancelSubscription(accessToken: string): Promise<void> {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   const body = await response.json();
-  if (!response.ok) throw new Error(body?.error ?? '해지 처리에 실패했습니다.');
+  if (!response.ok) throw new Error(body?.error ?? '해지 처리에 실패했어요.');
 }

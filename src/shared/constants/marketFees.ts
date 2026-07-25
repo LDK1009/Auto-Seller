@@ -6,7 +6,7 @@
 export const SMARTSTORE_FEE_RATE = 5.6;
 
 export const FEE_DISCLAIMER =
-  '스마트스토어 기준 대략치입니다. 실제 수수료는 카테고리·결제수단·판매자 등급에 따라 다르니 필요하면 직접 수정하세요.';
+  '스마트스토어 기준 대략치예요. 실제 수수료는 카테고리·결제수단·판매자 등급에 따라 다르니 필요하면 직접 수정하세요.';
 
 // 목표 마진율 프리셋 (%)
 export const TARGET_MARGIN_PRESETS = [10, 15, 20, 30];

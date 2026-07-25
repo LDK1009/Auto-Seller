@@ -39,7 +39,7 @@ export async function GET(request: Request) {
   ).slice(0, MAX_KEYWORDS_PER_REQUEST);
 
   if (keywords.length === 0) {
-    return NextResponse.json({ error: '키워드(keywords)가 필요합니다.' }, { status: 400 });
+    return NextResponse.json({ error: '키워드(keywords)가 필요해요.' }, { status: 400 });
   }
 
   const now = Date.now();

@@ -45,13 +45,13 @@ export default function ExcelImportView() {
       setFileName(file.name);
       setSelectedIndexes(new Set(parsed.map((_, index) => index)));
       if (parsed.length === 0) {
-        enqueueSnackbar('엑셀에서 이미지 URL을 찾지 못했습니다. 대량등록 양식이 맞는지 확인하세요.', {
+        enqueueSnackbar('엑셀에서 이미지 URL을 찾지 못했어요. 대량등록 양식이 맞는지 확인하세요.', {
           variant: 'warning',
         });
       }
     } catch (error) {
       console.error(error);
-      enqueueSnackbar('엑셀을 읽지 못했습니다. xlsx 형식인지 확인하세요.', { variant: 'error' });
+      enqueueSnackbar('엑셀을 읽지 못했어요. xlsx 형식인지 확인하세요.', { variant: 'error' });
     } finally {
       setProgress(null);
     }
@@ -65,7 +65,7 @@ export default function ExcelImportView() {
 
     const limited = urls.slice(0, MAX_HANDOFF_IMAGES);
     if (urls.length > MAX_HANDOFF_IMAGES) {
-      enqueueSnackbar(`한 번에 ${MAX_HANDOFF_IMAGES}장까지 처리합니다. 초과분 ${urls.length - MAX_HANDOFF_IMAGES}장은 제외했습니다.`, {
+      enqueueSnackbar(`한 번에 ${MAX_HANDOFF_IMAGES}장까지 처리해요. 초과분 ${urls.length - MAX_HANDOFF_IMAGES}장은 제외했어요.`, {
         variant: 'info',
       });
     }
@@ -81,7 +81,7 @@ export default function ExcelImportView() {
         files.push({ name: urlName || `excel-${index + 1}.jpg`, blob });
       }
       if (files.length === 0) {
-        enqueueSnackbar('가져올 수 있는 이미지가 없습니다.', { variant: 'warning' });
+        enqueueSnackbar('가져올 수 있는 이미지가 없어요.', { variant: 'warning' });
         return;
       }
       useImageHandoffStore.getState().setImages(files, true); // 누끼 자동 시작
@@ -89,7 +89,7 @@ export default function ExcelImportView() {
       router.push('/background-removal');
     } catch (error) {
       console.error(error);
-      enqueueSnackbar('이미지 수집 중 오류가 발생했습니다.', { variant: 'error' });
+      enqueueSnackbar('이미지 수집 중 오류가 발생했어요.', { variant: 'error' });
     } finally {
       setProgress(null);
     }
@@ -107,14 +107,14 @@ export default function ExcelImportView() {
   return (
     <PageLayout
       title="엑셀 대량 가공"
-      description="대량등록 엑셀 속 상품 이미지를 한 번에 모아 배경 제거까지 이어드립니다."
+      description="대량등록 엑셀 속 상품 이미지를 한 번에 모아 배경 제거까지 이어드려요."
       maxWidth="md"
       help={
         <HelpPanel storageKey="excel-import">
           <Stack spacing={0.75}>
             <Typography variant="body2">① 도매꾹 대량등록 엑셀(xlsx)을 업로드하세요</Typography>
             <Typography variant="body2">② 상품별로 발견된 이미지 URL을 확인하고 필요한 행만 선택하세요</Typography>
-            <Typography variant="body2">③ [누끼 일괄 시작]을 누르면 이미지를 모아 배경 제거가 자동 시작됩니다</Typography>
+            <Typography variant="body2">③ [누끼 일괄 시작]을 누르면 이미지를 모아 배경 제거가 자동 시작돼요</Typography>
             <Typography variant="caption" color="text.secondary">
               한 번에 최대 {MAX_HANDOFF_IMAGES}장까지 보낼 수 있어요.
             </Typography>
@@ -193,7 +193,7 @@ export default function ExcelImportView() {
 
               {unproxyableCount > 0 && (
                 <Alert severity="info">
-                  지원하지 않는 호스트의 이미지 {unproxyableCount}장은 제외됩니다 (도매꾹·ESM 호스팅만 수집).
+                  지원하지 않는 호스트의 이미지 {unproxyableCount}장은 제외돼요 (도매꾹·ESM 호스팅만 수집).
                 </Alert>
               )}
 

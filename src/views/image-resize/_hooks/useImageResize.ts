@@ -69,7 +69,7 @@ export function useImageResize() {
       (image) => new File([image.blob], image.name, { type: image.blob.type || 'image/png' }),
     );
     addFiles(files);
-    enqueueSnackbar(`이미지 ${files.length}장을 이어받았습니다.`, { variant: 'info' });
+    enqueueSnackbar(`이미지 ${files.length}장을 이어받았어요.`, { variant: 'info' });
   }, [addFiles]);
 
   //////////////////// 개별 삭제 / 전체 초기화 (objectURL 정리) ////////////////////
@@ -122,7 +122,7 @@ export function useImageResize() {
     }
 
     useImageResizeStore.getState().setIsProcessing(false);
-    enqueueSnackbar('규격 변환이 완료되었습니다.', { variant: 'success' });
+    enqueueSnackbar('규격 변환이 완료됐어요.', { variant: 'success' });
   }, []);
 
   //////////////////// ZIP 다운로드 ////////////////////
@@ -130,7 +130,7 @@ export function useImageResize() {
     const store = useImageResizeStore.getState();
     const doneJobs = store.jobs.filter((job) => job.status === 'done' && job.resultBlob);
     if (doneJobs.length === 0) {
-      enqueueSnackbar('다운로드할 완료 이미지가 없습니다.', { variant: 'info' });
+      enqueueSnackbar('다운로드할 완료 이미지가 없어요.', { variant: 'info' });
       return;
     }
 
@@ -144,7 +144,7 @@ export function useImageResize() {
       trackEvent('zip_download', { tool: 'image-resize' });
     } catch (error) {
       console.error(error);
-      enqueueSnackbar('ZIP 생성 중 오류가 발생했습니다.', { variant: 'error' });
+      enqueueSnackbar('ZIP 생성 중 오류가 발생했어요.', { variant: 'error' });
     } finally {
       useImageResizeStore.getState().setIsZipping(false);
     }

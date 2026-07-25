@@ -36,7 +36,7 @@ export async function splitImage(
     const context = canvas.getContext('2d');
     if (!context) {
       bitmap.close();
-      throw new Error('Canvas 2D 컨텍스트를 생성할 수 없습니다.');
+      throw new Error('Canvas 2D 컨텍스트를 생성할 수 없어요.');
     }
     if (useJpg) {
       // JPG는 투명도가 없으므로 흰 배경 선깔기 (PNG 투명 원본 대비)
@@ -50,7 +50,7 @@ export async function splitImage(
     });
     if (!pieceBlob) {
       bitmap.close();
-      throw new Error('분할 조각 생성에 실패했습니다.');
+      throw new Error('분할 조각 생성에 실패했어요.');
     }
     pieces.push(pieceBlob);
   }

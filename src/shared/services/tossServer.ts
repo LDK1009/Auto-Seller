@@ -16,7 +16,7 @@ export const isTossConfigured = () => getAuthHeader() !== null;
 ////////// 공통 호출 (토스 에러 body의 message를 살려 던진다)
 async function tossRequest<T>(path: string, body?: Record<string, unknown>): Promise<T> {
   const authHeader = getAuthHeader();
-  if (!authHeader) throw new Error('결제 기능이 아직 준비되지 않았습니다. (키 미설정)');
+  if (!authHeader) throw new Error('결제 기능이 아직 준비되지 않았어요. (키 미설정)');
 
   const response = await fetch(`${TOSS_API_BASE}${path}`, {
     method: body ? 'POST' : 'GET',
@@ -27,7 +27,7 @@ async function tossRequest<T>(path: string, body?: Record<string, unknown>): Pro
   const parsed = await response.json();
   if (!response.ok) {
     console.error('토스 API 오류:', path, parsed);
-    throw new Error(String(parsed?.message ?? '결제 처리에 실패했습니다.'));
+    throw new Error(String(parsed?.message ?? '결제 처리에 실패했어요.'));
   }
   return parsed as T;
 }

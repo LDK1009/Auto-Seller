@@ -146,7 +146,7 @@ export default function DomeggookSearchPanel({
       void loadPriceBounds(keyword);
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '검색에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : '검색에 실패했어요.', { variant: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -220,7 +220,7 @@ export default function DomeggookSearchPanel({
       setPage(response.page);
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '추가 로드에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : '추가 로드에 실패했어요.', { variant: 'error' });
     } finally {
       isLoadingMoreRef.current = false;
       setIsLoadingMore(false);
@@ -417,7 +417,7 @@ export default function DomeggookSearchPanel({
       </Paper>
 
       {/* 키 미설정 */}
-      {!isConfigured && <Alert severity="info">아직 준비 중인 기능입니다. (운영자: 도매꾹 API 키 설정 필요)</Alert>}
+      {!isConfigured && <Alert severity="info">아직 준비 중인 기능이에요. (운영자: 도매꾹 API 키 설정 필요)</Alert>}
 
       {/* 결과 */}
       {hasSearched && !isLoading && items.length > 0 && (

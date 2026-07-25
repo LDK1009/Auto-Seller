@@ -56,7 +56,7 @@ export default function MyProductsView() {
       await signInWithKakao();
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '로그인에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : '로그인에 실패했어요.', { variant: 'error' });
     }
   };
 
@@ -93,7 +93,7 @@ export default function MyProductsView() {
         ) : !session ? (
           <EmptyBox>
             <Typography variant="body2" color="text.secondary">
-              로그인하면 상품을 저장하고 품절을 한 번에 확인할 수 있습니다.
+              로그인하면 상품을 저장하고 품절을 한 번에 확인할 수 있어요.
             </Typography>
             <Button variant="contained" onClick={handleSignIn}>
               로그인
@@ -102,7 +102,7 @@ export default function MyProductsView() {
         ) : products.length === 0 ? (
           <EmptyBox>
             <Typography variant="body2" color="text.secondary">
-              아직 저장한 상품이 없습니다 — 원링크에서 상품 조회 후 [내 목록에 저장]을 눌러보세요.
+              아직 저장한 상품이 없어요 — 원링크에서 상품 조회 후 [내 목록에 저장]을 눌러보세요.
             </Typography>
             <Button variant="outlined" onClick={() => router.push('/domeggook-import')}>
               원링크로 가기

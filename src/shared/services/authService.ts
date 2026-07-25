@@ -12,7 +12,7 @@ export const isAuthConfigured = isSupabaseConfigured;
 export async function signInWithKakao(): Promise<void> {
   const supabase = getSupabaseClient();
   if (!supabase) {
-    throw new Error('로그인 기능 준비 중입니다.');
+    throw new Error('로그인 기능 준비 중이에요.');
   }
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'kakao',
@@ -20,7 +20,7 @@ export async function signInWithKakao(): Promise<void> {
   });
   if (error) {
     console.error(error);
-    throw new Error('카카오 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    throw new Error('카카오 로그인에 실패했어요. 잠시 후 다시 시도해주세요.');
   }
 }
 
@@ -31,7 +31,7 @@ export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut();
   if (error) {
     console.error(error);
-    throw new Error('로그아웃에 실패했습니다.');
+    throw new Error('로그아웃에 실패했어요.');
   }
 }
 

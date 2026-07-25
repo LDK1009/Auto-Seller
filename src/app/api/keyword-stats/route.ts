@@ -42,7 +42,7 @@ export async function GET(request: Request) {
   ).slice(0, MAX_KEYWORDS_PER_REQUEST);
 
   if (keywords.length === 0) {
-    return NextResponse.json({ error: '키워드(keywords)가 필요합니다.' }, { status: 400 });
+    return NextResponse.json({ error: '키워드(keywords)가 필요해요.' }, { status: 400 });
   }
 
   try {
@@ -163,7 +163,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: '검색량 조회에 실패했습니다. 잠시 후 다시 시도해주세요.' }, { status: 502 });
+    return NextResponse.json({ error: '검색량 조회에 실패했어요. 잠시 후 다시 시도해주세요.' }, { status: 502 });
   }
 }
 

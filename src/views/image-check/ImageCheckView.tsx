@@ -28,12 +28,12 @@ export default function ImageCheckView() {
   return (
     <PageLayout
       title="규정 검사"
-      description="상품 대표이미지가 마켓 규정에 맞는지 업로드 즉시 검사합니다. 처리는 브라우저에서 진행됩니다."
+      description="상품 대표이미지가 마켓 규정에 맞는지 업로드 즉시 검사해요. 처리는 브라우저에서 진행돼요."
       help={
         <HelpPanel storageKey="image-check">
           <Stack spacing={0.75}>
-            <Typography variant="body2">① 이미지를 업로드하면 즉시 포맷·해상도·비율·용량을 검사합니다</Typography>
-            <Typography variant="body2">② 주의/부적합 항목이 있으면 [규격 변환으로 보내기]로 바로 고칠 수 있습니다</Typography>
+            <Typography variant="body2">① 이미지를 업로드하면 즉시 포맷·해상도·비율·용량을 검사해요</Typography>
+            <Typography variant="body2">② 주의/부적합 항목이 있으면 [규격 변환으로 보내기]로 바로 고칠 수 있어요</Typography>
             <Typography variant="caption" color="text.secondary">
               {CHECK_DISCLAIMER}
             </Typography>

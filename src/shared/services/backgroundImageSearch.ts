@@ -22,7 +22,7 @@ export async function searchBackgroundImages(
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     console.error('배경 이미지 검색 실패:', response.status, body);
-    throw new Error(body?.error ?? '이미지 검색에 실패했습니다.');
+    throw new Error(body?.error ?? '이미지 검색에 실패했어요.');
   }
   const result = (await response.json()) as BackgroundImageSearchResult;
   return result;
@@ -34,7 +34,7 @@ export async function fetchBackgroundImage(url: string): Promise<Blob> {
   const response = await fetch(`/api/background-image?${params}`);
   if (!response.ok) {
     console.error('배경 이미지 로드 실패:', response.status);
-    throw new Error('배경 이미지를 불러오지 못했습니다.');
+    throw new Error('배경 이미지를 불러오지 못했어요.');
   }
   const blob = await response.blob();
   return blob;

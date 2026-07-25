@@ -33,7 +33,7 @@ export default function PricingView() {
       await signInWithKakao();
     } catch (error) {
       console.error(error);
-      enqueueSnackbar(error instanceof Error ? error.message : '로그인에 실패했습니다.', { variant: 'error' });
+      enqueueSnackbar(error instanceof Error ? error.message : '로그인에 실패했어요.', { variant: 'error' });
     }
   };
 
@@ -47,7 +47,7 @@ export default function PricingView() {
             구독 관리
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            결제·구독 상태를 관리합니다
+            결제·구독 상태를 관리해요
           </Typography>
         </Stack>
 
@@ -59,7 +59,7 @@ export default function PricingView() {
           // 비로그인
           <PlanCard>
             <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
-              구독 관리는 로그인 후 이용할 수 있습니다.
+              구독 관리는 로그인 후 이용할 수 있어요.
             </Typography>
             <Button variant="contained" size="large" onClick={handleSignIn}>
               로그인
@@ -110,8 +110,8 @@ export default function PricingView() {
               {isProcessing ? '처리 중…' : '카드 등록하고 구독 시작'}
             </Button>
             <Typography variant="caption" color="text.secondary">
-              등록한 카드로 매월 자동 결제됩니다. 언제든 해지할 수 있으며, 해지 시 남은 기간까지 이용
-              가능합니다. 환불은 환불 규정을 따릅니다.
+              등록한 카드로 매월 자동 결제돼요. 언제든 해지할 수 있으며, 해지 시 남은 기간까지 이용
+              가능해요. 환불은 환불 규정을 따라요.
             </Typography>
           </PlanCard>
         )}

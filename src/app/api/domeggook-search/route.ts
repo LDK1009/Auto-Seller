@@ -81,7 +81,7 @@ export async function GET(request: Request) {
     if (body?.errors) {
       // 검색 조건 오류 등 — 사용자 문구로 변환
       console.error('도매꾹 검색 오류:', body.errors);
-      return NextResponse.json({ error: '검색에 실패했습니다. 조건을 바꿔 다시 시도해주세요.' }, { status: 502 });
+      return NextResponse.json({ error: '검색에 실패했어요. 조건을 바꿔 다시 시도해주세요.' }, { status: 502 });
     }
 
     const header = body?.domeggook?.header ?? {};
@@ -123,6 +123,6 @@ export async function GET(request: Request) {
     return NextResponse.json(response, { headers: { 'Cache-Control': 'public, max-age=600' } });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: '검색에 실패했습니다. 잠시 후 다시 시도해주세요.' }, { status: 502 });
+    return NextResponse.json({ error: '검색에 실패했어요. 잠시 후 다시 시도해주세요.' }, { status: 502 });
   }
 }

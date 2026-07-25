@@ -161,7 +161,7 @@ export default function BackgroundOptionModal({
             )}
             {hasSearched && !isLoading && results.length === 0 && (
               <Typography variant="caption" color="text.secondary">
-                검색 결과가 없습니다.
+                검색 결과가 없어요.
               </Typography>
             )}
           </Stack>

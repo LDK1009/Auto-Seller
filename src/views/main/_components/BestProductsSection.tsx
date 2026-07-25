@@ -36,7 +36,7 @@ export default function BestProductsSection() {
       <Stack spacing={1} sx={{ textAlign: 'center' }}>
         <Typography variant="h5">지금 뜨는 도매꾹 베스트</Typography>
         <Typography variant="body2" color="text.secondary">
-          상품을 클릭하면 스마트스토어 등록 정보가 바로 준비됩니다
+          상품을 클릭하면 스마트스토어 등록 정보가 바로 준비돼요
         </Typography>
       </Stack>
 

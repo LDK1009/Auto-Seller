@@ -12,25 +12,25 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const url = searchParams.get('url');
   if (!url) {
-    return NextResponse.json({ error: '이미지 URL(url)이 필요합니다.' }, { status: 400 });
+    return NextResponse.json({ error: '이미지 URL(url)이 필요해요.' }, { status: 400 });
   }
 
   let parsed: URL;
   try {
     parsed = new URL(url);
   } catch {
-    return NextResponse.json({ error: '올바르지 않은 URL입니다.' }, { status: 400 });
+    return NextResponse.json({ error: '올바르지 않은 URL이에요.' }, { status: 400 });
   }
   const isAllowedHost =
     parsed.hostname === ALLOWED_HOST_SUFFIX || parsed.hostname.endsWith(`.${ALLOWED_HOST_SUFFIX}`);
   if (parsed.protocol !== 'https:' || !isAllowedHost) {
-    return NextResponse.json({ error: '허용되지 않은 이미지 출처입니다.' }, { status: 400 });
+    return NextResponse.json({ error: '허용되지 않은 이미지 출처예요.' }, { status: 400 });
   }
 
   try {
     const upstream = await fetch(parsed.toString(), { next: { revalidate: CACHE_SECONDS } });
     if (!upstream.ok || !upstream.body) {
-      return NextResponse.json({ error: '이미지를 불러오지 못했습니다.' }, { status: 502 });
+      return NextResponse.json({ error: '이미지를 불러오지 못했어요.' }, { status: 502 });
     }
 
     return new Response(upstream.body, {
@@ -41,6 +41,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: '이미지를 불러오지 못했습니다.' }, { status: 502 });
+    return NextResponse.json({ error: '이미지를 불러오지 못했어요.' }, { status: 502 });
   }
 }
