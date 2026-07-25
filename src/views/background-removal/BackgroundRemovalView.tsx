@@ -25,6 +25,7 @@ import { IMAGE_LIMIT_HELPER_TEXT } from '@/shared/constants/imageLimits';
 import { useBackgroundRemoval } from './_hooks/useBackgroundRemoval';
 import ImageDropzone from '@/shared/components/ImageDropzone';
 import WizardSteps from '@/shared/components/WizardSteps';
+import NextActionBubble from '@/shared/components/NextActionBubble';
 import BackgroundOptionModal from './_components/BackgroundOptionModal';
 import ImageJobGrid from './_components/ImageJobGrid';
 import StatBox from '@/shared/components/StatBox';
@@ -116,10 +117,16 @@ export default function BackgroundRemovalView() {
           activeStep={phase === 'before' ? 0 : phase === 'processing' ? 1 : 2}
         />
 
-        {/* ① 이미지 올리기 — 업로드존은 이 스텝에서만 */}
+        {/* ① 이미지 올리기 — 업로드존은 이 스텝에서만, 빈 상태엔 다음 행동 말풍선 */}
         {phase === 'before' && (
           <>
-            <ImageDropzone onFilesAdded={addFiles} disabled={isProcessing} />
+            {!hasJobs && (
+              <Stack spacing={1.5}>
+                <NextActionBubble>상품 이미지를 여기에 끌어다 놓으세요 — 클릭해서 골라도 돼요 (여러 장 가능)</NextActionBubble>
+                <ImageDropzone onFilesAdded={addFiles} disabled={isProcessing} />
+              </Stack>
+            )}
+            {hasJobs && <ImageDropzone onFilesAdded={addFiles} disabled={isProcessing} />}
             {hasJobs && (
               <Button
                 fullWidth
