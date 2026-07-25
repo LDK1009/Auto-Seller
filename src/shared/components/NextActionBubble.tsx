@@ -9,13 +9,17 @@ import styled from '@emotion/styled';
 import { keyframes } from '@emotion/react';
 
 type NextActionBubbleProps = {
-  children: ReactNode;
+  children: ReactNode; // 주 행동 (1문장)
+  hint?: ReactNode; // 보조 정보 — 수직 배치, 작고 연하게 (— 수평 연결 금지: 가독성 원칙 2026-07-24)
 };
 
-export default function NextActionBubble({ children }: NextActionBubbleProps) {
+export default function NextActionBubble({ children, hint }: NextActionBubbleProps) {
   return (
     <Wrap>
-      <Bubble>{children}</Bubble>
+      <Bubble>
+        {children}
+        {hint && <Hint>{hint}</Hint>}
+      </Bubble>
     </Wrap>
   );
 }
@@ -45,6 +49,9 @@ const Bubble = styled.div(({ theme }) => ({
   lineHeight: 1.5,
   textAlign: 'center',
   boxShadow: theme.shadows[3],
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
   // 아래 꼬리 — 대상 요소를 가리킨다
   '&::after': {
     content: '""',
@@ -57,3 +64,10 @@ const Bubble = styled.div(({ theme }) => ({
     borderTop: `7px solid ${theme.palette.primary.main}`,
   },
 }));
+
+// 보조 정보 줄 — 주 행동보다 작고 연하게
+const Hint = styled.span({
+  fontSize: 12,
+  fontWeight: 400,
+  opacity: 0.85,
+});

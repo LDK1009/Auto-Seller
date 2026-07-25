@@ -122,7 +122,9 @@ export default function BackgroundRemovalView() {
           <>
             {!hasJobs && (
               <Stack spacing={1.5}>
-                <NextActionBubble>상품 이미지를 여기에 끌어다 놓으세요 — 클릭해서 골라도 돼요 (여러 장 가능)</NextActionBubble>
+                <NextActionBubble hint="클릭해서 골라도 돼요 · 여러 장 가능">
+                  상품 이미지를 여기에 끌어다 놓으세요
+                </NextActionBubble>
                 <ImageDropzone onFilesAdded={addFiles} disabled={isProcessing} />
               </Stack>
             )}
