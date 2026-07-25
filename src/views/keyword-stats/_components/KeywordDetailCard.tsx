@@ -182,7 +182,7 @@ export default function KeywordDetailCard({ detail }: KeywordDetailCardProps) {
                 </LineChart>
               </ResponsiveContainer>
               <Typography variant="caption" color="text.secondary">
-                세로축은 검색량 지수 — 12개월 중 검색이 가장 많던 달을 100으로 본 상대값이에요
+                세로축은 검색량 지수예요. 12개월 중 검색이 가장 많던 달을 100으로 본 상대값이에요
               </Typography>
             </Stack>
           ) : (

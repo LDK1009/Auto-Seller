@@ -44,7 +44,7 @@ export default function VatCalculatorView() {
       help={
         <HelpPanel storageKey="vat-calculator">
           <Stack spacing={0.75}>
-            <Typography variant="body2">① 과세 유형을 고르세요 — 초보 위탁 셀러는 대부분 간이과세로 시작해요</Typography>
+            <Typography variant="body2">① 과세 유형을 고르세요. 초보 위탁 셀러는 대부분 간이과세로 시작해요</Typography>
             <Typography variant="body2">② 기간 매출(공급대가)과 매입(증빙 수취분)을 입력하세요</Typography>
             <Typography variant="body2">③ 납부 예상액을 확인하세요</Typography>
             <Typography variant="caption" color="text.secondary">

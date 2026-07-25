@@ -462,7 +462,7 @@ export default function DomeggookSearchPanel({
 
       {hasSearched && !isLoading && items.length === 0 && isConfigured && (
         <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 6 }}>
-          조건에 맞는 상품이 없어요 — 필터를 풀어보세요
+          조건에 맞는 상품이 없어요. 필터를 풀어보세요
         </Typography>
       )}
     </Stack>

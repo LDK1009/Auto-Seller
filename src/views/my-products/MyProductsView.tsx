@@ -102,7 +102,7 @@ export default function MyProductsView() {
         ) : products.length === 0 ? (
           <EmptyBox>
             <Typography variant="body2" color="text.secondary">
-              아직 저장한 상품이 없어요 — 원링크에서 상품 조회 후 [내 목록에 저장]을 눌러보세요.
+              아직 저장한 상품이 없어요. 원링크에서 상품 조회 후 [내 목록에 저장]을 눌러보세요.
             </Typography>
             <Button variant="outlined" onClick={() => router.push('/domeggook-import')}>
               원링크로 가기

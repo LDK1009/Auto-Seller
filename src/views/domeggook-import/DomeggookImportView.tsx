@@ -260,7 +260,7 @@ export default function DomeggookImportView() {
         }),
       ]);
       trackEvent('copy', { tool: 'detail-html' });
-      enqueueSnackbar('상세설명 HTML을 복사했어요 — 스마트스토어 [HTML 작성]에 붙여넣으세요.', { variant: 'success' });
+      enqueueSnackbar('상세설명 HTML을 복사했어요. 스마트스토어 [HTML 작성]에 붙여넣으세요.', { variant: 'success' });
     } catch (error) {
       console.error(error);
       enqueueSnackbar('복사에 실패했어요.', { variant: 'error' });
@@ -391,7 +391,7 @@ export default function DomeggookImportView() {
                           <Chip size="small" color="warning" label={item.saleStatus} />
                         )}
                         {item.inventory === 0 ? (
-                          <Chip size="small" color="error" label="품절 — 공급사 재입고 확인 필요" />
+                          <Chip size="small" color="error" label="품절" />
                         ) : item.inventory !== null ? (
                           <Chip
                             size="small"
@@ -643,7 +643,7 @@ export default function DomeggookImportView() {
                   detailSection={
                     detailImages.length === 0 ? (
                       <Typography variant="body2" color="text.secondary">
-                        이 상품은 상세 이미지가 없어요 — 에디터에 직접 내용을 작성하세요.
+                        이 상품은 상세 이미지가 없어요. 에디터에 직접 내용을 작성하세요.
                       </Typography>
                     ) : (
                       <>

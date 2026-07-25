@@ -98,7 +98,7 @@ export default function BackgroundRemovalView() {
         <HelpPanel storageKey="background-removal">
           <Stack spacing={0.75}>
             <Typography variant="body2">① 이미지를 드래그하거나 클릭해서 업로드해요 (여러 장 가능)</Typography>
-            <Typography variant="body2">② [배경 제거]를 누르세요 — 첫 실행은 준비 시간이 조금 걸릴 수 있어요</Typography>
+            <Typography variant="body2">② [배경 제거]를 누르세요. 첫 실행은 준비 시간이 조금 걸릴 수 있어요</Typography>
             <Typography variant="body2">
               ③ 완료 후 [배경 선택]에서 투명·색상·패턴·검색 이미지 배경으로 바꿀 수 있어요
             </Typography>

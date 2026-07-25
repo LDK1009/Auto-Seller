@@ -254,7 +254,7 @@ export default function DetailCropModal({ open, images, onClose, onCrop }: Detai
           <Stack spacing={0.25}>
             <Typography variant="h6">상세이미지 잘라오기</Typography>
             <Typography variant="caption" color="text.secondary">
-              스크롤로 훑고, 박스를 옮기거나 우하단 모서리로 크기를 조절하세요 — 1:1 정사각으로 잘려요.
+              스크롤로 훑고, 박스를 옮기거나 우하단 모서리로 크기를 조절하세요. 1:1 정사각으로 잘려요.
             </Typography>
           </Stack>
           <IconButton size="small" onClick={onClose} aria-label="닫기">

@@ -61,7 +61,7 @@ export default function ImageSplitView() {
         <HelpPanel storageKey="image-split">
           <Stack spacing={0.75}>
             <Typography variant="body2">① 긴 상세페이지 이미지를 업로드해요 (여러 장 가능)</Typography>
-            <Typography variant="body2">② 조각 높이를 정해요 — 마켓 에디터의 이미지 높이 제한에 맞추세요</Typography>
+            <Typography variant="body2">② 조각 높이를 정해요. 마켓 에디터의 이미지 높이 제한에 맞추세요</Typography>
             <Typography variant="body2">③ [분할하기] 후 [다운로드]하면 파일명_01, 02… 순서로 ZIP에 담겨요</Typography>
           </Stack>
         </HelpPanel>

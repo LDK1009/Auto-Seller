@@ -405,7 +405,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           </Stack>
         ) : (
           <Typography variant="body2" color="text.secondary">
-            추천 카테고리를 찾지 못했어요 — 등록 화면에서 상품명 키워드로 직접 검색해 선택하세요.
+            추천 카테고리를 찾지 못했어요. 등록 화면에서 상품명 키워드로 직접 검색해 선택하세요.
           </Typography>
         )}
       </SectionBlock>
@@ -785,7 +785,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
               <Tooltip
                 title={multilineTooltip([
                   '최근 검색량이 상승 추세예요.',
-                  '수요가 커지는 중 — 진입 타이밍이 유리해요.',
+                  '수요가 커지는 중이에요. 진입 타이밍이 유리해요.',
                 ])}
               >
                 <MarketChip size="small" variant="outlined" color="success" icon={<TrendingUpOutlinedIcon />} label="수요 상승" />
@@ -806,7 +806,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
                 title={multilineTooltip([
                   `검색량이 몰리는 시기: ${marketDetail.seasonality.label}`,
                   marketDetail.seasonality.isInSeason
-                    ? '지금이 그 시즌이에요 — 시즌 안에 팔고 빠지세요.'
+                    ? '지금이 그 시즌이에요. 시즌 안에 팔고 빠지세요.'
                     : '시즌에 맞춰 등록하세요.',
                 ])}
               >
@@ -869,7 +869,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           </Stack>
           {bundleStock === 0 && (
             <Typography variant="caption" color="text.secondary">
-              재고가 없어요 — 공급사 재입고 확인 후 등록하세요
+              재고가 없어요. 공급사 재입고 확인 후 등록하세요
             </Typography>
           )}
         </RowBox>
@@ -913,7 +913,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
           </>
         ) : (
           <Typography variant="body2" color="text.secondary">
-            옵션 없는 단일 상품이에요 — 등록 화면에서 옵션 &quot;설정 안 함&quot;을 선택하세요.
+            옵션 없는 단일 상품이에요. 등록 화면에서 옵션 &quot;설정 안 함&quot;을 선택하세요.
           </Typography>
         )}
       </SectionBlock>

@@ -169,7 +169,7 @@ export default function ResizeSettingsPanel({ settings, onChange, disabled = fal
           />
         </Stack>
         <Typography variant="caption" color="text.secondary">
-          공급사 대표이미지의 상·하단 홍보 문구를 잘라내요 — 미리보기에서 결과를 확인하세요
+          공급사 대표이미지의 상·하단 홍보 문구를 잘라내요. 미리보기에서 결과를 확인하세요
         </Typography>
       </Stack>
 

@@ -83,7 +83,7 @@ export default function ImageResizeView() {
           <Stack spacing={0.75}>
             <Typography variant="body2">① 이미지를 업로드하거나, 누끼 페이지에서 [규격 변환으로 보내기]로 이어받아요</Typography>
             <Typography variant="body2">② 목표 크기(프리셋/직접 입력)와 맞춤 방식(여백/크롭), 출력 포맷을 정해요</Typography>
-            <Typography variant="body2">③ [규격 변환]을 누르면 전체가 일괄 변환돼요 — 설정을 바꾸고 다시 변환할 수도 있어요</Typography>
+            <Typography variant="body2">③ [규격 변환]을 누르면 전체가 일괄 변환돼요. 설정을 바꾸고 다시 변환할 수도 있어요</Typography>
             <Typography variant="body2">④ [다운로드]로 전체 결과를 ZIP으로 저장해요</Typography>
           </Stack>
         </HelpPanel>

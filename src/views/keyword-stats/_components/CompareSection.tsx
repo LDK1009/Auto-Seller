@@ -118,7 +118,7 @@ export default function CompareSection({ entries }: PropsType) {
             </LineChart>
           </ResponsiveContainer>
           <Typography variant="caption" color="text.secondary">
-            세로축은 검색량 지수 — 이 비교에서 검색이 가장 많던 지점을 100으로 본 상대값이에요
+            세로축은 검색량 지수예요. 이 비교에서 검색이 가장 많던 지점을 100으로 본 상대값이에요
           </Typography>
         </BlockCard>
       )}

@@ -104,7 +104,7 @@ export default function AiVerdictCard({ keyword, stat, detail }: PropsType) {
             </Stack>
           )}
           <Typography variant="caption" color="text.secondary">
-            네이버 실측 지표 기반 AI 의견 — 최종 판단은 셀러 몫이에요. 오늘 남은 횟수 {currentVerdict.remaining}회
+            네이버 실측 지표 기반 AI 의견이에요. 최종 판단은 셀러 몫이에요. 오늘 남은 횟수 {currentVerdict.remaining}회
           </Typography>
         </Stack>
       )}
@@ -133,7 +133,7 @@ export default function AiVerdictCard({ keyword, stat, detail }: PropsType) {
                 카카오 로그인하고 AI 판단 받기
               </KakaoButton>
               <Typography variant="caption" color="text.secondary">
-                로그인하면 하루 {AI_VERDICT_DAILY_LIMIT}회 무료 — 다른 도구는 로그인 없이 그대로 쓸 수 있어요
+                로그인하면 하루 {AI_VERDICT_DAILY_LIMIT}회 무료예요. 다른 도구는 로그인 없이 그대로 쓸 수 있어요
               </Typography>
             </>
           )}
