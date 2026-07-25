@@ -341,7 +341,6 @@ export default function DomeggookSearchPanel({
               {isPriceEditing ? (
                 <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
                   <TextField
-                    size="small"
                     value={priceInputMin}
                     onChange={(event) => setPriceInputMin(formatPriceInput(event.target.value))}
                     onKeyDown={(event) => {
@@ -352,7 +351,6 @@ export default function DomeggookSearchPanel({
                   />
                   <Typography variant="caption" color="text.secondary">~</Typography>
                   <TextField
-                    size="small"
                     value={priceInputMax}
                     onChange={(event) => setPriceInputMax(formatPriceInput(event.target.value))}
                     onKeyDown={(event) => {

@@ -104,7 +104,6 @@ export default function BackgroundOptionModal({
               배경 이미지 검색
             </Typography>
             <TextField
-              size="small"
               fullWidth
               placeholder="무료 배경 이미지 검색 (예: 대리석, 우드, 스튜디오)"
               value={keyword}

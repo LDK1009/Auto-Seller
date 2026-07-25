@@ -148,7 +148,6 @@ export default function ResizeSettingsPanel({ settings, onChange, disabled = fal
             );
           })}
           <TextField
-            size="small"
             type="number"
             label="상단"
             value={settings.cropTopPercent}
@@ -158,7 +157,6 @@ export default function ResizeSettingsPanel({ settings, onChange, disabled = fal
             sx={{ width: 100 }}
           />
           <TextField
-            size="small"
             type="number"
             label="하단"
             value={settings.cropBottomPercent}

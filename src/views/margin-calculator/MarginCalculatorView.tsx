@@ -129,7 +129,6 @@ export default function MarginCalculatorView() {
                     ))}
                   </Stack>
                   <TextField
-                    size="small"
                     type="number"
                     label="목표 마진율 (판매가 기준)"
                     value={targetMarginRate}
@@ -146,7 +145,6 @@ export default function MarginCalculatorView() {
               </Typography>
               {/* 타겟 = 스마트스토어 단일 — 마켓 선택 없이 스스 기본값 + 직접 수정만 (2026-07-24 간소화) */}
               <TextField
-                size="small"
                 type="number"
                 label="수수료율 (스마트스토어 기준)"
                 value={input.feeRate}
@@ -197,7 +195,6 @@ type AmountFieldProps = { label: string; value: number; onChange: (value: number
 function AmountField({ label, value, onChange }: AmountFieldProps) {
   return (
     <TextField
-      size="small"
       type="number"
       label={label}
       value={value === 0 ? '' : value}

@@ -1184,7 +1184,6 @@ function RateChips({ presets, value, onChange, max, zeroLabel }: RateChipsProps)
       {isEditing ? (
         <TextField
           autoFocus
-          size="small"
           value={inputText}
           onChange={(event) => setInputText(event.target.value.replace(/[^\d]/g, ''))}
           onKeyDown={(event) => {

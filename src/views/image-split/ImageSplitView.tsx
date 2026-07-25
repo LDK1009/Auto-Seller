@@ -90,7 +90,6 @@ export default function ImageSplitView() {
                     />
                   ))}
                   <TextField
-                    size="small"
                     type="number"
                     label="직접 입력"
                     value={pieceHeight}

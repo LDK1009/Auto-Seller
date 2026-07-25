@@ -60,7 +60,6 @@ export default function WatermarkSettingsPanel({
       {settings.type === 'text' && (
         <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
           <TextField
-            size="small"
             label="워터마크 문구"
             value={settings.text}
             disabled={disabled}

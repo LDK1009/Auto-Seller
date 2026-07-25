@@ -131,7 +131,6 @@ type AmountFieldProps = { label: string; value: number; onChange: (value: number
 function AmountField({ label, value, onChange }: AmountFieldProps) {
   return (
     <TextField
-      size="small"
       type="number"
       label={label}
       value={value === 0 ? '' : value}
