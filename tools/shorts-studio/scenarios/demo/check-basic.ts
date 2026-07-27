@@ -26,15 +26,16 @@ export const demo: DemoScenario = {
     await p.page.locator('input[type="file"]').first().setInputFiles(files(8));
     await p.hold(2.5);
 
-    // 검사 결과 카드가 뜨는 것으로 완료 판정 ([규격 변환으로 보내기] 버튼은
-    // 부적합 항목이 있을 때만 노출돼 대기 대상으로 부적합)
+    // 완료 판정 — 결과 카드의 [초기화] 버튼은 hasJobs일 때만 노출되는 visible 신호.
+    // (기존 /적합|주의|부적합/ 은 사용법 안내문의 "부적합" hidden 텍스트를 먼저 잡아 타임아웃)
     p.markScene();
-    await p.waitLoaded(p.page.getByText(/적합|주의|부적합/).first(), 60000);
+    await p.waitLoaded(p.page.getByRole("button", { name: "초기화" }).first(), 60000);
     await p.hold(1.2);
     await p.smoothScrollBy(400, 1.5);
 
+    // 강조 — 결과 카드의 "적합" 통계 (exact로 "부적합" 안내문 제외)
     p.markScene();
-    await p.showSection(p.page.getByText(/적합|주의|부적합/).first(), 2.4);
+    await p.showSection(p.page.getByText("적합", { exact: true }).first(), 2.4);
     await p.hold(1.0);
   },
 };
