@@ -48,5 +48,8 @@ export function useBestProducts() {
 
   const canRotate = pool.length > BEST_DISPLAY_COUNT;
 
-  return { products, isLoading, rotate, canRotate };
+  // 히어로 목업용 대표 상품 1개 (인기 1위) — 실제 상품 썸네일로 시선을 잡는다
+  const featuredProduct = pool[0] ?? null;
+
+  return { products, isLoading, rotate, canRotate, featuredProduct };
 }

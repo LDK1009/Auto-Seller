@@ -1,7 +1,9 @@
 'use client';
 
 //////////////////////////////////////// 메인 화면 (랜딩) ////////////////////////////////////////
-// 구성: 히어로(슬로건 + 링크 입력) → 진행 3단계(타임라인) → STEP별 도구 → 약속 → FAQ → 하단 CTA → 푸터.
+// 구성 (docs/기획/랜딩-기획.md 4장 확정, 2026-07-27):
+// 히어로(슬로건+결과물 목업+CTA 1개) → 베스트 상품(시연) → 문제 공감 → 결과 3가지 → 여정 3단계
+// → 도구 목록 → FAQ → 하단 CTA → 푸터
 // 레이아웃 원칙:
 // - 세로 리스트, 항목 = [왼쪽 순번/아이콘 + 오른쪽 제목·설명] 한 덩어리
 // - 흰/회색 밴드 교차로 섹션 호흡 (토스식 리듬)
@@ -22,14 +24,15 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import MoneyOffIcon from '@mui/icons-material/MoneyOff';
-import NoAccountsIcon from '@mui/icons-material/NoAccounts';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined';
+import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
+import InsightsOutlinedIcon from '@mui/icons-material/InsightsOutlined';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import { APP_NAME, APP_NAME_EN, APP_DESCRIPTION, SLOGAN_LINES } from '@/shared/constants/app';
 import { BUSINESS_INFO } from '@/shared/constants/business';
 import BestProductsSection from './_components/BestProductsSection';
 import SheetMockup from './_components/SheetMockup';
+import { useBestProducts } from './_hooks/useBestProducts';
 import { TOOLS, TOOL_GROUPS, FLAGSHIP_TOOL } from '@/shared/constants/tools';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
 import { trackEvent } from '@/shared/utils/analytics';
@@ -53,22 +56,23 @@ const JOURNEY_STEPS = [
   },
 ];
 
-//////////////////// 약속 3가지 (BRAND 6장 핵심 메시지 블록) ////////////////////
-const PROMISES = [
+//////////////////// 결과 3가지 (PLAN 4장 3대 약속 — 시간·실수 방지·판단 근거) ////////////////////
+// ⚠️ 무료·무가입·프라이버시는 여기 넣지 않는다 (획득 조건이지 제품 가치가 아님 — 2026-07-27 정정)
+const OUTCOMES = [
   {
-    icon: <MoneyOffIcon color="primary" />,
-    title: '무료',
-    description: '지금 제공하는 모든 도구는 장당 과금 없이 무제한이에요.',
+    icon: <TimerOutlinedIcon color="primary" fontSize="large" />,
+    title: '상품 하나에 쓰던 시간이 줄어요',
+    description: '이미지 가공부터 등록 정보 준비까지, 흩어진 작업을 한 화면에서 이어서 끝내요.',
   },
   {
-    icon: <NoAccountsIcon color="primary" />,
-    title: '가입 없음',
-    description: '열면 바로 사용 — 계정도 로그인도 없어요.',
+    icon: <ShieldOutlinedIcon color="primary" fontSize="large" />,
+    title: '등록 전에 실수를 걸러줘요',
+    description: '최소구매수량, 공급사 이미지 사용 조건, 상품명 금지어, KC 인증 대상 여부를 미리 알려줘요.',
   },
   {
-    icon: <LockOutlinedIcon color="primary" />,
-    title: '내 이미지는 브라우저에서',
-    description: '내가 올린 이미지는 서버로 가지 않아요.',
+    icon: <InsightsOutlinedIcon color="primary" fontSize="large" />,
+    title: '감이 아니라 숫자로 고르게 돼요',
+    description: '검색량과 경쟁 정도, 마진과 시장 가격대를 등록 전에 확인할 수 있어요.',
   },
 ];
 
@@ -88,39 +92,46 @@ const PAIN_POINTS = [
   },
 ];
 
-//////////////////// FAQ (셀러가 실제로 궁금한 것 — 07-26 재작성) ////////////////////
+//////////////////// FAQ (랜딩-기획.md 5장 — 셀러의 실제 결정 장벽 순서) ////////////////////
 const FAQS = [
-  {
-    question: '정말 무료예요? 어떻게 운영돼요?',
-    answer:
-      '지금 있는 도구는 전부 무료예요. 브라우저에서 처리돼서 우리 쪽 비용이 거의 없거든요. 나중에 서버 비용이 드는 새 기능이 생기면 그 기능에만 요금이 붙어요. 이미 무료인 기능을 유료로 바꾸지 않아요.',
-  },
   {
     question: '등록까지 자동으로 해주나요?',
     answer:
-      '마지막 등록 버튼은 직접 눌러야 해요. 대신 등록 화면에 입력할 것들 — 카테고리, 상품명, 판매가, 이미지, 태그까지 — 를 전부 준비해드려서, 위에서 아래로 붙여넣기만 하면 돼요.',
+      '마지막 등록 버튼은 직접 눌러야 해요. 대신 등록 화면에 넣을 카테고리, 상품명, 판매가, 옵션, 이미지, 태그를 전부 준비해드려요. 스마트스토어 등록 폼과 같은 순서로 나오니까 위에서 아래로 붙여넣기만 하면 돼요.',
   },
   {
     question: '도매꾹 상품 이미지를 그대로 써도 되나요?',
     answer:
-      '공급사마다 사용 조건이 달라요. 원링크가 상품을 조회할 때 공급사의 사용 조건 원문을 먼저 보여주고, 사용이 허용되지 않은 상품은 미리 알려드려요.',
+      '공급사마다 사용 조건이 달라요. 상품을 조회하면 그 공급사가 정한 이미지 사용 조건 원문을 먼저 보여주고, 사용이 허용되지 않은 상품은 진행 전에 알려드려요. 편집 허용 범위도 함께 표시해요.',
   },
   {
-    question: '도매꾹 말고 다른 도매 사이트도 되나요?',
+    question: '추천 상품명과 태그는 어떤 기준으로 만들어지나요?',
     answer:
-      '지금은 도매꾹만 지원해요. 도매꾹에서 소싱해 스마트스토어에 파는 흐름에 맞춰 만들었어요.',
+      '공급사가 등록한 키워드와 네이버 검색량을 기준으로 조합해요. 상품명은 길이·금지어·중복 단어를 검사해 점수로 보여주고, 태그는 상품명에 이미 들어간 단어를 빼고 검색량 순으로 골라줘요. 마음에 안 들면 직접 고칠 수 있어요.',
   },
   {
-    question: '쿠팡이나 11번가 등록에도 쓸 수 있나요?',
+    question: '도매꾹 말고 다른 도매처도 되나요?',
+    answer: '지금은 도매꾹만 지원해요. 도매꾹에서 떼다 스마트스토어에 파는 흐름에 맞춰 만들었어요.',
+  },
+  {
+    question: '쿠팡이나 11번가에도 쓸 수 있나요?',
     answer:
-      '등록 정보 시트는 스마트스토어 폼 순서에 맞춰져 있어요. 이미지 도구(누끼·규격·워터마크)는 어느 마켓에 올리든 그대로 쓸 수 있어요.',
+      '등록 정보는 스마트스토어 폼 기준이에요. 이미지 도구(누끼·규격 맞추기·워터마크·상세 분할)는 어느 마켓에 올리든 그대로 쓸 수 있어요.',
+  },
+  {
+    question: '얼마인가요? 계정이 필요한가요?',
+    answer:
+      '지금 있는 기능은 무료로 쓸 수 있고, 대부분 로그인 없이 바로 써요. 상품을 저장해두고 품절을 확인하는 기능처럼 내 정보가 필요한 것만 카카오 로그인을 써요.',
   },
 ];
 
 export default function MainView() {
+  // 베스트 상품 1회 조회 — 히어로 목업(1위 상품)과 그리드가 같은 데이터를 쓴다
+  const { products, isLoading, rotate, canRotate, featuredProduct } = useBestProducts();
+
   return (
     <>
-      {/* 히어로 — 슬로건 + 결과물 목업(와우) + CTA 1개 (07-26 전면 개편: 원링크 단일 동선) */}
+      {/* 히어로 — 슬로건 + 결과물 목업(와우) + CTA 1개 (원링크 단일 동선) */}
       <HeroBand>
         <CheckerboardLayer aria-hidden />
         <Container maxWidth="md">
@@ -137,8 +148,8 @@ export default function MainView() {
               {APP_DESCRIPTION}
             </Typography>
 
-            {/* 와우 모먼트: 링크 하나 넣으면 나오는 결과물을 그대로 보여준다 */}
-            <SheetMockup />
+            {/* 와우 모먼트: 실제 인기 상품 → 등록 정보 변환을 그대로 보여준다 */}
+            <SheetMockup product={featuredProduct} />
 
             <Button
               component={Link}
@@ -152,7 +163,7 @@ export default function MainView() {
               무료로 시작하기
             </Button>
             <Typography variant="caption" color="text.secondary">
-              가입 없이 바로 쓸 수 있어요
+              지금은 무료로 쓸 수 있어요
             </Typography>
           </Stack>
         </Container>
@@ -161,7 +172,12 @@ export default function MainView() {
       {/* 베스트 상품 — 링크 없이 온 방문자용 시연 진입 */}
       <Band $tone="default">
         <Container maxWidth="md">
-          <BestProductsSection />
+          <BestProductsSection
+            products={products}
+            isLoading={isLoading}
+            canRotate={canRotate}
+            onRotate={rotate}
+          />
         </Container>
       </Band>
 
@@ -293,21 +309,23 @@ export default function MainView() {
         </Container>
       </Band>
 
-      {/* 약속 */}
+      {/* 결과 3가지 — 무엇이 달라지는가 (3대 약속) */}
       <Band $tone="default">
         <Container maxWidth="md">
           <SectionColumn>
             <Typography variant="h5" sx={{ textAlign: 'center' }}>
-              {APP_NAME}의 약속
+              {APP_NAME}를 쓰면 이렇게 달라져요
             </Typography>
             <Stack spacing={1.5}>
-              {PROMISES.map((promise) => (
-                <PromiseRow key={promise.title}>
-                  <ToolIconBox>{promise.icon}</ToolIconBox>
+              {OUTCOMES.map((outcome) => (
+                <PromiseRow key={outcome.title}>
+                  <ToolIconBox>{outcome.icon}</ToolIconBox>
                   <Stack spacing={0.25}>
-                    <Typography variant="subtitle1">{promise.title}</Typography>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                      {outcome.title}
+                    </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {promise.description}
+                      {outcome.description}
                     </Typography>
                   </Stack>
                 </PromiseRow>
@@ -360,7 +378,7 @@ export default function MainView() {
               무료로 시작하기
             </Button>
             <Typography variant="caption" color="text.secondary">
-              가입 없이 바로 쓸 수 있어요
+              지금은 무료로 쓸 수 있어요
             </Typography>
           </Stack>
         </Container>

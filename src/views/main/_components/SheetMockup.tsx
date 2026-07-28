@@ -2,7 +2,8 @@
 
 //////////////////////////////////////// 원링크 결과 목업 (히어로 비주얼) ////////////////////////////////////////
 // 와우 모먼트: "이런 상품에서 → 이런 정보가 한 번에" 를 좌우로 보여준다 (모바일은 상하).
-// 좌: 도매꾹 상품 카드(예시) / 우: 등록 정보 시트 축소판 — 행이 순차로 차오르며 자동 추출 인상.
+// 좌: 실제 도매꾹 인기 1위 상품 (썸네일·상품명·가격 실데이터 — 로딩 전엔 고정 예시)
+// 우: 등록 정보 시트 축소판 — 행이 순차로 차오르며 자동 추출 인상.
 // 실제 시트의 디자인 언어(번호 뱃지·행 구조·복사 아이콘)를 그대로 축소 (제품과 다른 그림 금지 — 갭 관리).
 
 import styled from '@emotion/styled';
@@ -12,43 +13,53 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
+import type { DomeggookSearchItem } from '@/shared/types/domeggookSearch';
 
-// 예시 상품 (가상 — 실존 브랜드·상호 아님)
-const MOCK_PRODUCT = {
+// 실제 상품 로딩 전 폴백 (가상 예시 — 실존 브랜드·상호 아님)
+const FALLBACK_PRODUCT = {
   title: '3단 자동우산 UV차단 암막 골프우산',
-  price: '4,300원',
-  meta: '최소구매 2개 · 재고 1,240개',
+  price: 4300,
+  thumb: null as string | null,
 };
 
-// 시트가 자동으로 채워주는 값 (실제 12섹션 중 대표 5개)
+// 시트가 자동으로 채워주는 값 (실제 12섹션 중 대표 5개 — 값은 예시)
 const MOCK_ROWS = [
-  { number: 1, label: '카테고리', value: '생활/건강 > 우산 > 장우산' },
-  { number: 2, label: '상품명', value: '3단 자동 장우산 UV차단 암막 골프우산' },
-  { number: 3, label: '판매가', value: '12,900원 · 순이익 3,480원' },
-  { number: 6, label: '이미지', value: '대표 1장 + 추가 4장 · 누끼 완료' },
-  { number: 11, label: '태그', value: '#자동우산 #골프우산 외 8개' },
+  { number: 1, label: '카테고리', value: '자동 추천 3개' },
+  { number: 2, label: '상품명', value: '검색량 반영 추천 + 100점 채점' },
+  { number: 3, label: '판매가', value: '마진 역산 · 시장가 비교' },
+  { number: 6, label: '이미지', value: '누끼 · 워터마크 완료' },
+  { number: 11, label: '태그', value: '#검색량순 10개 자동 선별' },
 ];
 
-export default function SheetMockup() {
+type SheetMockupProps = {
+  product: DomeggookSearchItem | null; // 도매꾹 인기 1위 (없으면 폴백)
+};
+
+export default function SheetMockup({ product }: SheetMockupProps) {
+  const title = product?.title ?? FALLBACK_PRODUCT.title;
+  const price = product?.price ?? FALLBACK_PRODUCT.price;
+  const thumb = product?.thumb ?? FALLBACK_PRODUCT.thumb;
+
   return (
     <Split aria-hidden>
       {/* 좌: 도매꾹 상품 (입력) */}
       <Panel>
-        <PanelLabel>도매꾹 상품 링크</PanelLabel>
+        <PanelLabel>도매꾹 상품</PanelLabel>
         <ProductCard>
           <ProductThumb>
-            <ImageOutlinedIcon sx={{ fontSize: 30, color: 'text.disabled' }} />
+            {thumb ? (
+              // referrerPolicy — 도매꾹 CDN 핫링크 차단 대응
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={thumb} alt="" loading="lazy" referrerPolicy="no-referrer" />
+            ) : null}
           </ProductThumb>
-          <Stack spacing={0.25} sx={{ minWidth: 0, textAlign: 'left' }}>
-            <Typography variant="caption" sx={{ fontWeight: 600, lineHeight: 1.4 }}>
-              {MOCK_PRODUCT.title}
-            </Typography>
-            <Typography variant="caption" color="primary" sx={{ fontWeight: 700 }}>
-              {MOCK_PRODUCT.price}
+          <Stack spacing={0.5} sx={{ minWidth: 0, textAlign: 'left', flex: 1 }}>
+            <ProductTitle variant="caption">{title}</ProductTitle>
+            <Typography variant="subtitle2" color="primary" sx={{ fontWeight: 700 }}>
+              {price.toLocaleString()}원
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {MOCK_PRODUCT.meta}
+              링크만 붙여넣으면
             </Typography>
           </Stack>
         </ProductCard>
@@ -122,8 +133,9 @@ const PanelLabel = styled.span(({ theme }) => ({
 
 const ProductCard = styled.div(({ theme }) => ({
   display: 'flex',
-  gap: theme.spacing(1.25),
+  gap: theme.spacing(1.5),
   flex: 1,
+  alignItems: 'center',
   padding: theme.spacing(1.5),
   borderRadius: 12,
   border: `1px solid ${theme.palette.divider}`,
@@ -132,15 +144,28 @@ const ProductCard = styled.div(({ theme }) => ({
 }));
 
 const ProductThumb = styled.div(({ theme }) => ({
-  width: 64,
-  height: 64,
+  width: 88,
+  height: 88,
   flexShrink: 0,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
+  overflow: 'hidden',
   borderRadius: 8,
   backgroundColor: theme.palette.background.default,
+  '& img': {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    display: 'block',
+  },
 }));
+
+const ProductTitle = styled(Typography)({
+  fontWeight: 600,
+  lineHeight: 1.45,
+  display: '-webkit-box',
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: 'vertical',
+  overflow: 'hidden',
+});
 
 // 화살표 — 데스크톱은 가로(→), 모바일은 세로(↓)
 const ArrowSlot = styled.div(({ theme }) => ({

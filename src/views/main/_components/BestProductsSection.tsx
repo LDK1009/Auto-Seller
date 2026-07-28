@@ -15,13 +15,22 @@ import Skeleton from '@mui/material/Skeleton';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { trackEvent } from '@/shared/utils/analytics';
-import { useBestProducts, BEST_DISPLAY_COUNT } from '../_hooks/useBestProducts';
+import { BEST_DISPLAY_COUNT } from '../_hooks/useBestProducts';
+import type { DomeggookSearchItem } from '@/shared/types/domeggookSearch';
 
 const KRW = (value: number) => `${value.toLocaleString()}원`;
 
-export default function BestProductsSection() {
+// 데이터는 MainView가 훅으로 한 번만 받아 내려준다 (히어로 목업과 공유 — 중복 호출 방지)
+type BestProductsSectionProps = {
+  products: DomeggookSearchItem[];
+  isLoading: boolean;
+  canRotate: boolean;
+  onRotate: () => void;
+};
+
+export default function BestProductsSection({ products, isLoading, canRotate, onRotate }: BestProductsSectionProps) {
   const router = useRouter();
-  const { products, isLoading, rotate, canRotate } = useBestProducts();
+  const rotate = onRotate;
 
   // API 미설정·조회 실패 — 랜딩 보조 섹션이라 통째로 숨김
   if (!isLoading && products.length === 0) return null;
