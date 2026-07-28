@@ -99,7 +99,8 @@ const FAQS = [
 export default function MainView() {
   return (
     <>
-      {/* 히어로 — 슬로건 + 메인 액션 */}
+      {/* 히어로 — 슬로건 + 베스트 상품(주 CTA) + 링크 입력(보조)
+          GA4 실측(07-26): 랜딩 이탈 60% vs 원링크 직행 이탈 0% — 첫 뷰포트에 "누르면 되는 상품"을 올려 시연 진입을 주 동선으로 */}
       <HeroBand>
         <CheckerboardLayer aria-hidden />
         <Container maxWidth="md">
@@ -115,17 +116,14 @@ export default function MainView() {
             <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400, maxWidth: 560 }}>
               {APP_DESCRIPTION}
             </Typography>
+
+            {/* 주 CTA: 베스트 상품 — 링크 없이 와도 클릭 한 번으로 원링크 체험 */}
+            <BestProductsSection />
+
             <HeroActions />
           </Stack>
         </Container>
       </HeroBand>
-
-      {/* 베스트 상품 후킹 — 링크 없이 온 방문자를 클릭 한 번으로 원링크 체험에 태운다 */}
-      <Band $tone="default">
-        <Container maxWidth="md">
-          <BestProductsSection />
-        </Container>
-      </Band>
 
       {/* 진행 3단계 — 타임라인 (흰 밴드) */}
       <Band $tone="paper">
@@ -332,12 +330,26 @@ export default function MainView() {
   );
 }
 
-//////////////////// 히어로 액션 블록 (히어로·하단 CTA 공용 — 3단 위계) ////////////////////
-// 1순위: 링크 입력(원링크) / 2순위: 워크스페이스(구경 방문자) / 3순위: 키워드 분석(소싱 미결정자)
+//////////////////// 히어로 액션 블록 (히어로·하단 CTA 공용) ////////////////////
+// 위계 (GA4 07-26 재편): 1순위 = 베스트 상품(별도 렌더) / 2순위 = 링크 입력(데스크톱 상시, 모바일 접힘) /
+// 3순위 = 워크스페이스. 키워드 분석 링크는 삭제 (실측 클릭 0회)
 function HeroActions() {
+  // 모바일 전용 링크폼 펼침 — 폰 방문자는 도매꾹 링크를 들고 오는 경우가 드물어 기본 접힘
+  const [isLinkFormOpenOnMobile, setIsLinkFormOpenOnMobile] = useState(false);
+
   return (
     <Stack spacing={1.5} sx={{ width: '100%', maxWidth: 640, alignItems: 'center' }}>
-      <LinkForm />
+      <MobileLinkToggle
+        variant="outlined"
+        size="large"
+        fullWidth
+        onClick={() => setIsLinkFormOpenOnMobile((previous) => !previous)}
+      >
+        도매꾹 링크로 시작하기
+      </MobileLinkToggle>
+      <LinkFormWrap $isOpenOnMobile={isLinkFormOpenOnMobile}>
+        <LinkForm />
+      </LinkFormWrap>
       <Button
         component={Link}
         href={FLAGSHIP_TOOL.href}
@@ -353,13 +365,6 @@ function HeroActions() {
       >
         가입 없이 워크스페이스 시작
       </Button>
-      {/* 소싱 미결정자 탈출구 (SERVICE 1장 수용 원칙) — 클릭률이 높아지면 여정 서사 개편 근거 */}
-      <Typography variant="body2" color="text.secondary">
-        아직 팔 상품을 못 정했다면?{' '}
-        <StarterHintLink href="/keyword-stats" onClick={() => trackEvent('keyword_start_from_landing')}>
-          키워드 분석으로 시작 →
-        </StarterHintLink>
-      </Typography>
     </Stack>
   );
 }
@@ -377,6 +382,7 @@ function LinkForm() {
       inputRef.current?.focus();
       return;
     }
+    trackEvent('link_start_from_landing'); // 히어로 핵심 CTA 계측 (07-26 구멍 메움)
     router.push(`/domeggook-import?input=${encodeURIComponent(trimmed)}`);
   };
 
@@ -461,15 +467,24 @@ const FooterLink = styled(Link)(({ theme }) => ({
   },
 }));
 
-// 소싱 미결정자용 보조 링크 (히어로 전용)
-const StarterHintLink = styled(Link)(({ theme }) => ({
-  color: theme.palette.primary.main,
-  fontWeight: 600,
-  textDecoration: 'none',
-  '&:hover': {
-    textDecoration: 'underline',
+// 모바일 전용: 링크폼 펼침 토글 (데스크톱에선 폼 상시 노출이라 숨김)
+const MobileLinkToggle = styled(Button)(({ theme }) => ({
+  backgroundColor: theme.palette.background.paper,
+  '&:hover': { backgroundColor: theme.palette.background.paper },
+  [theme.breakpoints.up('sm')]: {
+    display: 'none',
   },
 }));
+
+// 링크폼 래퍼 — 모바일에선 토글로 열었을 때만 노출
+const LinkFormWrap = styled('div', transientOptions)<{ $isOpenOnMobile: boolean }>(
+  ({ theme, $isOpenOnMobile }) => ({
+    width: '100%',
+    [theme.breakpoints.down('sm')]: {
+      display: $isOpenOnMobile ? 'block' : 'none',
+    },
+  }),
+);
 
 // 메인 액션 카드: 링크 입력 + 시작 버튼
 const ActionCard = styled.div(({ theme }) => ({
