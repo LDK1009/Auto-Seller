@@ -7,15 +7,13 @@
 // - 흰/회색 밴드 교차로 섹션 호흡 (토스식 리듬)
 // - 문구는 docs/기획/PLAN.md 9장(브랜드·마케팅) + docs/개발/design/README.md UX 라이팅 준수 (검증 안 된 수치·과장 금지)
 
-import { Fragment, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Fragment } from 'react';
 import styled from '@emotion/styled';
 import Link from 'next/link';
 import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
 import Divider from '@mui/material/Divider';
 import Chip from '@mui/material/Chip';
 import Accordion from '@mui/material/Accordion';
@@ -31,6 +29,7 @@ import StorefrontIcon from '@mui/icons-material/Storefront';
 import { APP_NAME, APP_NAME_EN, APP_DESCRIPTION, SLOGAN_LINES } from '@/shared/constants/app';
 import { BUSINESS_INFO } from '@/shared/constants/business';
 import BestProductsSection from './_components/BestProductsSection';
+import SheetMockup from './_components/SheetMockup';
 import { TOOLS, TOOL_GROUPS, FLAGSHIP_TOOL } from '@/shared/constants/tools';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
 import { trackEvent } from '@/shared/utils/analytics';
@@ -73,34 +72,55 @@ const PROMISES = [
   },
 ];
 
-//////////////////// FAQ (사실 기반 — BRAND 4장 톤) ////////////////////
+//////////////////// 문제 공감 (고객-인사이트 실측 pain — 07-26 개편) ////////////////////
+const PAIN_POINTS = [
+  {
+    title: '밤 11시, 아직도 이미지 자르는 중',
+    description: '대표이미지 누끼 따고, 상세 잘라 붙이고. 등록 시간의 대부분이 이미지 작업에 사라져요.',
+  },
+  {
+    title: '등록 폼 앞에서 상품 하나에 30분',
+    description: '카테고리 찾고, 상품명 고민하고, 태그 짜내고. 붙여넣을 게 열두 칸인데 매번 처음부터 채워요.',
+  },
+  {
+    title: '겨우 팔리기 시작하면, 이번엔 도매처 품절',
+    description: '주문은 들어왔는데 도매꾹 재고가 없으면 그때부터 진짜 일이 시작돼요.',
+  },
+];
+
+//////////////////// FAQ (셀러가 실제로 궁금한 것 — 07-26 재작성) ////////////////////
 const FAQS = [
   {
-    question: '정말 무료인가요?',
-    answer: '네. 지금 제공하는 모든 도구는 장당 과금 없이 무료로 쓸 수 있어요.',
+    question: '정말 무료예요? 어떻게 운영돼요?',
+    answer:
+      '지금 있는 도구는 전부 무료예요. 브라우저에서 처리돼서 우리 쪽 비용이 거의 없거든요. 나중에 서버 비용이 드는 새 기능이 생기면 그 기능에만 요금이 붙어요. 이미 무료인 기능을 유료로 바꾸지 않아요.',
   },
   {
-    question: '가입 없이 어떻게 쓰나요?',
+    question: '등록까지 자동으로 해주나요?',
     answer:
-      '이미지 처리가 브라우저 안에서 끝나기 때문에 계정이 필요 없어요. 페이지를 열면 바로 작업을 시작할 수 있어요.',
+      '마지막 등록 버튼은 직접 눌러야 해요. 대신 등록 화면에 입력할 것들 — 카테고리, 상품명, 판매가, 이미지, 태그까지 — 를 전부 준비해드려서, 위에서 아래로 붙여넣기만 하면 돼요.',
   },
   {
-    question: '내 이미지는 어디로 가나요?',
+    question: '도매꾹 상품 이미지를 그대로 써도 되나요?',
     answer:
-      '내가 올린 이미지는 서버로 전송되지 않고 내 브라우저에서만 처리돼요. 도매꾹 링크로 가져온 상품 이미지는 전달용으로만 서버를 거치며 저장하지 않아요.',
+      '공급사마다 사용 조건이 달라요. 원링크가 상품을 조회할 때 공급사의 사용 조건 원문을 먼저 보여주고, 사용이 허용되지 않은 상품은 미리 알려드려요.',
   },
   {
-    question: '도매꾹 상품 이미지는 마음대로 써도 되나요?',
+    question: '도매꾹 말고 다른 도매 사이트도 되나요?',
     answer:
-      '공급사마다 이미지 사용 조건이 달라요. 원링크에서 공급사의 사용 조건 원문을 보여드리니, 확인 후 진행하세요.',
+      '지금은 도매꾹만 지원해요. 도매꾹에서 소싱해 스마트스토어에 파는 흐름에 맞춰 만들었어요.',
+  },
+  {
+    question: '쿠팡이나 11번가 등록에도 쓸 수 있나요?',
+    answer:
+      '등록 정보 시트는 스마트스토어 폼 순서에 맞춰져 있어요. 이미지 도구(누끼·규격·워터마크)는 어느 마켓에 올리든 그대로 쓸 수 있어요.',
   },
 ];
 
 export default function MainView() {
   return (
     <>
-      {/* 히어로 — 슬로건 + 베스트 상품(주 CTA) + 링크 입력(보조)
-          GA4 실측(07-26): 랜딩 이탈 60% vs 원링크 직행 이탈 0% — 첫 뷰포트에 "누르면 되는 상품"을 올려 시연 진입을 주 동선으로 */}
+      {/* 히어로 — 슬로건 + 결과물 목업(와우) + CTA 1개 (07-26 전면 개편: 원링크 단일 동선) */}
       <HeroBand>
         <CheckerboardLayer aria-hidden />
         <Container maxWidth="md">
@@ -117,16 +137,62 @@ export default function MainView() {
               {APP_DESCRIPTION}
             </Typography>
 
-            {/* 주 CTA: 베스트 상품 — 링크 없이 와도 클릭 한 번으로 원링크 체험 */}
-            <BestProductsSection />
+            {/* 와우 모먼트: 링크 하나 넣으면 나오는 결과물을 그대로 보여준다 */}
+            <SheetMockup />
 
-            <HeroActions />
+            <Button
+              component={Link}
+              href={FLAGSHIP_TOOL.href}
+              variant="contained"
+              size="large"
+              endIcon={<ArrowForwardIcon />}
+              onClick={() => trackEvent('onelink_cta_from_landing')}
+              sx={{ px: 5, py: 1.5, fontSize: 17 }}
+            >
+              무료로 시작하기
+            </Button>
+            <Typography variant="caption" color="text.secondary">
+              가입 없이 바로 쓸 수 있어요
+            </Typography>
           </Stack>
         </Container>
       </HeroBand>
 
-      {/* 진행 3단계 — 타임라인 (흰 밴드) */}
+      {/* 베스트 상품 — 링크 없이 온 방문자용 시연 진입 */}
+      <Band $tone="default">
+        <Container maxWidth="md">
+          <BestProductsSection />
+        </Container>
+      </Band>
+
+      {/* 문제 공감 — 타겟의 실제 pain 3개 (고객-인사이트 실측 기반) */}
       <Band $tone="paper">
+        <Container maxWidth="md">
+          <SectionColumn>
+            <Typography variant="h5" sx={{ textAlign: 'center' }}>
+              혹시 오늘도 이러고 있지 않나요?
+            </Typography>
+            <Stack spacing={1.5}>
+              {PAIN_POINTS.map((pain) => (
+                <PainCard key={pain.title}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                    {pain.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {pain.description}
+                  </Typography>
+                </PainCard>
+              ))}
+            </Stack>
+            <Typography variant="body1" sx={{ textAlign: 'center', fontWeight: 600 }}>
+              오토셀러는 이 세 가지를 줄이려고 만들었어요.
+            </Typography>
+          </SectionColumn>
+        </Container>
+      </Band>
+
+      {/* 진행 3단계 — 타임라인 */}
+      <Band $tone="default">
         <Container maxWidth="md">
           <SectionColumn>
             <Typography variant="h5" sx={{ textAlign: 'center' }}>
@@ -152,8 +218,8 @@ export default function MainView() {
         </Container>
       </Band>
 
-      {/* STEP별 도구 (회색 밴드) */}
-      <Band $tone="default">
+      {/* STEP별 도구 */}
+      <Band $tone="paper">
         <Container maxWidth="md">
           <SectionColumn>
             <Stack spacing={1} sx={{ textAlign: 'center' }}>
@@ -227,8 +293,8 @@ export default function MainView() {
         </Container>
       </Band>
 
-      {/* 약속 (흰 밴드) */}
-      <Band $tone="paper">
+      {/* 약속 */}
+      <Band $tone="default">
         <Container maxWidth="md">
           <SectionColumn>
             <Typography variant="h5" sx={{ textAlign: 'center' }}>
@@ -251,8 +317,8 @@ export default function MainView() {
         </Container>
       </Band>
 
-      {/* FAQ (회색 밴드) */}
-      <Band $tone="default">
+      {/* FAQ */}
+      <Band $tone="paper">
         <Container maxWidth="md">
           <SectionColumn>
             <Typography variant="h5" sx={{ textAlign: 'center' }}>
@@ -281,8 +347,21 @@ export default function MainView() {
         <CheckerboardLayer aria-hidden />
         <Container maxWidth="md">
           <Stack spacing={3} sx={{ position: 'relative', alignItems: 'center', textAlign: 'center' }}>
-            <Typography variant="h5">지금 링크 하나면 시작돼요</Typography>
-            <HeroActions />
+            <Typography variant="h5">오늘 등록할 상품부터 편해져 보세요</Typography>
+            <Button
+              component={Link}
+              href={FLAGSHIP_TOOL.href}
+              variant="contained"
+              size="large"
+              endIcon={<ArrowForwardIcon />}
+              onClick={() => trackEvent('onelink_cta_from_landing')}
+              sx={{ px: 5, py: 1.5, fontSize: 17 }}
+            >
+              무료로 시작하기
+            </Button>
+            <Typography variant="caption" color="text.secondary">
+              가입 없이 바로 쓸 수 있어요
+            </Typography>
           </Stack>
         </Container>
       </CtaBand>
@@ -330,87 +409,6 @@ export default function MainView() {
   );
 }
 
-//////////////////// 히어로 액션 블록 (히어로·하단 CTA 공용) ////////////////////
-// 위계 (GA4 07-26 재편): 1순위 = 베스트 상품(별도 렌더) / 2순위 = 링크 입력(데스크톱 상시, 모바일 접힘) /
-// 3순위 = 워크스페이스. 키워드 분석 링크는 삭제 (실측 클릭 0회)
-function HeroActions() {
-  // 모바일 전용 링크폼 펼침 — 폰 방문자는 도매꾹 링크를 들고 오는 경우가 드물어 기본 접힘
-  const [isLinkFormOpenOnMobile, setIsLinkFormOpenOnMobile] = useState(false);
-
-  return (
-    <Stack spacing={1.5} sx={{ width: '100%', maxWidth: 640, alignItems: 'center' }}>
-      <MobileLinkToggle
-        variant="outlined"
-        size="large"
-        fullWidth
-        onClick={() => setIsLinkFormOpenOnMobile((previous) => !previous)}
-      >
-        도매꾹 링크로 시작하기
-      </MobileLinkToggle>
-      <LinkFormWrap $isOpenOnMobile={isLinkFormOpenOnMobile}>
-        <LinkForm />
-      </LinkFormWrap>
-      <Button
-        component={Link}
-        href={FLAGSHIP_TOOL.href}
-        variant="outlined"
-        size="large"
-        fullWidth
-        onClick={() => trackEvent('workspace_from_landing')}
-        sx={{
-          // 체커보드 배경 위에서 묻히지 않게 흰 배경
-          backgroundColor: 'background.paper',
-          '&:hover': { backgroundColor: 'background.paper' },
-        }}
-      >
-        가입 없이 워크스페이스 시작
-      </Button>
-    </Stack>
-  );
-}
-
-//////////////////// 링크 입력 폼 (히어로·하단 CTA 공용) ////////////////////
-function LinkForm() {
-  const router = useRouter();
-  const [linkInput, setLinkInput] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // 버튼은 항상 활성 — 빈 입력이면 입력창으로 포커스 유도
-  const startWithLink = () => {
-    const trimmed = linkInput.trim();
-    if (trimmed.length === 0) {
-      inputRef.current?.focus();
-      return;
-    }
-    trackEvent('link_start_from_landing'); // 히어로 핵심 CTA 계측 (07-26 구멍 메움)
-    router.push(`/domeggook-import?input=${encodeURIComponent(trimmed)}`);
-  };
-
-  return (
-    <ActionCard>
-      <TextField
-        fullWidth
-        size="medium"
-        placeholder="도매꾹 상품 링크를 붙여넣으세요"
-        value={linkInput}
-        inputRef={inputRef}
-        onChange={(event) => setLinkInput(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') startWithLink();
-        }}
-      />
-      <Button
-        variant="contained"
-        size="large"
-        endIcon={<ArrowForwardIcon />}
-        onClick={startWithLink}
-        sx={{ flexShrink: 0 }}
-      >
-        시작하기
-      </Button>
-    </ActionCard>
-  );
-}
 
 //////////////////////////////////////// 스타일 ////////////////////////////////////////
 // 섹션 밴드: 흰/회색 교차로 호흡
@@ -467,39 +465,14 @@ const FooterLink = styled(Link)(({ theme }) => ({
   },
 }));
 
-// 모바일 전용: 링크폼 펼침 토글 (데스크톱에선 폼 상시 노출이라 숨김)
-const MobileLinkToggle = styled(Button)(({ theme }) => ({
-  backgroundColor: theme.palette.background.paper,
-  '&:hover': { backgroundColor: theme.palette.background.paper },
-  [theme.breakpoints.up('sm')]: {
-    display: 'none',
-  },
-}));
-
-// 링크폼 래퍼 — 모바일에선 토글로 열었을 때만 노출
-const LinkFormWrap = styled('div', transientOptions)<{ $isOpenOnMobile: boolean }>(
-  ({ theme, $isOpenOnMobile }) => ({
-    width: '100%',
-    [theme.breakpoints.down('sm')]: {
-      display: $isOpenOnMobile ? 'block' : 'none',
-    },
-  }),
-);
-
-// 메인 액션 카드: 링크 입력 + 시작 버튼
-const ActionCard = styled.div(({ theme }) => ({
+// 문제 공감 카드 (pain 3개) — 흰 밴드 위 회색 인셋
+const PainCard = styled.div(({ theme }) => ({
   display: 'flex',
-  gap: theme.spacing(1.5),
-  width: '100%',
-  maxWidth: 640,
-  padding: theme.spacing(1.5),
+  flexDirection: 'column',
+  gap: theme.spacing(0.5),
+  padding: theme.spacing(2.5, 3),
   borderRadius: theme.shape.borderRadius,
-  border: `1px solid ${theme.palette.divider}`,
-  backgroundColor: theme.palette.background.paper,
-  boxShadow: theme.shadows[4],
-  [theme.breakpoints.down('sm')]: {
-    flexDirection: 'column',
-  },
+  backgroundColor: theme.palette.background.default,
 }));
 
 // 섹션 공통: 중앙 정렬 세로 컬럼 (읽기 폭 제한으로 시선 집중)
@@ -580,14 +553,15 @@ const UpcomingRow = styled.div(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
 }));
 
-// 약속: 흰 밴드 위 회색 인셋 박스
+// 약속: 회색 밴드 위 흰 인셋 박스 (07-26 밴드 톤 스왑)
 const PromiseRow = styled.div(({ theme }) => ({
   display: 'flex',
   alignItems: 'flex-start',
   gap: theme.spacing(2.5),
   padding: theme.spacing(2.5, 3),
   borderRadius: theme.shape.borderRadius,
-  backgroundColor: theme.palette.background.default,
+  backgroundColor: theme.palette.background.paper,
+  border: `1px solid ${theme.palette.divider}`,
 }));
 
 const FaqAccordion = styled(Accordion)(({ theme }) => ({
