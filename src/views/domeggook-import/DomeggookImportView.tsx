@@ -122,8 +122,15 @@ export default function DomeggookImportView() {
     setMainImage(null);
     setExtraImages([]);
     setIsProductSaved(false);
-    const fetched = await lookup(input);
-    trackEvent('domeggook_lookup', { result: fetched ? 'success' : 'fail' });
+    const { item: fetched, reason } = await lookup(input);
+    // 계측: 실패 사유(reason)와 이미지 사용권(license)까지 남긴다.
+    // license: 'blocked'는 조회는 성공했지만 LicenseGate가 파이프라인을 막은 경우 —
+    // 이 비율이 높으면 그 자체가 최대 이탈 지점이다 (ROADMAP 계측 보강).
+    trackEvent('domeggook_lookup', {
+      result: fetched ? 'success' : 'fail',
+      reason,
+      license: fetched ? (fetched.license.usable ? 'usable' : 'blocked') : 'unknown',
+    });
     if (fetched) {
       const thumb = fetched.images.find((image) => image.kind === 'thumb');
       if (thumb) setMainImage(pickedFromOriginal(thumb));
@@ -181,6 +188,14 @@ export default function DomeggookImportView() {
         return [...previous, picked];
       });
     }
+  };
+
+  ////////// 이미지 편집 모달 열기 — 계측 단일 지점
+  // image_edit_open = 소싱(원링크)에서 이미지 가공으로 실제로 넘어간 순간.
+  // PLAN 4장의 차별화 축(파이프라인)이 작동하는지를 재는 유일한 지표다 (ROADMAP 계측 보강).
+  const openSlotEditor = (picked: PickedImage, context: 'main' | 'extra') => {
+    trackEvent('image_edit_open', { context });
+    setSlotPreview({ picked, context });
   };
 
   ////////// 편집 적용 — 가공 Blob으로 해당 슬롯 교체 (원본 항목은 대체 — [원본으로]는 모달 안에서)
@@ -521,7 +536,7 @@ export default function DomeggookImportView() {
                               <PickThumb
                                 key={mainImage.id}
                                 $isSelected
-                                onClick={() => setSlotPreview({ picked: mainImage, context: 'main' })}
+                                onClick={() => openSlotEditor(mainImage, 'main')}
                               >
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={mainImage.previewUrl} alt="대표이미지" />
@@ -579,7 +594,7 @@ export default function DomeggookImportView() {
                               <PickThumb
                                 key={entry.id}
                                 $isSelected
-                                onClick={() => setSlotPreview({ picked: entry, context: 'extra' })}
+                                onClick={() => openSlotEditor(entry, 'extra')}
                               >
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={entry.previewUrl} alt="크롭 추가" />

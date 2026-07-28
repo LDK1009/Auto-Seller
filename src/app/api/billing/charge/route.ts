@@ -6,7 +6,12 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseServerClient } from '@/shared/services/supabaseServer';
 import { chargeBillingKey, isTossConfigured } from '@/shared/services/tossServer';
-import { SUBSCRIPTION_PLAN, BILLING_PERIOD_MONTHS } from '@/shared/constants/billing';
+import {
+  SUBSCRIPTION_PLAN,
+  BILLING_PERIOD_MONTHS,
+  isBillingEnabled,
+  BILLING_DISABLED_MESSAGE,
+} from '@/shared/constants/billing';
 
 function nextPeriodEnd(from: Date): string {
   const next = new Date(from);
@@ -28,6 +33,13 @@ export async function POST(request: Request) {
   if (!cronToken || request.headers.get('x-billing-token') !== cronToken) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
+
+  ////////// 🚨 결제 킬스위치 (2026-07-27) — 유료 기능 0개인 동안 실청구 차단
+  // 크론이 계속 호출되더라도 여기서 멈춘다. 구독 상태는 건드리지 않는다(past_due 오염 방지).
+  if (!isBillingEnabled()) {
+    return NextResponse.json({ ok: true, skipped: 'billing_disabled', message: BILLING_DISABLED_MESSAGE });
+  }
+
   const serverClient = getSupabaseServerClient();
   if (!serverClient || !isTossConfigured()) {
     return NextResponse.json({ error: '결제 기능이 아직 준비되지 않았어요.' }, { status: 503 });

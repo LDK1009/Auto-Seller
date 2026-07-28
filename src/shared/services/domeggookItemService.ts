@@ -3,12 +3,29 @@
 
 import type { DomeggookItem, DomeggookItemImage } from '@/shared/types/domeggook';
 
+////////// 조회 실패 에러 — HTTP 상태를 실어 호출부가 이탈 사유를 분해할 수 있게 한다 (GA4 lookup reason)
+// Error를 상속하므로 기존 `error instanceof Error ? error.message` 처리 경로는 그대로 동작한다.
+export class DomeggookItemError extends Error {
+  readonly status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'DomeggookItemError';
+    this.status = status;
+  }
+}
+
 ////////// 상품 정보 조회
 export async function fetchDomeggookItem(productNo: string): Promise<DomeggookItem> {
-  const response = await fetch(`/api/domeggook-item?no=${productNo}`);
-  const body = await response.json();
+  let response: Response;
+  try {
+    response = await fetch(`/api/domeggook-item?no=${productNo}`);
+  } catch {
+    // 네트워크 단절 등 — 응답 자체가 없는 경우 (status 0으로 구분)
+    throw new DomeggookItemError('네트워크 연결을 확인해주세요.', 0);
+  }
+  const body = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(body?.error ?? '도매꾹 상품 정보를 불러오지 못했어요.');
+    throw new DomeggookItemError(body?.error ?? '도매꾹 상품 정보를 불러오지 못했어요.', response.status);
   }
   return body as DomeggookItem;
 }

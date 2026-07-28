@@ -41,6 +41,29 @@ import { scoreProductName, type ProductNameGrade } from '../_utils/scoreProductN
 import { fetchKeywordStats, fetchCategorySuggest, fetchKeywordDetail, type CategoryCandidate } from '@/shared/services/keywordStatsService';
 import type { KeywordDetail } from '@/shared/types/keywordDetail';
 import type { KeywordStat, RelatedKeyword } from '@/shared/types/keywordStats';
+import { trackEvent, type SheetSection } from '@/shared/utils/analytics';
+
+////////// 복사 라벨 → 지표 슬러그 (2026-07-27 계측 보강)
+// 이 시트의 복사는 전부 copyText()를 지나므로 여기 한 곳만 매핑하면 전 섹션이 계측된다.
+// UI 라벨(한국어)이 바뀌어도 지표가 끊기지 않도록 슬러그를 고정한다.
+// ⚠️ copyText 호출 라벨을 바꾸면 이 표도 같이 고칠 것 — 누락 시 'other'로 집계된다.
+const COPY_LABEL_TO_SECTION: Record<string, SheetSection> = {
+  카테고리: 'category',
+  상품명: 'name',
+  판매가: 'price',
+  '재고 수량': 'stock',
+  모델명: 'info',
+  품번: 'info',
+  제조사: 'info',
+  'KC 인증번호': 'info',
+  원산지: 'info',
+  배송비: 'delivery',
+  '제주 추가배송비': 'delivery',
+  반품배송비: 'return',
+  교환배송비: 'return',
+  태그: 'tag',
+  '판매자 상품코드': 'code',
+};
 
 const SMARTSTORE_FEE_RATE = SHARED_SMARTSTORE_FEE_RATE; // 5.6% (스마트스토어)
 // 할인율 표시 프리셋 (%) — 최종 결제가는 유지하고 정가만 역산 (스스 관행: 정가+할인 표기)
@@ -256,6 +279,7 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
   // 1행 = 컬럼 헤더 [옵션명 옵션값 사용여부] — 옵션명은 도매꾹이 그룹명을 안 줘 '옵션' 고정
   const downloadOptionsExcel = async () => {
     if (bundledOptions.length === 0) return;
+    trackEvent('option_xlsx_download', { options: bundledOptions.length });
     const XLSX = await import('xlsx'); // 클릭 시 동적 로드 (번들 비대 방지)
     const headerRow = ['옵션명', '옵션값', '사용여부'];
     const dataRows = bundledOptions.map((option) => ['옵션', option.name.slice(0, 25), 'Y']); // 옵션값 25자 제한 (스마트스토어 규격)
@@ -359,10 +383,22 @@ export default function RegistrationSheet({ item, imageSection, detailSection }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  ////////// 복사
+  ////////// 시트 도달 계측 — 퍼널의 진짜 분모 (상품이 바뀌면 다시 1회)
+  // domeggook_lookup(조회) → sheet_view(시트 도달) → section_copy(값 가져감) 순으로 이탈을 분해한다.
+  const trackedSheetNoRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (trackedSheetNoRef.current === item.no) return;
+    trackedSheetNoRef.current = item.no;
+    trackEvent('sheet_view', { license: item.license.usable ? 'usable' : 'blocked' });
+  }, [item.no, item.license.usable]);
+
+  ////////// 복사 — 시트의 모든 복사가 지나는 단일 지점 (계측 포함)
+  // section_copy = "사용자가 이 시트에서 실제로 값을 가져갔다" = 진짜 완주 신호.
+  // 이전에는 ⑦상세HTML 하나만 계측돼 완주율이 실제보다 낮게 보였다 (ROADMAP 계측 보강).
   const copyText = async (label: string, value: string) => {
     if (!value) return;
     await navigator.clipboard.writeText(value);
+    trackEvent('section_copy', { section: COPY_LABEL_TO_SECTION[label] ?? 'other', label });
     enqueueSnackbar(`${label}을(를) 복사했어요.`, { variant: 'success' });
   };
 

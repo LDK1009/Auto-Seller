@@ -6,7 +6,12 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseServerClient } from '@/shared/services/supabaseServer';
 import { issueBillingKey, chargeBillingKey, isTossConfigured } from '@/shared/services/tossServer';
-import { SUBSCRIPTION_PLAN, BILLING_PERIOD_MONTHS } from '@/shared/constants/billing';
+import {
+  SUBSCRIPTION_PLAN,
+  BILLING_PERIOD_MONTHS,
+  isBillingEnabled,
+  BILLING_DISABLED_MESSAGE,
+} from '@/shared/constants/billing';
 
 ////////// 다음 결제일 (개월 단위)
 function nextPeriodEnd(from: Date): string {
@@ -16,6 +21,13 @@ function nextPeriodEnd(from: Date): string {
 }
 
 export async function POST(request: Request) {
+  ////////// 🚨 결제 킬스위치 (2026-07-27) — 유료 기능 0개인 동안 신규 구독 차단
+  // 빌링키 발급 = 첫 결제 승인까지 이어지므로 가장 앞에서 막는다.
+  // 해제: Vercel 환경변수 BILLING_ENABLED=true (constants/billing.ts 주석의 선결 3개 확인 후)
+  if (!isBillingEnabled()) {
+    return NextResponse.json({ error: BILLING_DISABLED_MESSAGE }, { status: 503 });
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const serverClient = getSupabaseServerClient();
