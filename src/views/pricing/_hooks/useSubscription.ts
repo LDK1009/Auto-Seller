@@ -13,6 +13,8 @@ import {
   issueBillingKey,
   cancelSubscription,
 } from '@/shared/services/billingService';
+import { fetchCredits, purchaseCredits } from '@/shared/services/creditService';
+import type { CreditPackId } from '@/shared/constants/billing';
 import type { Subscription } from '@/shared/types/billing';
 
 export function useSubscription() {
@@ -22,6 +24,7 @@ export function useSubscription() {
   const { session, isSessionLoading, accessToken } = useAuthSession();
 
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [creditBalance, setCreditBalance] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const issueHandledRef = useRef(false);
@@ -41,10 +44,19 @@ export function useSubscription() {
   };
 
   ////////// 초기 로드 (세션 확정 후 — 콜백에서만 setState)
+  // 구독 + 크레딧 잔액을 함께 받는다 (크레딧 최초 조회 시 가입 보너스 지급됨)
   useEffect(() => {
     if (isSessionLoading) return;
     let cancelled = false;
-    const load = async () => (session ? fetchMySubscription() : null);
+    const load = async () => {
+      if (!session || !accessToken) return null;
+      const [subscriptionData, credits] = await Promise.all([
+        fetchMySubscription(),
+        fetchCredits(accessToken).catch(() => null),
+      ]);
+      if (!cancelled && credits) setCreditBalance(credits.balance);
+      return subscriptionData;
+    };
     load()
       .then((data) => {
         if (!cancelled) setSubscription(data);
@@ -117,6 +129,25 @@ export function useSubscription() {
     }
   };
 
+  ////////// 크레딧 충전 (등록된 카드로 즉시 결제)
+  const purchase = async (packId: CreditPackId) => {
+    if (!accessToken) {
+      enqueueSnackbar('로그인 후 이용할 수 있어요.', { variant: 'info' });
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      const result = await purchaseCredits(accessToken, packId);
+      setCreditBalance(result.balance);
+      enqueueSnackbar('크레딧을 충전했어요.', { variant: 'success' });
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar(error instanceof Error ? error.message : '충전에 실패했어요.', { variant: 'error' });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   ////////// 해지
   const cancel = async () => {
     if (!accessToken) return;
@@ -133,5 +164,15 @@ export function useSubscription() {
     }
   };
 
-  return { session, isSessionLoading, subscription, isLoading, isProcessing, subscribe, cancel };
+  return {
+    session,
+    isSessionLoading,
+    subscription,
+    creditBalance,
+    isLoading,
+    isProcessing,
+    subscribe,
+    purchase,
+    cancel,
+  };
 }

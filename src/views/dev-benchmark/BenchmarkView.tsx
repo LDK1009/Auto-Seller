@@ -2,7 +2,7 @@
 
 //////////////////////////////////////// 누끼 성능 벤치마크 (개발용) ////////////////////////////////////////
 // L-1 실측 도구 — R-1(아하 모먼트 성립) 판정용. 네비게이션에 노출하지 않는다.
-// 시나리오: GPU+fp16(현행) / CPU+fp16(WebGPU 없는 환경 시뮬) / CPU+quint8(경량 대안)
+// 2026-07-29: ormbg(Apache-2.0) 교체 후 실제 사용 경로(removeImageBackground)를 그대로 측정한다.
 
 import { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
@@ -13,19 +13,17 @@ import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
+import { removeImageBackground } from '@/shared/utils/removeImageBackground';
 
 //////////////////// 시나리오 정의 ////////////////////
+// 실제 제품 경로 단일 측정 — 디바이스(WebGPU/WASM) 선택은 유틸 내부가 자동 판단한다.
 type BenchScenario = {
   key: string;
   label: string;
-  device: 'cpu' | 'gpu';
-  model: 'isnet_fp16' | 'isnet_quint8';
 };
 
 const SCENARIOS: BenchScenario[] = [
-  { key: 'gpu-fp16', label: 'GPU + fp16 (현행 기본)', device: 'gpu', model: 'isnet_fp16' },
-  { key: 'cpu-fp16', label: 'CPU + fp16 (WebGPU 없는 환경)', device: 'cpu', model: 'isnet_fp16' },
-  { key: 'cpu-quint8', label: 'CPU + quint8 (경량 대안)', device: 'cpu', model: 'isnet_quint8' },
+  { key: 'ormbg-default', label: 'ormbg (실사용 경로 — WebGPU 우선)' },
 ];
 
 // 로컬 샘플 (public/samples — git 미추적, 로컬에만 존재)
@@ -63,7 +61,8 @@ export default function BenchmarkView() {
   // SSR-클라이언트 하이드레이션 불일치 방지 — navigator는 마운트 후에만 읽는다
   const [hasWebGpu, setHasWebGpu] = useState<boolean | null>(null);
   useEffect(() => {
-    setHasWebGpu('gpu' in navigator);
+    const timer = setTimeout(() => setHasWebGpu('gpu' in navigator), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   ////////// 샘플 로드 (public/samples 로컬 전용)
@@ -91,17 +90,14 @@ export default function BenchmarkView() {
     setRunningKey(scenario.key);
 
     try {
-      const { removeBackground } = await import('@imgly/background-removal');
       const perImageMs: number[] = [];
 
       for (let index = 0; index < files.length; index += 1) {
         setStatus(`[${scenario.label}] ${index + 1}/${files.length} 처리 중…`);
+        // eslint-disable-next-line react-hooks/purity -- 벤치마크 목적상 실제 경과 시간 측정이 본질 (핸들러 내 호출)
         const startedAt = performance.now();
-        await removeBackground(files[index], {
-          device: scenario.device,
-          model: scenario.model,
-          output: { format: 'image/png', quality: 0.8 },
-        });
+        await removeImageBackground(files[index]);
+        // eslint-disable-next-line react-hooks/purity -- 위와 동일
         perImageMs.push(performance.now() - startedAt);
       }
 

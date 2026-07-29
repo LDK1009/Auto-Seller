@@ -1,6 +1,8 @@
 //////////////////////////////////////// 누끼 기능 상수 ////////////////////////////////////////
-
-import type { Config } from '@imgly/background-removal';
+// 모델: ormbg (Open Remove Background Model) ONNX — Apache-2.0
+// 2026-07-29 교체: @imgly/background-removal(AGPL-3.0) → ormbg-ONNX(Apache-2.0)
+// 사유: AGPL §13은 상용 SaaS 배포 시 전체 소스공개를 요구한다. 유료화 선결 조건이라 교체.
+// 실행: transformers.js로 브라우저에서 (WebGPU 우선, 미지원 시 WASM) — 서버 비용 0 유지.
 
 // 입력 파일 허용/제한은 공통 상수 사용: @/shared/constants/imageLimits
 
@@ -9,33 +11,24 @@ export const OUTPUT_FORMAT = 'image/png' as const; // 투명도 유지 위해 PN
 export const OUTPUT_EXTENSION = 'png';
 export const RESULT_SUFFIX = '_누끼'; // 결과 파일명 접미사
 
-//////////////////// @imgly 처리 옵션 ////////////////////
-// 자산(모델·WASM)은 기본 imgly CDN에서 로드된다(별도 설정 불필요).
-export const REMOVE_BG_CONFIG: Config = {
-  device: 'gpu', // WebGPU 지원 시 GPU 추론, 미지원 브라우저는 자동 CPU 폴백
-  model: 'isnet_fp16', // 품질/속도 균형 기본 모델
-  output: {
-    format: OUTPUT_FORMAT,
-    quality: 0.8,
-  },
-};
+//////////////////// 모델 ////////////////////
+// Hugging Face Hub에서 로드 (최초 1회 다운로드 후 브라우저 캐시)
+export const SEGMENTATION_MODEL_ID = 'schirrmacher/ormbg';
+export const MODEL_LICENSE = 'Apache-2.0';
+
+// 추론 정밀도 — fp16이 용량·속도 균형 (미지원 환경은 라이브러리가 fp32로 폴백)
+export const MODEL_DTYPE = 'fp16' as const;
 
 //////////////////// 진행 단계 ////////////////////
-// @imgly progress 콜백의 key를 단계명 + 진행바 목표치로 매핑한다.
-// fetch:* = 모델/WASM 다운로드(첫 실행만), compute:* = 실제 누끼 연산 4단계.
-//
-// 진행바(0~1)는 "한 이미지 4단계 = 100%"이며, 정확히 4등분하지 않고
-// 실제 소요 비중대로 가중치를 준다(inference가 대부분을 차지).
-// end = 해당 단계가 끝났을 때의 누적 진행률, estMs = 예상 소요시간(단계 경계에서만
-// 이벤트가 오므로, 이 시간 동안 linear로 바를 채워 "기어가는" 진행감을 준다).
+// phase: 'download' = 모델 내려받기(최초 1회), 'compute' = 실제 누끼 연산
+// 진행바(0~1)는 "한 이미지 = 100%"이며 단계별 가중치로 채운다 (inference가 대부분).
 export const DOWNLOAD_STEP_LABEL = '모델 다운로드';
 
 export type StepProgress = { label: string; end: number; estMs: number };
 export const STEP_PROGRESS: Record<string, StepProgress> = {
-  'compute:decode': { label: '이미지 해독', end: 0.05, estMs: 250 }, // 파일→픽셀 (빠름)
-  'compute:inference': { label: '배경 분석', end: 0.8, estMs: 2500 }, // 추론 (대부분 차지)
-  'compute:mask': { label: '배경 제거', end: 0.85, estMs: 250 }, // 마스크 적용 (빠름)
-  'compute:encode': { label: '이미지 저장', end: 1.0, estMs: 900 }, // PNG 인코딩 (중간)
+  decode: { label: '이미지 해독', end: 0.05, estMs: 250 }, // 파일→픽셀
+  inference: { label: '배경 분석', end: 0.85, estMs: 2500 }, // 세그멘테이션 추론 (대부분 차지)
+  compose: { label: '배경 제거', end: 1.0, estMs: 400 }, // 마스크 합성 + PNG 인코딩
 };
 
 //////////////////// 배경 옵션 ////////////////////

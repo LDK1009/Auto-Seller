@@ -13,10 +13,11 @@ import {
   type SavedProduct,
   type StockCheckResult,
 } from '@/shared/services/savedProductsService';
+import { fetchWatchList, addWatch, removeWatch } from '@/shared/services/creditService';
 
 export function useSavedProducts() {
   const { enqueueSnackbar } = useSnackbar();
-  const { session, isSessionLoading } = useAuthSession();
+  const { session, isSessionLoading, accessToken } = useAuthSession();
 
   const [products, setProducts] = useState<SavedProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,5 +80,73 @@ export function useSavedProducts() {
     }
   };
 
-  return { session, isSessionLoading, products, isLoading, stockResults, checkProgress, remove, checkStock };
+  //////////////////// 품절 자동감시 (구독 기능) ////////////////////
+  const [watchState, setWatchState] = useState<{ subscribed: boolean; limit: number; watchedNos: Set<string> }>({
+    subscribed: false,
+    limit: 0,
+    watchedNos: new Set(),
+  });
+
+  ////////// 감시 목록 로드 (세션 확정 후)
+  useEffect(() => {
+    if (isSessionLoading || !accessToken) return;
+    let cancelled = false;
+    fetchWatchList(accessToken)
+      .then((data) => {
+        if (cancelled) return;
+        setWatchState({
+          subscribed: data.subscribed,
+          limit: data.limit,
+          watchedNos: new Set(data.items.map((item) => item.product_no)),
+        });
+      })
+      .catch((error) => console.error(error));
+    return () => {
+      cancelled = true;
+    };
+  }, [isSessionLoading, accessToken]);
+
+  ////////// 감시 켜기·끄기
+  const toggleWatch = async (product: SavedProduct) => {
+    if (!accessToken) return;
+    const isWatched = watchState.watchedNos.has(product.product_no);
+    try {
+      if (isWatched) {
+        await removeWatch(accessToken, product.product_no);
+        setWatchState((previous) => {
+          const nextNos = new Set(previous.watchedNos);
+          nextNos.delete(product.product_no);
+          return { ...previous, watchedNos: nextNos };
+        });
+        enqueueSnackbar('자동감시를 껐어요.', { variant: 'info' });
+      } else {
+        await addWatch(accessToken, {
+          productNo: product.product_no,
+          title: product.title,
+          thumbUrl: product.thumb_url,
+        });
+        setWatchState((previous) => ({
+          ...previous,
+          watchedNos: new Set(previous.watchedNos).add(product.product_no),
+        }));
+        enqueueSnackbar('자동감시를 켰어요. 품절되면 알림톡으로 알려드릴게요.', { variant: 'success' });
+      }
+    } catch (error) {
+      console.error(error);
+      enqueueSnackbar(error instanceof Error ? error.message : '자동감시 설정에 실패했어요.', { variant: 'error' });
+    }
+  };
+
+  return {
+    session,
+    isSessionLoading,
+    products,
+    isLoading,
+    stockResults,
+    checkProgress,
+    remove,
+    checkStock,
+    watchState,
+    toggleWatch,
+  };
 }

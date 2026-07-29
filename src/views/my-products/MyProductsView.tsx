@@ -16,6 +16,8 @@ import IconButton from '@mui/material/IconButton';
 import CircularProgress from '@mui/material/CircularProgress';
 import Tooltip from '@mui/material/Tooltip';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
 import { useSnackbar } from 'notistack';
 import { signInWithKakao } from '@/shared/services/authService';
@@ -48,8 +50,18 @@ function stockChip(result: StockCheckResult | undefined) {
 export default function MyProductsView() {
   const router = useRouter();
   const { enqueueSnackbar } = useSnackbar();
-  const { session, isSessionLoading, products, isLoading, stockResults, checkProgress, remove, checkStock } =
-    useSavedProducts();
+  const {
+    session,
+    isSessionLoading,
+    products,
+    isLoading,
+    stockResults,
+    checkProgress,
+    remove,
+    checkStock,
+    watchState,
+    toggleWatch,
+  } = useSavedProducts();
 
   const handleSignIn = async () => {
     try {
@@ -133,6 +145,37 @@ export default function MyProductsView() {
                     저장 {dayjs(product.created_at).format('M월 D일')}
                   </Typography>
                 </Stack>
+                {/* 품절 자동감시 토글 (구독 기능) — 비구독자는 안내로 유도 */}
+                <Tooltip
+                  title={
+                    !watchState.subscribed
+                      ? '품절 자동감시는 구독 기능이에요'
+                      : watchState.watchedNos.has(product.product_no)
+                        ? '자동감시 켜짐 — 품절되면 알림톡'
+                        : '자동감시 켜기'
+                  }
+                >
+                  <span>
+                    <IconButton
+                      size="small"
+                      aria-label="자동감시"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (!watchState.subscribed) {
+                          router.push('/pricing');
+                          return;
+                        }
+                        toggleWatch(product);
+                      }}
+                    >
+                      {watchState.watchedNos.has(product.product_no) ? (
+                        <NotificationsActiveIcon color="primary" sx={{ fontSize: 18 }} />
+                      ) : (
+                        <NotificationsNoneIcon sx={{ fontSize: 18 }} />
+                      )}
+                    </IconButton>
+                  </span>
+                </Tooltip>
                 <Tooltip title="목록에서 삭제">
                   <IconButton
                     size="small"

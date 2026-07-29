@@ -12,6 +12,7 @@ import {
   isBillingEnabled,
   BILLING_DISABLED_MESSAGE,
 } from '@/shared/constants/billing';
+import { grantSubscriptionCredits } from '@/shared/services/creditServer';
 
 ////////// 다음 결제일 (개월 단위)
 function nextPeriodEnd(from: Date): string {
@@ -50,7 +51,11 @@ export async function POST(request: Request) {
   const userId = userData.user.id;
 
   ////////// 2) 요청 검증
-  const body = (await request.json().catch(() => null)) as { authKey?: string; customerKey?: string } | null;
+  const body = (await request.json().catch(() => null)) as {
+    authKey?: string;
+    customerKey?: string;
+    alertPhone?: string; // 알림톡 수신 번호 (카카오 로그인은 번호 미제공)
+  } | null;
   if (!body?.authKey || !body?.customerKey) {
     return NextResponse.json({ error: '잘못된 요청이에요.' }, { status: 400 });
   }
@@ -97,13 +102,21 @@ export async function POST(request: Request) {
       payment_key: payment.paymentKey,
       amount: SUBSCRIPTION_PLAN.monthlyPrice,
       status: 'done',
+      kind: 'subscription',
       approved_at: payment.approvedAt ?? new Date().toISOString(),
       raw: payment,
     });
     await serverClient
       .from('subscriptions')
-      .update({ current_period_end: periodEnd, status: 'active' })
+      .update({ current_period_end: periodEnd, status: 'active', alert_phone: body.alertPhone ?? null })
       .eq('id', subscription.id);
+
+    ////////// 6) 구독 포함 크레딧 지급 (이번 달) — 실패해도 결제는 유효하므로 삼키고 로그만
+    try {
+      await grantSubscriptionCredits(serverClient, userId, new Date().toISOString().slice(0, 7));
+    } catch (creditError) {
+      console.error('구독 크레딧 지급 실패:', creditError);
+    }
 
     return NextResponse.json({ ok: true, periodEnd });
   } catch (error) {

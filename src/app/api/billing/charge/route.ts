@@ -12,6 +12,7 @@ import {
   isBillingEnabled,
   BILLING_DISABLED_MESSAGE,
 } from '@/shared/constants/billing';
+import { grantSubscriptionCredits } from '@/shared/services/creditServer';
 
 function nextPeriodEnd(from: Date): string {
   const next = new Date(from);
@@ -77,6 +78,7 @@ export async function POST(request: Request) {
         payment_key: payment.paymentKey,
         amount: SUBSCRIPTION_PLAN.monthlyPrice,
         status: 'done',
+        kind: 'subscription',
         approved_at: payment.approvedAt ?? new Date().toISOString(),
         raw: payment,
       });
@@ -84,6 +86,12 @@ export async function POST(request: Request) {
         .from('subscriptions')
         .update({ status: 'active', current_period_end: nextPeriodEnd(new Date()) })
         .eq('id', subscription.id);
+      // 갱신 결제 성공 = 이번 달 포함 크레딧 지급
+      try {
+        await grantSubscriptionCredits(serverClient, subscription.user_id, new Date().toISOString().slice(0, 7));
+      } catch (creditError) {
+        console.error('구독 크레딧 지급 실패:', subscription.user_id, creditError);
+      }
       charged += 1;
     } catch (error) {
       console.error('정기결제 실패:', subscription.id, error);
@@ -93,6 +101,7 @@ export async function POST(request: Request) {
         order_id: orderId,
         amount: SUBSCRIPTION_PLAN.monthlyPrice,
         status: 'failed',
+        kind: 'subscription',
       });
       await serverClient.from('subscriptions').update({ status: 'past_due' }).eq('id', subscription.id);
       failed += 1;
