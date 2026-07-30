@@ -20,13 +20,10 @@ import Switch from '@mui/material/Switch';
 import Tooltip from '@mui/material/Tooltip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Collapse from '@mui/material/Collapse';
-import TextField from '@mui/material/TextField';
-import Link from '@mui/material/Link';
 import CloseIcon from '@mui/icons-material/Close';
 import FormatColorResetIcon from '@mui/icons-material/FormatColorReset';
 import PaletteIcon from '@mui/icons-material/Palette';
 import RestartAltOutlinedIcon from '@mui/icons-material/RestartAltOutlined';
-import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
 import { useSnackbar } from 'notistack';
 import { removeImageBackground } from '@/shared/utils/removeImageBackground';
 import { applyBackground } from '@/shared/utils/applyBackground';
@@ -39,18 +36,10 @@ import { DEFAULT_WATERMARK_SETTINGS, type WatermarkSettings } from '@/shared/con
 import WatermarkSettingsPanel from '@/shared/components/WatermarkSettingsPanel';
 import ColorPickerPopover, { getPatternPreviewCss } from '@/shared/components/ColorPickerPopover';
 import LoginRequiredDialog from '@/shared/components/LoginRequiredDialog';
+import AiThumbnailPanel from '@/shared/components/AiThumbnailPanel';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
 import { useAuthSession } from '@/shared/hooks/useAuthSession';
-import { fetchCredits } from '@/shared/services/creditService';
-import { blobToBase64, base64ToBlob, generateThumbnail } from '@/shared/services/aiImageService';
 import { CREDIT_COST } from '@/shared/constants/billing';
-import {
-  THUMBNAIL_STYLE_PRESETS,
-  DEFAULT_THUMBNAIL_STYLE_ID,
-  HEADLINE_MAX_LENGTH,
-  type ThumbnailStyleId,
-} from '@/shared/constants/aiThumbnail';
-import { trackEvent } from '@/shared/utils/analytics';
 
 const WATERMARK_APPLY_DEBOUNCE_MS = 400; // 텍스트 타이핑·슬라이더 드래그 연속 변경 흡수
 
@@ -101,10 +90,7 @@ export default function SlotImageEditorModal({
   // aiBase = AI 생성 결과 = 이후 편집(누끼·워터마크)의 기준 이미지
   const [aiBase, setAiBase] = useState<EditLayer | null>(null);
   const [isAiOn, setIsAiOn] = useState(false);
-  const [aiStyleId, setAiStyleId] = useState<ThumbnailStyleId>(DEFAULT_THUMBNAIL_STYLE_ID);
-  const [aiHeadline, setAiHeadline] = useState('');
-  const [creditBalance, setCreditBalance] = useState<number | null>(null); // null = 아직 모름
-  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false); // 비로그인 스위치 조작 안내
 
   const sourceBlobRef = useRef<Blob | null>(null); // 원본 Blob 캐시
   const transparentBlobRef = useRef<Blob | null>(null); // 누끼 결과 캐시 (배경 옵션 변경마다 재사용)
@@ -213,21 +199,6 @@ export default function SlotImageEditorModal({
   };
 
   //////////////////// AI 썸네일 ////////////////////
-  ////////// 크레딧 잔액 조회 (AI 섹션을 펼친 시점에만 — 모달 열 때마다 호출하지 않는다)
-  useEffect(() => {
-    const accessToken = session?.access_token;
-    if (!isAiOn || !accessToken) return;
-    let cancelled = false;
-    fetchCredits(accessToken)
-      .then((summary) => {
-        if (!cancelled) setCreditBalance(summary.balance);
-      })
-      .catch((error) => console.error(error));
-    return () => {
-      cancelled = true;
-    };
-  }, [isAiOn, session?.access_token]);
-
   ////////// 스위치 — 비로그인은 다이얼로그로 안내 (토스트 아님)
   const handleAiToggle = (checked: boolean) => {
     if (checked && !session) {
@@ -237,50 +208,20 @@ export default function SlotImageEditorModal({
     setIsAiOn(checked);
   };
 
-  ////////// 생성 — 현재 화면의 이미지를 참조로 보내고, 결과를 새 기준 이미지로 앉힌다
-  const generateAiThumbnail = async () => {
-    const accessToken = session?.access_token;
-    if (!accessToken) {
-      setIsLoginDialogOpen(true);
-      return;
-    }
-    setBusyLabel('AI가 썸네일 만드는 중… 20초쯤 걸려요');
-    try {
-      const reference = await blobToBase64(final?.blob ?? processed?.blob ?? (await getSourceBlob()));
-      const preset = THUMBNAIL_STYLE_PRESETS.find((entry) => entry.id === aiStyleId) ?? THUMBNAIL_STYLE_PRESETS[0];
-      const result = await generateThumbnail({
-        accessToken,
-        productName: productName?.trim() || '상품',
-        style: preset.prompt,
-        headline: aiHeadline.trim() || undefined,
-        image: reference,
-      });
-      const blob = base64ToBlob(result.image);
-      // 새 기준 이미지 = 이전 누끼 캐시·배경·워터마크 결과 무효화 (워터마크는 이펙트가 자동 재합성)
-      transparentBlobRef.current = null;
-      setIsBackgroundOn(false);
-      setBgOption(null);
-      setProcessed((previous) => {
-        if (previous) URL.revokeObjectURL(previous.url);
-        return null;
-      });
-      setAiBase((previous) => {
-        if (previous) URL.revokeObjectURL(previous.url);
-        return { blob, url: URL.createObjectURL(blob) };
-      });
-      setCreditBalance((previous) => (previous === null ? previous : Math.max(0, previous - result.creditsSpent)));
-      trackEvent('ai_thumbnail_generate', { result: 'success', style: aiStyleId, hasHeadline: aiHeadline.trim() !== '' });
-    } catch (error) {
-      console.error(error);
-      const needsCredits = (error as { needsCredits?: boolean }).needsCredits === true;
-      if (needsCredits) setCreditBalance(0);
-      enqueueSnackbar(error instanceof Error ? error.message : 'AI 썸네일 생성에 실패했어요.', {
-        variant: needsCredits ? 'warning' : 'error',
-      });
-      trackEvent('ai_thumbnail_generate', { result: needsCredits ? 'no_credits' : 'fail', style: aiStyleId });
-    } finally {
-      setBusyLabel(null);
-    }
+  ////////// 생성 결과 수용 — AI 이미지를 새 기준 이미지로 앉히고 이전 가공을 무효화
+  const applyAiResult = (blob: Blob) => {
+    transparentBlobRef.current = null; // 누끼 캐시는 이전 이미지 것 — 버린다
+    setIsBackgroundOn(false);
+    setBgOption(null);
+    setProcessed((previous) => {
+      if (previous) URL.revokeObjectURL(previous.url);
+      return null;
+    });
+    setAiBase((previous) => {
+      if (previous) URL.revokeObjectURL(previous.url);
+      return { blob, url: URL.createObjectURL(blob) };
+    });
+    // 워터마크가 켜져 있으면 이펙트가 새 기준 이미지 위에 다시 합성한다 (deps에 aiBase 포함)
   };
 
   ////////// 원본 복귀 (AI 결과까지 버린다 — 소모된 크레딧은 돌아오지 않음)
@@ -303,7 +244,6 @@ export default function SlotImageEditorModal({
   const hasEdits = processed !== null || final !== null || aiBase !== null;
   const displayUrl = final?.url ?? processed?.url ?? aiBase?.url ?? imageUrl;
   const showCheckerboard = bgOption?.kind === 'transparent';
-  const isCreditShort = creditBalance !== null && creditBalance < CREDIT_COST.thumbnail;
 
   const handleApply = () => {
     const blob = final?.blob ?? processed?.blob ?? aiBase?.blob;
@@ -352,65 +292,16 @@ export default function SlotImageEditorModal({
                 />
                 <Chip size="small" variant="outlined" label={`크레딧 ${CREDIT_COST.thumbnail}개`} />
               </Stack>
-              <Collapse in={isAiOn}>
-                <Stack spacing={1.5}>
-                  {/* 스타일 — 프롬프트를 쓰지 않게 고정 선택지 */}
-                  <Stack spacing={0.75}>
-                    <Typography variant="caption" color="text.secondary">
-                      스타일
-                    </Typography>
-                    <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap', rowGap: 0.75 }}>
-                      {THUMBNAIL_STYLE_PRESETS.map((preset) => (
-                        <Chip
-                          key={preset.id}
-                          size="small"
-                          label={preset.label}
-                          disabled={isBusy}
-                          color={aiStyleId === preset.id ? 'primary' : 'default'}
-                          variant={aiStyleId === preset.id ? 'filled' : 'outlined'}
-                          onClick={() => setAiStyleId(preset.id)}
-                        />
-                      ))}
-                    </Stack>
-                  </Stack>
-
-                  <TextField
-                    size="small"
-                    label="문구 (선택)"
-                    placeholder="예) 하루만에 도착"
-                    value={aiHeadline}
-                    disabled={isBusy}
-                    onChange={(event) => setAiHeadline(event.target.value.slice(0, HEADLINE_MAX_LENGTH))}
-                    helperText={`이미지 위에 넣을 짧은 문구예요. ${aiHeadline.length}/${HEADLINE_MAX_LENGTH}자`}
-                  />
-
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<AutoAwesomeOutlinedIcon />}
-                    onClick={generateAiThumbnail}
-                    disabled={isBusy || isCreditShort}
-                    sx={{ alignSelf: 'flex-start' }}
-                  >
-                    {aiBase ? '다시 만들기' : '썸네일 만들기'}
-                  </Button>
-
-                  {/* 크레딧 상태 — 부족하면 충전 경로를 바로 열어준다 */}
-                  {isCreditShort ? (
-                    <Typography variant="caption" color="warning.main">
-                      크레딧이 부족해요.{' '}
-                      <Link href="/pricing" target="_blank" rel="noopener" underline="always">
-                        충전하기
-                      </Link>
-                    </Typography>
-                  ) : (
-                    <Typography variant="caption" color="text.secondary">
-                      {creditBalance === null
-                        ? '지금 이미지를 참고해서 새 썸네일을 만들어요.'
-                        : `남은 크레딧 ${creditBalance}개 · 만들 때마다 ${CREDIT_COST.thumbnail}개 써요.`}
-                    </Typography>
-                  )}
-                </Stack>
+              <Collapse in={isAiOn} unmountOnExit>
+                <AiThumbnailPanel
+                  productName={productName}
+                  source="slot_editor"
+                  hasResult={aiBase !== null}
+                  disabled={isBusy}
+                  getReferenceBlob={async () => final?.blob ?? processed?.blob ?? (await getSourceBlob())}
+                  onGenerated={applyAiResult}
+                  onBusyChange={setBusyLabel}
+                />
               </Collapse>
             </Stack>
 

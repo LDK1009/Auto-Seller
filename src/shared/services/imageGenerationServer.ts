@@ -16,6 +16,13 @@ export type GeneratedImage = {
   mimeType: string;
 };
 
+// Gemini 응답 — 이미지 파트 키가 응답마다 snake/camel로 섞여 온다 (둘 다 받는다)
+type GeminiInlineData = { data?: string; mime_type?: string; mimeType?: string };
+type GeminiResponse = {
+  candidates?: { content?: { parts?: { text?: string; inline_data?: GeminiInlineData; inlineData?: GeminiInlineData }[] } }[];
+  error?: { message?: string };
+};
+
 ////////// 공통 호출 — 텍스트 프롬프트 + (선택) 참조 이미지들 → 이미지 1장
 export async function generateImage(params: {
   prompt: string;
@@ -34,14 +41,29 @@ export async function generateImage(params: {
     { text: params.prompt },
   ];
 
+  // 응답은 text로 먼저 받는다 — 빈 바디/HTML 오류면 response.json()이
+  // "Unexpected end of JSON input"만 던져서 원인(상태코드·바디)이 사라진다
   const response = await fetch(`${GEMINI_API_BASE}/${model}:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ contents: [{ parts }] }),
     cache: 'no-store',
   });
+  const rawBody = await response.text();
 
-  const parsed = await response.json();
+  if (!rawBody) {
+    console.error(`이미지 생성 API 빈 응답: status=${response.status} model=${model}`);
+    throw new Error('이미지 생성 서버가 응답을 주지 않았어요. 잠시 후 다시 시도해주세요.');
+  }
+
+  let parsed: GeminiResponse | null = null;
+  try {
+    parsed = JSON.parse(rawBody);
+  } catch {
+    console.error(`이미지 생성 API 응답 파싱 실패: status=${response.status} body=${rawBody.slice(0, 300)}`);
+    throw new Error('이미지 생성 서버 응답을 읽지 못했어요. 잠시 후 다시 시도해주세요.');
+  }
+
   if (!response.ok) {
     console.error('이미지 생성 API 오류:', parsed);
     throw new Error(parsed?.error?.message ?? '이미지 생성에 실패했어요.');
@@ -53,7 +75,7 @@ export async function generateImage(params: {
     for (const part of candidate?.content?.parts ?? []) {
       const inline = part?.inline_data ?? part?.inlineData;
       if (inline?.data) {
-        return { base64: inline.data, mimeType: inline.mime_type ?? inline.mimeType ?? 'image/png' };
+        return { base64: inline.data, mimeType: inline.mime_type ?? inline.mimeType ?? 'image/jpeg' };
       }
     }
   }

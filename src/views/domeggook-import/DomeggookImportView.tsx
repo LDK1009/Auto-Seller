@@ -40,6 +40,7 @@ import LicenseGate from './_components/LicenseGate';
 import DetailCropModal from './_components/DetailCropModal';
 import RegistrationSheet from './_components/RegistrationSheet';
 import SlotImageEditorModal from './_components/SlotImageEditorModal';
+import AiThumbnailModal from './_components/AiThumbnailModal';
 import DetailPreviewModal from './_components/DetailPreviewModal';
 import type { DomeggookItemImage } from '@/shared/types/domeggook';
 import CodeIcon from '@mui/icons-material/Code';
@@ -48,6 +49,7 @@ import BookmarkAddedIcon from '@mui/icons-material/BookmarkAdded';
 import CropOutlinedIcon from '@mui/icons-material/CropOutlined';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
 
 // 대표/추가 이미지 슬롯 항목 — 원본(도매꾹 이미지) 또는 크롭(상세에서 잘라옴)
 type PickedImage = {
@@ -83,6 +85,7 @@ export default function DomeggookImportView() {
   // 슬롯 이미지 미리보기 (1000×1000 기준) — context에 따라 [대표로 사용]/[제거] 제공
   const [slotPreview, setSlotPreview] = useState<{ picked: PickedImage; context: 'main' | 'extra' } | null>(null);
   const [isDetailPreviewOpen, setIsDetailPreviewOpen] = useState(false); // ⑦ 상세설명 미리보기
+  const [isAiThumbnailOpen, setIsAiThumbnailOpen] = useState(false); // ⑥ AI 썸네일 모달
   // 내 목록 저장 (품절 감시 라인 2) — 조회 상품 기준 저장 여부
   const { session } = useAuthSession();
   const [isProductSaved, setIsProductSaved] = useState(false);
@@ -188,6 +191,29 @@ export default function DomeggookImportView() {
         return [...previous, picked];
       });
     }
+  };
+
+  ////////// AI 썸네일 결과 투입 — 크롭 결과와 동일하게 슬롯 항목으로 만든다
+  const addGeneratedImage = (blob: Blob, target: 'main' | 'extra') => {
+    cropSequenceRef.current += 1;
+    const picked: PickedImage = {
+      id: `ai-${cropSequenceRef.current}`,
+      source: 'crop',
+      previewUrl: URL.createObjectURL(blob),
+      blob,
+    };
+    if (target === 'main') {
+      setMainImage(picked);
+      enqueueSnackbar('AI 썸네일을 대표이미지로 넣었어요.', { variant: 'success' });
+      return;
+    }
+    setExtraImages((previous) => {
+      if (previous.length >= MAX_EXTRA_IMAGES) {
+        enqueueSnackbar(`추가이미지는 최대 ${MAX_EXTRA_IMAGES}장이에요.`, { variant: 'info' });
+        return previous;
+      }
+      return [...previous, picked];
+    });
   };
 
   ////////// 이미지 편집 모달 열기 — 계측 단일 지점
@@ -528,6 +554,35 @@ export default function DomeggookImportView() {
                       <Alert severity="info">이 상품에서 가져올 수 있는 이미지를 찾지 못했어요.</Alert>
                     ) : (
                       <>
+                        {/* AI 썸네일 진입 — 편집 모달을 열지 않아도 여기서 바로 (유료 기능 노출 지점) */}
+                        {(mainImage || thumbImage) && (
+                          <AiPromoCard>
+                            <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+                              <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
+                                <AutoAwesomeOutlinedIcon sx={{ fontSize: 18, color: 'primary.main' }} />
+                                <Typography variant="subtitle2">AI로 썸네일 만들기</Typography>
+                                <Chip size="small" variant="outlined" label="크레딧 1개" />
+                              </Stack>
+                              <Typography variant="body2" color="text.secondary">
+                                도매꾹 사진은 다른 셀러도 똑같이 써요. 상품은 그대로 두고 배경·분위기만 바꿔
+                                내 썸네일을 만들어요.
+                              </Typography>
+                            </Stack>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              startIcon={<AutoAwesomeOutlinedIcon />}
+                              onClick={() => {
+                                trackEvent('ai_thumbnail_open', { source: 'image_section' });
+                                setIsAiThumbnailOpen(true);
+                              }}
+                              sx={{ flexShrink: 0 }}
+                            >
+                              만들기
+                            </Button>
+                          </AiPromoCard>
+                        )}
+
                         {/* 대표이미지 — 기본 = 도매꾹 대표, 크롭으로 교체 가능. 클릭 = 1000×1000 미리보기 */}
                         <Stack spacing={0.75}>
                           <Typography variant="subtitle2">대표이미지 · 1장</Typography>
@@ -692,6 +747,21 @@ export default function DomeggookImportView() {
           </>
         )}
       </Stack>
+
+      {/* AI 썸네일 — 이미지 섹션에서 직접 진입 (편집 모달과 별개 경로, 같은 생성 패널 사용) */}
+      {isAiThumbnailOpen && (mainImage || thumbImage) && (
+        <AiThumbnailModal
+          open
+          referenceUrl={mainImage?.previewUrl ?? thumbImage?.proxyUrl ?? ''}
+          referenceBlob={mainImage?.blob}
+          productName={item?.title}
+          productNo={item?.no}
+          canAddExtra={extraImages.length < MAX_EXTRA_IMAGES}
+          onClose={() => setIsAiThumbnailOpen(false)}
+          onUseAsMain={(blob) => addGeneratedImage(blob, 'main')}
+          onAddAsExtra={(blob) => addGeneratedImage(blob, 'extra')}
+        />
+      )}
 
       {/* 슬롯 이미지 미리보기+편집 — 누끼·배경 합성·워터마크, [적용] 시 슬롯 교체 */}
       {slotPreview && (
@@ -898,6 +968,22 @@ const PickStrip = styled.div(({ theme }) => ({
   display: 'flex',
   gap: theme.spacing(1),
   flexWrap: 'wrap',
+}));
+
+// AI 썸네일 진입 카드 — 이미지 섹션에서 유일하게 색이 들어간 블록 (유료 기능 인지 지점)
+const AiPromoCard = styled.div(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(2),
+  padding: theme.spacing(1.75, 2),
+  borderRadius: theme.shape.borderRadius,
+  border: `1px solid ${alpha(theme.palette.primary.main, 0.28)}`,
+  backgroundColor: alpha(theme.palette.primary.main, 0.05),
+  [theme.breakpoints.down('sm')]: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: theme.spacing(1.25),
+  },
 }));
 
 const PickThumb = styled('div', transientOptions)<{ $isSelected?: boolean }>(({ theme, $isSelected }) => ({

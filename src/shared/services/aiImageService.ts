@@ -15,6 +15,35 @@ export async function blobToBase64(blob: Blob): Promise<GeneratedImagePayload> {
   return { base64, mimeType: blob.type || 'image/png' };
 }
 
+////////// 참조 이미지 축소 (긴 변 1024px·JPEG) → base64
+// 도매꾹 원본은 2-4MB가 흔하다. base64는 여기서 1.33배로 더 불어나 요청 본문이 수 MB가 되고,
+// 모델은 어차피 축소해서 읽는다 → 보내기 전에 줄여 전송 실패·지연을 없앤다.
+const REFERENCE_MAX_SIDE = 1024;
+const REFERENCE_QUALITY = 0.9;
+
+export async function blobToReferencePayload(blob: Blob): Promise<GeneratedImagePayload> {
+  const bitmap = await createImageBitmap(blob);
+  const scale = Math.min(1, REFERENCE_MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+  if (scale === 1 && blob.size <= 1_000_000) {
+    bitmap.close();
+    return blobToBase64(blob); // 이미 작으면 그대로 (재인코딩 손실 없음)
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  const context = canvas.getContext('2d');
+  if (!context) {
+    bitmap.close();
+    return blobToBase64(blob);
+  }
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  const resized = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, 'image/jpeg', REFERENCE_QUALITY),
+  );
+  return blobToBase64(resized ?? blob);
+}
+
 ////////// base64 → Blob (생성 결과를 슬롯에 넣기 위해)
 export function base64ToBlob(payload: GeneratedImagePayload): Blob {
   const binary = atob(payload.base64);
@@ -44,7 +73,12 @@ async function postJson(path: string, accessToken: string, body: unknown) {
   });
   const parsed = await response.json().catch(() => null);
   if (!response.ok) {
-    const error = new Error(parsed?.error ?? '이미지 생성에 실패했어요.') as AiGenerateError;
+    // 서버가 바디 없이 끊긴 경우(타임아웃·용량 초과)에도 원인을 알 수 있게 상태코드를 남긴다
+    const fallback =
+      response.status === 413
+        ? '이미지가 너무 커요. 다른 이미지로 시도해주세요.'
+        : `이미지 생성에 실패했어요. (오류 ${response.status})`;
+    const error = new Error(parsed?.error ?? fallback) as AiGenerateError;
     error.needsCredits = Boolean(parsed?.needsCredits);
     error.notConfigured = parsed?.configured === false;
     throw error;
