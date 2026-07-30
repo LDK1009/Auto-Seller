@@ -27,7 +27,8 @@ import {
 import LoginRequiredDialog from '@/shared/components/LoginRequiredDialog';
 import { trackEvent } from '@/shared/utils/analytics';
 
-const BUSY_LABEL = 'AI가 썸네일 만드는 중… 20초쯤 걸려요';
+// 실측 12초 내외 + 혼잡 시 재시도 1회 → 최대 30초까지 본다 (기다리는 사람이 불안하지 않게 범위로 안내)
+const BUSY_LABEL = 'AI가 썸네일 만드는 중… 15-30초 걸려요';
 
 type AiThumbnailPanelProps = {
   productName?: string;

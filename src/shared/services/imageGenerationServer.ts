@@ -7,7 +7,13 @@ const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models
 //   3.1-flash-image  17.9s · 이미지 1,120토큰 · 장당 약 30-55원 → 크레딧 200원 대비 마진 73-85%
 //   3-pro-image      27.8s · 동일 토큰      · 장당 약 190원   → 마진 5% (적자 위험)
 // 품질(한글 문구 렌더·구도)은 양쪽 합격이라 Pro를 쓸 근거가 없다.
+// 2026-07-30 재실측 (동일 참조 이미지·동일 프롬프트, 순수 API 왕복):
+//   3.1-flash-image      12.8s / 11.8s  → 유일한 실사용 후보
+//   3.1-flash-lite-image 28.2s          → 더 느리고 구도도 나쁨 (상품이 떠 있고 문구가 작음)
+//   3-pro-image          303초 후 연결 끊김 → 사용 불가
 const DEFAULT_IMAGE_MODEL = 'gemini-3.1-flash-image';
+const RETRYABLE_ATTEMPTS = 2; // 503(혼잡)·빈 응답 대비 1회 재시도
+const RETRY_DELAY_MS = 1500;
 
 export const isImageGenerationConfigured = () => Boolean(process.env.GEMINI_API_KEY);
 
@@ -43,13 +49,25 @@ export async function generateImage(params: {
 
   // 응답은 text로 먼저 받는다 — 빈 바디/HTML 오류면 response.json()이
   // "Unexpected end of JSON input"만 던져서 원인(상태코드·바디)이 사라진다
-  const response = await fetch(`${GEMINI_API_BASE}/${model}:generateContent?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ parts }] }),
-    cache: 'no-store',
-  });
-  const rawBody = await response.text();
+  //
+  // 재시도가 필요한 이유 (2026-07-30 실측): 이미지 모델은 혼잡 시 503 UNAVAILABLE
+  // ("This model is currently experiencing high demand")을 그냥 던진다. 1회 재시도로 대부분 통과한다.
+  let response: Response | null = null;
+  let rawBody = '';
+  for (let attempt = 0; attempt < RETRYABLE_ATTEMPTS; attempt += 1) {
+    response = await fetch(`${GEMINI_API_BASE}/${model}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts }] }),
+      cache: 'no-store',
+    });
+    rawBody = await response.text();
+    const isRetryable = response.status === 429 || response.status >= 500 || rawBody === '';
+    if (!isRetryable || attempt === RETRYABLE_ATTEMPTS - 1) break;
+    console.error(`이미지 생성 재시도 (status=${response.status}, 시도 ${attempt + 1})`);
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+  }
+  if (!response) throw new Error('이미지 생성에 실패했어요. 잠시 후 다시 시도해주세요.');
 
   if (!rawBody) {
     console.error(`이미지 생성 API 빈 응답: status=${response.status} model=${model}`);
@@ -84,18 +102,21 @@ export async function generateImage(params: {
 
 //////////////////// 프롬프트 빌더 ////////////////////
 // 셀러 썸네일 관행에 맞춘 지시 — 과장 문구·허위 정보 삽입 금지 (SaaS 책임 범위)
+// 2026-07-30 실측 개선: "새로 만들어줘"(생성)보다 "이 사진을 편집해줘"(편집)가 상품 보존·구도 모두 낫다.
+// 문구를 넣을 때는 자리(상단 25%)를 먼저 비우게 해야 상품 위에 글자가 겹치지 않는다.
+// 금지 목록(광선·스티커·테두리…)이 없으면 촌스러운 장식이 붙는다.
 export function buildThumbnailPrompt(params: { productName: string; style: string; headline?: string }): string {
   const headlineLine = params.headline
-    ? `이미지 위쪽에 "${params.headline}" 문구를 굵고 읽기 쉬운 한글 서체로 넣어줘. 오타 없이 정확히 그대로.`
-    : '문구는 넣지 마.';
+    ? `상단 25%는 문구 자리로 비우고, 거기에 "${params.headline}" 한 줄만 넣어줘. 검은색 굵은 한글 고딕, 오타 없이 정확히 그대로.`
+    : '글자와 숫자는 넣지 마.';
   return [
-    '온라인 쇼핑몰 상품 썸네일을 만들어줘.',
+    '이 사진을 온라인 쇼핑몰 상품 썸네일로 편집해줘. 상품은 참조 이미지 그대로 두고 배경·구도·문구만 다뤄.',
     `상품: ${params.productName}`,
-    `스타일: ${params.style}`,
-    '정사각형(1:1) 구도, 상품이 화면 중앙에서 크게 보이게.',
-    '참조 이미지의 상품 형태·색상·비율을 그대로 유지하고, 없는 기능이나 다른 제품을 만들어내지 마.',
+    `배경·분위기: ${params.style}`,
+    '1:1 정사각형. 상품이 프레임의 70% 정도를 차지하게 중앙에 크게, 바닥에 짧고 자연스러운 접지 그림자.',
     headlineLine,
-    '가격, 할인율, 인증 마크, 브랜드 로고는 넣지 마.',
+    '상품의 형태·색상·질감·비율을 바꾸지 말고, 없는 부품·기능·다른 제품을 만들어내지 마.',
+    '금지: 광선·반짝임·그라데이션 오버레이·스티커·리본·테두리 프레임·가격·할인율·인증 마크·브랜드 로고·워터마크.',
   ].join('\n');
 }
 

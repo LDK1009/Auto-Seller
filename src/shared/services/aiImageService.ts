@@ -65,12 +65,23 @@ export type ThumbnailRequest = {
 
 export type AiGenerateError = Error & { needsCredits?: boolean; notConfigured?: boolean };
 
+// 서버가 응답을 안 주면 스피너가 영원히 돈다 — 라우트 상한(maxDuration 120s)보다 조금 길게 잡고 끊는다
+const REQUEST_TIMEOUT_MS = 130_000;
+
 async function postJson(path: string, accessToken: string, body: unknown) {
-  const response = await fetch(path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-    body: JSON.stringify(body),
-  });
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    console.error(error);
+    // 크레딧은 서버가 선차감 후 실패 시 환불한다 — 여기서 "차감 안 됐다"고 단정하면 거짓말이 될 수 있다
+    throw new Error('시간이 너무 오래 걸려서 중단했어요. 잠시 후 다시 시도해주세요.');
+  }
   const parsed = await response.json().catch(() => null);
   if (!response.ok) {
     // 서버가 바디 없이 끊긴 경우(타임아웃·용량 초과)에도 원인을 알 수 있게 상태코드를 남긴다
