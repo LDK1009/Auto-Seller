@@ -8,15 +8,21 @@ import { getSupabaseClient, isSupabaseConfigured } from './supabase';
 ////////// 인증 인프라 준비 여부 (UI가 "준비 중" 분기에 사용)
 export const isAuthConfigured = isSupabaseConfigured;
 
-////////// 카카오 로그인 (현재 페이지로 복귀 — ?keyword= 상태 유지)
+////////// 카카오 로그인 (현재 페이지로 복귀 — ?keyword= 등 상태 유지)
+// 복귀는 항상 /auth/callback을 거친다 (2026-07-30 픽스):
+//   현재 주소를 그대로 넘기면 랜딩(= origin + '/')에서 로그인할 때 Supabase 허용목록의
+//   `도메인/**` 패턴에 매칭되지 않아(경로 세그먼트 0개) Site URL로 강제 착지한다 = 로컬에서 프로덕션으로 튐.
+//   경로가 있는 고정 콜백으로 보내면 로컬·프로덕션·프리뷰 어디서든 origin 기준으로 정확히 돌아온다.
 export async function signInWithKakao(): Promise<void> {
   const supabase = getSupabaseClient();
   if (!supabase) {
     throw new Error('로그인 기능 준비 중이에요.');
   }
+  const nextPath = `${window.location.pathname}${window.location.search}`;
+  const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'kakao',
-    options: { redirectTo: window.location.href },
+    options: { redirectTo },
   });
   if (error) {
     console.error(error);
