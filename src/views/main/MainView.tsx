@@ -403,6 +403,9 @@ export default function MainView() {
                   상호: {BUSINESS_INFO.companyName} · 대표: {BUSINESS_INFO.representative}
                   <br />
                   사업자등록번호: {BUSINESS_INFO.registrationNumber}
+                  {BUSINESS_INFO.mailOrderNumber && (
+                    <> · 통신판매업신고: {BUSINESS_INFO.mailOrderNumber}</>
+                  )}
                   <br />
                   주소: {BUSINESS_INFO.address}
                   <br />
