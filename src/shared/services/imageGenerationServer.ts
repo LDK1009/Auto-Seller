@@ -23,7 +23,8 @@ export async function generateImage(params: {
 }): Promise<GeneratedImage> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('이미지 생성 기능이 아직 준비되지 않았어요.');
-  const model = process.env.GEMINI_IMAGE_MODEL ?? DEFAULT_IMAGE_MODEL;
+  // `??`가 아니라 `||` — env에 키만 있고 값이 빈 문자열이면 모델명 없이 호출돼 404가 난다
+  const model = process.env.GEMINI_IMAGE_MODEL?.trim() || DEFAULT_IMAGE_MODEL;
 
   // parts: 참조 이미지 → 프롬프트 순서 (모델이 이미지를 맥락으로 읽고 지시를 적용)
   const parts: Record<string, unknown>[] = [
