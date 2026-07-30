@@ -1,11 +1,13 @@
 //////////////////////////////////////// AI 이미지 생성 (Gemini) ////////////////////////////////////////
 // 서버 전용. 키 미설정 시 configured=false로 강등 (throw 금지 — UI가 "준비 중" 안내).
-// 모델은 env로 교체 가능 (원가·화질 실측 후 조정) — 기본은 표준 해상도 모델(장당 원가 최저 구간).
-// 원가 감각 (2026-07 리서치): 1024px ≈ $0.039(≈55원) / 1K-2K ≈ $0.134(≈190원)
-//   → 크레딧 1개 = 200원이므로 썸네일은 표준 해상도로 생성해야 마진이 남는다.
+// 모델은 env(GEMINI_IMAGE_MODEL)로 교체 가능 — 기본값은 아래 실측 근거로 Flash 고정.
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
-const DEFAULT_IMAGE_MODEL = 'gemini-3-pro-image-preview';
+// 2026-07-29 실측으로 Flash 확정 (동일 프롬프트 비교):
+//   3.1-flash-image  17.9s · 이미지 1,120토큰 · 장당 약 30-55원 → 크레딧 200원 대비 마진 73-85%
+//   3-pro-image      27.8s · 동일 토큰      · 장당 약 190원   → 마진 5% (적자 위험)
+// 품질(한글 문구 렌더·구도)은 양쪽 합격이라 Pro를 쓸 근거가 없다.
+const DEFAULT_IMAGE_MODEL = 'gemini-3.1-flash-image';
 
 export const isImageGenerationConfigured = () => Boolean(process.env.GEMINI_API_KEY);
 
