@@ -22,13 +22,13 @@ import {
   THUMBNAIL_STYLE_PRESETS,
   DEFAULT_THUMBNAIL_STYLE_ID,
   HEADLINE_MAX_LENGTH,
-  type ThumbnailStyleId,
+  findThumbnailDirection,
 } from '@/shared/constants/aiThumbnail';
 import LoginRequiredDialog from '@/shared/components/LoginRequiredDialog';
 import { trackEvent } from '@/shared/utils/analytics';
 
-// 실측 12초 내외 + 혼잡 시 재시도 1회 → 최대 30초까지 본다 (기다리는 사람이 불안하지 않게 범위로 안내)
-const BUSY_LABEL = 'AI가 썸네일 만드는 중… 15-30초 걸려요';
+// 실측 편차가 크다 (평온 12-16초 / 혼잡 90-165초) — 과소 약속하면 더 불안해진다
+const BUSY_LABEL = 'AI가 썸네일 만드는 중… 보통 20초, 몰릴 때는 1분 넘게 걸려요';
 
 type AiThumbnailPanelProps = {
   productName?: string;
@@ -52,7 +52,7 @@ export default function AiThumbnailPanel({
   const { enqueueSnackbar } = useSnackbar();
   const { session } = useAuthSession();
 
-  const [styleId, setStyleId] = useState<ThumbnailStyleId>(DEFAULT_THUMBNAIL_STYLE_ID);
+  const [styleId, setStyleId] = useState(DEFAULT_THUMBNAIL_STYLE_ID);
   const [headline, setHeadline] = useState('');
   const [creditBalance, setCreditBalance] = useState<number | null>(null); // null = 아직 모름
   const [isGenerating, setIsGenerating] = useState(false);
@@ -86,11 +86,10 @@ export default function AiThumbnailPanel({
     onBusyChange?.(BUSY_LABEL);
     try {
       const reference = await blobToReferencePayload(await getReferenceBlob());
-      const preset = THUMBNAIL_STYLE_PRESETS.find((entry) => entry.id === styleId) ?? THUMBNAIL_STYLE_PRESETS[0];
       const result = await generateThumbnail({
         accessToken,
         productName: productName?.trim() || '상품',
-        style: preset.prompt,
+        styleId,
         headline: headline.trim() || undefined,
         image: reference,
       });
@@ -120,7 +119,7 @@ export default function AiThumbnailPanel({
 
   return (
     <Stack spacing={1.5}>
-      {/* 스타일 — 프롬프트를 쓰지 않게 고정 선택지 */}
+      {/* 스타일 — 프롬프트를 쓰지 않게 아트디렉션 3종 중 선택 */}
       <Stack spacing={0.75}>
         <Typography variant="caption" color="text.secondary">
           스타일
@@ -138,6 +137,9 @@ export default function AiThumbnailPanel({
             />
           ))}
         </Stack>
+        <Typography variant="caption" color="text.secondary">
+          {findThumbnailDirection(styleId).hint}
+        </Typography>
       </Stack>
 
       <TextField

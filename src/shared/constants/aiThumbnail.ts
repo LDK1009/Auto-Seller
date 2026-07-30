@@ -1,17 +1,69 @@
-//////////////////////////////////////// AI 썸네일 프리셋 ////////////////////////////////////////
-// 셀러가 프롬프트를 쓰지 않아도 되게 스타일을 고정 선택지로 제공한다 (입력 최소화).
-// prompt 문자열은 서버 buildThumbnailPrompt의 `스타일:` 줄로 그대로 들어간다.
+//////////////////////////////////////// AI 썸네일 아트디렉션 ////////////////////////////////////////
+// 셀러가 프롬프트를 쓰지 않아도 되게, 디자이너 브리프를 프리셋으로 고정한다 (입력 최소화).
+// 프롬프트 본문은 서버(imageGenerationServer)가 이 스펙으로 조립한다 —
+// 클라이언트가 프롬프트 문자열을 보내면 임의 지시를 끼워넣을 수 있어서(프롬프트 주입) id만 넘긴다.
+//
+// 2026-07-30 실측으로 확정된 사항 (도매꾹 인기상품 2건 × 방향 3종):
+// - "썸네일 만들어줘"(한 줄 지시)보다 캔버스·그리드·타이포·금지를 규격으로 준 브리프가 확실히 낫다
+// - 상품명을 그냥 주면 모델이 그걸 이미지에 배지로 그려 넣는다 → "참고용, 글자로 쓰지 마"를 명시해야 막힌다
+// - 문구·제품 겹침은 "겹치면 실패다, 제품을 내려라"까지 말해야 사라진다
+// - "바깥 5% 안전 여백"이라고 쓰면 회색 테두리 프레임을 그려버린다 → 위치 규칙으로 표현해야 한다
 
-export const THUMBNAIL_STYLE_PRESETS = [
-  { id: 'clean', label: '흰 배경', prompt: '깔끔한 흰 배경, 밝고 선명한 조명, 부드러운 그림자' },
-  { id: 'lifestyle', label: '생활 연출', prompt: '실제 사용 장면 연출, 자연광이 드는 실내, 소품은 최소한' },
-  { id: 'studio', label: '스튜디오', prompt: '어두운 배경에 스포트 조명, 고급스러운 제품 사진 느낌' },
-  { id: 'pastel', label: '파스텔', prompt: '연한 파스텔 단색 배경, 밝고 부드러운 분위기' },
-] as const;
+export type ThumbnailDirection = {
+  id: string;
+  label: string;
+  hint: string; // UI 보조 설명 (칩 아래 한 줄)
+  textColor: string; // 브리프의 문구 색 지시
+  lines: string[]; // 브리프의 [아트디렉션] 블록
+};
 
-export type ThumbnailStyleId = (typeof THUMBNAIL_STYLE_PRESETS)[number]['id'];
+export const THUMBNAIL_STYLE_PRESETS: ThumbnailDirection[] = [
+  {
+    id: 'studio',
+    label: '미니멀 스튜디오',
+    hint: '흰 배경에 상품만 — 가장 안전해요',
+    textColor: '검정(#1A1A1A)',
+    lines: [
+      '- 컨셉: 여백이 넉넉한 미니멀 스튜디오 제품컷. 편집 디자인처럼 정돈된 느낌.',
+      '- 배경: 아주 연한 회백색 단색(#F4F4F2) 하나로 캔버스 전체를 채운다. 영역별로 색을 나누거나 밴드를 만들지 마.',
+      '- 그리드: 상단 0-26%는 문구 자리로 비우고(제품 침범 금지), 26-88%가 제품 자리, 하단 12%는 빈 여백.',
+      '- 조명: 부드러운 소프트박스 한 방향(좌상단 45도). 하이라이트는 과하지 않게.',
+      '- 제품 배치: 정면 중앙 정렬, 제품 자리 높이의 80%까지만 쓴다.',
+    ],
+  },
+  {
+    id: 'colorblock',
+    label: '컬러 블록',
+    hint: '상단 색 띠에 문구 — 목록에서 눈에 걸려요',
+    textColor: '흰색(#FFFFFF)',
+    lines: [
+      '- 컨셉: 상단 컬러 밴드 + 하단 제품. 검색 목록에서 눈에 걸리는 대비 구조.',
+      '- 그리드: 상단 0-28%는 진한 단색 컬러 밴드(문구 자리, 제품 침범 금지), 28-100%는 밝은 배경 위 제품 자리.',
+      '- 색: 컬러 밴드는 참조 사진의 제품 색에서 뽑은 같은 계열의 진한 톤. 하단 배경은 밝은 뉴트럴 단색.',
+      '- 경계는 수평 직선 한 줄로 깔끔하게. 그라데이션·곡선·그림자 장식 금지.',
+      '- 제품 배치: 제품 자리 중앙. 컬러 밴드를 침범하지 않도록 위쪽을 비워둔다.',
+    ],
+  },
+  {
+    id: 'lifestyle',
+    label: '생활 연출',
+    hint: '쓰는 자리에 놓인 모습 — 분위기가 살아요',
+    textColor: '검정(#1A1A1A)',
+    lines: [
+      '- 컨셉: 실제로 쓰는 자리에 놓인 사용 맥락 컷. 소품은 최소.',
+      '- 그리드: 상단 0-26%는 문구 자리 — 이 영역 배경은 밝고 단순하게 비우고 제품·소품이 들어오지 못한다.',
+      '- 배경: 자연광이 드는 실내 한 장면(예: 현관·책상·창가). 얕은 심도로 배경만 살짝 흐리게.',
+      '- 조명: 창에서 들어오는 자연광. 색온도는 중성.',
+      '- 제품 배치: 문구 자리 아래, 화면 중앙에서 약간 우하단. 프레임의 55-65%.',
+    ],
+  },
+];
 
-export const DEFAULT_THUMBNAIL_STYLE_ID: ThumbnailStyleId = 'clean';
+export const DEFAULT_THUMBNAIL_STYLE_ID = 'studio';
+
+export function findThumbnailDirection(styleId: string | undefined): ThumbnailDirection {
+  return THUMBNAIL_STYLE_PRESETS.find((entry) => entry.id === styleId) ?? THUMBNAIL_STYLE_PRESETS[0];
+}
 
 // 썸네일 문구는 짧을 때만 읽힌다 — 길면 모델이 줄바꿈·오타를 낸다
 export const HEADLINE_MAX_LENGTH = 14;

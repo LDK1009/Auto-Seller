@@ -2,6 +2,8 @@
 // 서버 전용. 키 미설정 시 configured=false로 강등 (throw 금지 — UI가 "준비 중" 안내).
 // 모델은 env(GEMINI_IMAGE_MODEL)로 교체 가능 — 기본값은 아래 실측 근거로 Flash 고정.
 
+import { findThumbnailDirection, HEADLINE_MAX_LENGTH } from '@/shared/constants/aiThumbnail';
+
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 // 2026-07-29 실측으로 Flash 확정 (동일 프롬프트 비교):
 //   3.1-flash-image  17.9s · 이미지 1,120토큰 · 장당 약 30-55원 → 크레딧 200원 대비 마진 73-85%
@@ -102,21 +104,54 @@ export async function generateImage(params: {
 
 //////////////////// 프롬프트 빌더 ////////////////////
 // 셀러 썸네일 관행에 맞춘 지시 — 과장 문구·허위 정보 삽입 금지 (SaaS 책임 범위)
-// 2026-07-30 실측 개선: "새로 만들어줘"(생성)보다 "이 사진을 편집해줘"(편집)가 상품 보존·구도 모두 낫다.
-// 문구를 넣을 때는 자리(상단 25%)를 먼저 비우게 해야 상품 위에 글자가 겹치지 않는다.
-// 금지 목록(광선·스티커·테두리…)이 없으면 촌스러운 장식이 붙는다.
-export function buildThumbnailPrompt(params: { productName: string; style: string; headline?: string }): string {
-  const headlineLine = params.headline
-    ? `상단 25%는 문구 자리로 비우고, 거기에 "${params.headline}" 한 줄만 넣어줘. 검은색 굵은 한글 고딕, 오타 없이 정확히 그대로.`
-    : '글자와 숫자는 넣지 마.';
+// 디자이너 브리프 방식 — 역할·캔버스·아트디렉션·제품처리·타이포·금지를 규격으로 준다.
+// 한 줄 지시("썸네일 만들어줘")와 비교 실측한 결과가 아트디렉션 스펙(constants/aiThumbnail)에 정리돼 있다.
+export function buildThumbnailPrompt(params: {
+  productName: string;
+  styleId?: string;
+  headline?: string;
+}): string {
+  const direction = findThumbnailDirection(params.styleId);
+  // 문구는 사용자 입력 — 줄바꿈·과한 길이를 잘라 브리프 구조가 깨지지 않게 한다
+  const headline = params.headline?.replace(/\s+/g, ' ').trim().slice(0, HEADLINE_MAX_LENGTH);
+
+  const typography = headline
+    ? [
+        `- 문구는 "${headline}" 한 줄만. 오타 없이 정확히 그대로.`,
+        '- 한글 굵은 고딕(Black), 자간은 좁게, 줄바꿈 없음.',
+        '- 글자 폭이 캔버스 가로의 55-70%를 차지하게 크게.',
+        `- 색은 ${direction.textColor}. 외곽선·그림자·그라데이션·기울임 없음.`,
+        '- 중요: 글자와 제품이 조금이라도 겹치면 실패다. 겹칠 것 같으면 제품을 아래로 내리고 크기를 줄여 겹침을 없앤다.',
+      ].join('\n')
+    : '- 글자와 숫자는 넣지 않는다.';
+
   return [
-    '이 사진을 온라인 쇼핑몰 상품 썸네일로 편집해줘. 상품은 참조 이미지 그대로 두고 배경·구도·문구만 다뤄.',
-    `상품: ${params.productName}`,
-    `배경·분위기: ${params.style}`,
-    '1:1 정사각형. 상품이 프레임의 70% 정도를 차지하게 중앙에 크게, 바닥에 짧고 자연스러운 접지 그림자.',
-    headlineLine,
-    '상품의 형태·색상·질감·비율을 바꾸지 말고, 없는 부품·기능·다른 제품을 만들어내지 마.',
-    '금지: 광선·반짝임·그라데이션 오버레이·스티커·리본·테두리 프레임·가격·할인율·인증 마크·브랜드 로고·워터마크.',
+    '너는 네이버 스마트스토어 상품 썸네일을 전문으로 만드는 커머스 디자이너야.',
+    '아래 브리프대로 참조 사진을 편집해서 썸네일 1장을 완성해.',
+    '',
+    `[상품] ${params.productName}`,
+    '※ 상품명은 맥락 파악용이다. 상품명이나 그 일부를 이미지에 글자로 쓰지 마.',
+    '',
+    '[캔버스]',
+    '- 1:1 정사각형(1000×1000 기준). 배경은 캔버스를 가득 채운다.',
+    '- 글자와 제품은 캔버스 가장자리에서 최소 5% 떨어뜨린다. 여백에 선·테두리·프레임을 그리지 마.',
+    '',
+    '[아트디렉션]',
+    ...direction.lines,
+    '',
+    '[제품 처리]',
+    '- 참조 사진의 제품을 그대로 쓴다. 형태·색상·질감·비율·개수 변경 금지, 없는 제품·부품 창작 금지.',
+    '- 제품 외곽을 배경에서 깔끔하게 분리하고, 바닥에 아주 짧은 접지 그림자(불투명도 15-20%)를 둔다.',
+    '- 제품 초점은 선명하게. 흐리게 처리하지 마.',
+    '',
+    '[타이포그래피]',
+    typography,
+    '',
+    '[금지]',
+    '- 광선·반짝임·렌즈플레어·빛번짐, 패턴 오버레이, 그라데이션 장식',
+    '- 스티커·리본·배지·라벨·말풍선·테두리 프레임',
+    `- ${headline ? `지정한 "${headline}"` : '지정된 문구'} 외의 모든 글자 — 상품명·영문 슬로건·수량(예: 2매입)·단위·용량·가격·할인율·숫자 뱃지·인증마크·브랜드 로고·워터마크 전부 금지`,
+    '- 사람 손·얼굴을 새로 만들어 넣지 않는다',
   ].join('\n');
 }
 

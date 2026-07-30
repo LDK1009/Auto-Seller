@@ -12,7 +12,8 @@ import {
   isImageGenerationConfigured,
 } from '@/shared/services/imageGenerationServer';
 
-export const maxDuration = 120; // 이미지 생성은 수 초~수십 초
+// 실측(2026-07-30): 평온할 때 12-16초, 혼잡하면 90-165초까지 튄다. 상한을 넉넉히 잡아야 중간에 끊기지 않는다.
+export const maxDuration = 300;
 
 export async function POST(request: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -35,9 +36,10 @@ export async function POST(request: Request) {
   const userId = userData.user.id;
 
   ////////// 입력
+  // 프롬프트 본문은 서버가 조립한다 — 클라이언트는 아트디렉션 id만 보낸다 (임의 지시 주입 차단)
   const body = (await request.json().catch(() => null)) as {
     productName?: string;
-    style?: string;
+    styleId?: string;
     headline?: string;
     image?: { base64: string; mimeType: string };
   } | null;
@@ -62,7 +64,7 @@ export async function POST(request: Request) {
     const generated = await generateImage({
       prompt: buildThumbnailPrompt({
         productName: body.productName,
-        style: body.style ?? '깔끔한 흰 배경, 밝고 선명한 조명',
+        styleId: body.styleId, // 미지정·오타면 기본 아트디렉션으로 폴백
         headline: body.headline,
       }),
       referenceImages: [body.image],

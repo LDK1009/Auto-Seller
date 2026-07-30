@@ -58,15 +58,15 @@ export function base64ToBlob(payload: GeneratedImagePayload): Blob {
 export type ThumbnailRequest = {
   accessToken: string;
   productName: string;
-  style: string;
+  styleId: string; // 아트디렉션 id — 프롬프트 본문은 서버가 만든다
   headline?: string;
   image: GeneratedImagePayload;
 };
 
 export type AiGenerateError = Error & { needsCredits?: boolean; notConfigured?: boolean };
 
-// 서버가 응답을 안 주면 스피너가 영원히 돈다 — 라우트 상한(maxDuration 120s)보다 조금 길게 잡고 끊는다
-const REQUEST_TIMEOUT_MS = 130_000;
+// 서버가 응답을 안 주면 스피너가 영원히 돈다 — 라우트 상한(maxDuration 300s)보다 조금 길게 잡고 끊는다
+const REQUEST_TIMEOUT_MS = 310_000;
 
 async function postJson(path: string, accessToken: string, body: unknown) {
   let response: Response;
