@@ -63,7 +63,8 @@ async function getSegmenter(onProgress?: ProgressHandler): Promise<any> {
     return await segmenterPromise;
   } catch (error) {
     segmenterPromise = null; // 실패 시 다음 시도에서 재로드
-    throw error;
+    console.error('배경 제거 모델 로드 실패:', error);
+    throw new Error('배경 제거 준비에 실패했어요. 네트워크를 확인하고 다시 시도해주세요.');
   }
 }
 

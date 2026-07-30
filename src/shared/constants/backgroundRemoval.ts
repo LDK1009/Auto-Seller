@@ -13,7 +13,9 @@ export const RESULT_SUFFIX = '_누끼'; // 결과 파일명 접미사
 
 //////////////////// 모델 ////////////////////
 // Hugging Face Hub에서 로드 (최초 1회 다운로드 후 브라우저 캐시)
-export const SEGMENTATION_MODEL_ID = 'schirrmacher/ormbg';
+// ⚠️ 원본 레포(schirrmacher/ormbg)는 ONNX 파일만 있고 config·preprocessor가 없어 transformers.js가 못 읽는다.
+//    transformers.js 변환본(onnx-community/ormbg-ONNX)을 쓴다 — 같은 모델·Apache-2.0, fp16 가중치 포함.
+export const SEGMENTATION_MODEL_ID = 'onnx-community/ormbg-ONNX';
 export const MODEL_LICENSE = 'Apache-2.0';
 
 // 추론 정밀도 — fp16이 용량·속도 균형 (미지원 환경은 라이브러리가 fp32로 폴백)
