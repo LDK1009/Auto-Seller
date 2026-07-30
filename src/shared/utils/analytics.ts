@@ -16,6 +16,10 @@
 // - option_xlsx_download       : 옵션 일괄등록 양식 다운로드
 // - image_edit_open { context }: 이미지 편집 모달 진입 = 파이프라인 실제 연결
 //
+// ── 유료 기능 계측 (2026-07-30 추가) ──────────────────────────────────
+// - ai_thumbnail_generate { result, style, hasHeadline } : AI 썸네일 생성 시도
+//   result = success | fail | no_credits — no_credits 비율이 높으면 크레딧 배분(가입 보너스 10개)이 잘못된 것
+//
 // 판정 방법 (배포 +7일):
 //   1) sheet_view 대비 section_copy 비율 = 진짜 완주율
 //   2) domeggook_lookup 의 reason/license 분포 = 진입 단계 최대 이탈 원인

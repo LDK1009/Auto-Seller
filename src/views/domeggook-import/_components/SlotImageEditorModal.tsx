@@ -4,7 +4,8 @@
 // ⑥ 대표/추가 이미지 클릭 시 열리는 미리보기 + 편집. 기존 도구 UI 그대로 이식:
 // - 배경: [배경 제거]/[배경 색상] 툴버튼 — 색상 클릭 시 ColorPickerPopover(팔레트·추천 색상·패턴·그라데이션 방향)
 // - 워터마크: 스위치 켜면 WatermarkSettingsPanel — 속성 변경 시 디바운스 자동 합성 ([합성] 버튼 없음)
-// - 레이어 구조: 원본 → processed(누끼+배경) → final(워터마크) 순서로 항상 재합성 (중복 합성 없음)
+// - AI 썸네일: 로그인+크레딧 1 소모. 생성 결과는 "새 기준 이미지(aiBase)"가 되고 누끼·워터마크가 그 위에 얹힌다
+// - 레이어 구조: 원본(또는 aiBase) → processed(누끼+배경) → final(워터마크) 순서로 항상 재합성 (중복 합성 없음)
 // - [적용] 시 최종 Blob을 부모로 반환 → 슬롯 교체, [원본으로 되돌리기]로 초기화
 
 import { useEffect, useRef, useState } from 'react';
@@ -19,10 +20,13 @@ import Switch from '@mui/material/Switch';
 import Tooltip from '@mui/material/Tooltip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Collapse from '@mui/material/Collapse';
+import TextField from '@mui/material/TextField';
+import Link from '@mui/material/Link';
 import CloseIcon from '@mui/icons-material/Close';
 import FormatColorResetIcon from '@mui/icons-material/FormatColorReset';
 import PaletteIcon from '@mui/icons-material/Palette';
 import RestartAltOutlinedIcon from '@mui/icons-material/RestartAltOutlined';
+import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
 import { useSnackbar } from 'notistack';
 import { removeImageBackground } from '@/shared/utils/removeImageBackground';
 import { applyBackground } from '@/shared/utils/applyBackground';
@@ -34,7 +38,19 @@ import {
 import { DEFAULT_WATERMARK_SETTINGS, type WatermarkSettings } from '@/shared/constants/watermark';
 import WatermarkSettingsPanel from '@/shared/components/WatermarkSettingsPanel';
 import ColorPickerPopover, { getPatternPreviewCss } from '@/shared/components/ColorPickerPopover';
+import LoginRequiredDialog from '@/shared/components/LoginRequiredDialog';
 import { transientOptions } from '@/shared/utils/emotionTransientProps';
+import { useAuthSession } from '@/shared/hooks/useAuthSession';
+import { fetchCredits } from '@/shared/services/creditService';
+import { blobToBase64, base64ToBlob, generateThumbnail } from '@/shared/services/aiImageService';
+import { CREDIT_COST } from '@/shared/constants/billing';
+import {
+  THUMBNAIL_STYLE_PRESETS,
+  DEFAULT_THUMBNAIL_STYLE_ID,
+  HEADLINE_MAX_LENGTH,
+  type ThumbnailStyleId,
+} from '@/shared/constants/aiThumbnail';
+import { trackEvent } from '@/shared/utils/analytics';
 
 const WATERMARK_APPLY_DEBOUNCE_MS = 400; // 텍스트 타이핑·슬라이더 드래그 연속 변경 흡수
 
@@ -46,6 +62,7 @@ type SlotImageEditorModalProps = {
   imageBlob?: Blob; // 크롭본이면 Blob 직접 보유
   context: 'main' | 'extra';
   isCurrentMain: boolean; // 대표 컨텍스트에서 이미 대표인지
+  productName?: string; // AI 썸네일 프롬프트에 넣을 상품명 (조회된 상품 제목)
   onClose: () => void;
   onApply: (blob: Blob) => void; // 가공 결과로 슬롯 교체
   onSetMain?: () => void; // 대표 컨텍스트 — 이 이미지를 대표로
@@ -58,12 +75,14 @@ export default function SlotImageEditorModal({
   imageBlob,
   context,
   isCurrentMain,
+  productName,
   onClose,
   onApply,
   onSetMain,
   onRemove,
 }: SlotImageEditorModalProps) {
   const { enqueueSnackbar } = useSnackbar();
+  const { session } = useAuthSession();
 
   //////////////////// 편집 레이어 상태 ////////////////////
   // processed = 누끼+배경 결과 / final = 워터마크까지 합성한 최종 (표시 우선순위: final > processed > 원본)
@@ -78,12 +97,22 @@ export default function SlotImageEditorModal({
   const [busyLabel, setBusyLabel] = useState<string | null>(null); // 누끼·배경 합성 오버레이
   const [isWatermarkComposing, setIsWatermarkComposing] = useState(false);
 
+  //////////////////// AI 썸네일 상태 ////////////////////
+  // aiBase = AI 생성 결과 = 이후 편집(누끼·워터마크)의 기준 이미지
+  const [aiBase, setAiBase] = useState<EditLayer | null>(null);
+  const [isAiOn, setIsAiOn] = useState(false);
+  const [aiStyleId, setAiStyleId] = useState<ThumbnailStyleId>(DEFAULT_THUMBNAIL_STYLE_ID);
+  const [aiHeadline, setAiHeadline] = useState('');
+  const [creditBalance, setCreditBalance] = useState<number | null>(null); // null = 아직 모름
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
+
   const sourceBlobRef = useRef<Blob | null>(null); // 원본 Blob 캐시
   const transparentBlobRef = useRef<Blob | null>(null); // 누끼 결과 캐시 (배경 옵션 변경마다 재사용)
   // 초기화 이펙트 없음 — 부모가 열 때마다 조건부 마운트(fresh mount)라 항상 초기값으로 시작
 
-  ////////// 원본 Blob 확보 (크롭본 = 보유 Blob, 원본 = 프록시 fetch — 1회 캐시)
+  ////////// 편집 기준 Blob 확보 (AI 결과가 있으면 그것 → 없으면 크롭본/프록시 원본 1회 캐시)
   const getSourceBlob = async (): Promise<Blob> => {
+    if (aiBase) return aiBase.blob;
     if (sourceBlobRef.current) return sourceBlobRef.current;
     if (imageBlob) {
       sourceBlobRef.current = imageBlob;
@@ -166,7 +195,7 @@ export default function SlotImageEditorModal({
       clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isWatermarkOn, watermark, processed]);
+  }, [isWatermarkOn, watermark, processed, aiBase]); // aiBase — AI 결과로 기준 이미지가 바뀌면 워터마크도 다시 얹는다
 
   ////////// 배경 토글 — 켜면 즉시 모델 로드(누끼) 후 투명 배경, 끄면 배경 레이어 제거
   const handleBackgroundToggle = (checked: boolean) => {
@@ -183,7 +212,78 @@ export default function SlotImageEditorModal({
     }
   };
 
-  ////////// 원본 복귀
+  //////////////////// AI 썸네일 ////////////////////
+  ////////// 크레딧 잔액 조회 (AI 섹션을 펼친 시점에만 — 모달 열 때마다 호출하지 않는다)
+  useEffect(() => {
+    const accessToken = session?.access_token;
+    if (!isAiOn || !accessToken) return;
+    let cancelled = false;
+    fetchCredits(accessToken)
+      .then((summary) => {
+        if (!cancelled) setCreditBalance(summary.balance);
+      })
+      .catch((error) => console.error(error));
+    return () => {
+      cancelled = true;
+    };
+  }, [isAiOn, session?.access_token]);
+
+  ////////// 스위치 — 비로그인은 다이얼로그로 안내 (토스트 아님)
+  const handleAiToggle = (checked: boolean) => {
+    if (checked && !session) {
+      setIsLoginDialogOpen(true);
+      return;
+    }
+    setIsAiOn(checked);
+  };
+
+  ////////// 생성 — 현재 화면의 이미지를 참조로 보내고, 결과를 새 기준 이미지로 앉힌다
+  const generateAiThumbnail = async () => {
+    const accessToken = session?.access_token;
+    if (!accessToken) {
+      setIsLoginDialogOpen(true);
+      return;
+    }
+    setBusyLabel('AI가 썸네일 만드는 중… 20초쯤 걸려요');
+    try {
+      const reference = await blobToBase64(final?.blob ?? processed?.blob ?? (await getSourceBlob()));
+      const preset = THUMBNAIL_STYLE_PRESETS.find((entry) => entry.id === aiStyleId) ?? THUMBNAIL_STYLE_PRESETS[0];
+      const result = await generateThumbnail({
+        accessToken,
+        productName: productName?.trim() || '상품',
+        style: preset.prompt,
+        headline: aiHeadline.trim() || undefined,
+        image: reference,
+      });
+      const blob = base64ToBlob(result.image);
+      // 새 기준 이미지 = 이전 누끼 캐시·배경·워터마크 결과 무효화 (워터마크는 이펙트가 자동 재합성)
+      transparentBlobRef.current = null;
+      setIsBackgroundOn(false);
+      setBgOption(null);
+      setProcessed((previous) => {
+        if (previous) URL.revokeObjectURL(previous.url);
+        return null;
+      });
+      setAiBase((previous) => {
+        if (previous) URL.revokeObjectURL(previous.url);
+        return { blob, url: URL.createObjectURL(blob) };
+      });
+      setCreditBalance((previous) => (previous === null ? previous : Math.max(0, previous - result.creditsSpent)));
+      trackEvent('ai_thumbnail_generate', { result: 'success', style: aiStyleId, hasHeadline: aiHeadline.trim() !== '' });
+    } catch (error) {
+      console.error(error);
+      const needsCredits = (error as { needsCredits?: boolean }).needsCredits === true;
+      if (needsCredits) setCreditBalance(0);
+      enqueueSnackbar(error instanceof Error ? error.message : 'AI 썸네일 생성에 실패했어요.', {
+        variant: needsCredits ? 'warning' : 'error',
+      });
+      trackEvent('ai_thumbnail_generate', { result: needsCredits ? 'no_credits' : 'fail', style: aiStyleId });
+    } finally {
+      setBusyLabel(null);
+    }
+  };
+
+  ////////// 원본 복귀 (AI 결과까지 버린다 — 소모된 크레딧은 돌아오지 않음)
   const resetEdits = () => {
     setIsBackgroundOn(false);
     setProcessed((previous) => {
@@ -191,16 +291,22 @@ export default function SlotImageEditorModal({
       return null;
     });
     setBgOption(null);
+    setAiBase((previous) => {
+      if (previous) URL.revokeObjectURL(previous.url);
+      return null;
+    });
+    transparentBlobRef.current = null;
     setIsWatermarkOn(false); // final은 이펙트가 정리
   };
 
   const isBusy = busyLabel !== null;
-  const hasEdits = processed !== null || final !== null;
-  const displayUrl = final?.url ?? processed?.url ?? imageUrl;
+  const hasEdits = processed !== null || final !== null || aiBase !== null;
+  const displayUrl = final?.url ?? processed?.url ?? aiBase?.url ?? imageUrl;
   const showCheckerboard = bgOption?.kind === 'transparent';
+  const isCreditShort = creditBalance !== null && creditBalance < CREDIT_COST.thumbnail;
 
   const handleApply = () => {
-    const blob = final?.blob ?? processed?.blob;
+    const blob = final?.blob ?? processed?.blob ?? aiBase?.blob;
     if (blob) onApply(blob);
   };
 
@@ -233,6 +339,81 @@ export default function SlotImageEditorModal({
           </PreviewFrame>
 
           <Stack spacing={3.5} sx={{ flex: 1, minWidth: 260, overflowY: 'auto' }}>
+            {/* AI 썸네일 — 로그인+크레딧 1. 생성 결과가 새 기준 이미지가 되고 아래 배경·워터마크가 그 위에 얹힌다 */}
+            <Stack spacing={1}>
+              <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
+                <Typography variant="subtitle2">AI 썸네일</Typography>
+                <Switch
+                  size="small"
+                  checked={isAiOn}
+                  disabled={isBusy}
+                  onChange={(_event, checked) => handleAiToggle(checked)}
+                  slotProps={{ input: { 'aria-label': 'AI 썸네일 사용' } }}
+                />
+                <Chip size="small" variant="outlined" label={`크레딧 ${CREDIT_COST.thumbnail}개`} />
+              </Stack>
+              <Collapse in={isAiOn}>
+                <Stack spacing={1.5}>
+                  {/* 스타일 — 프롬프트를 쓰지 않게 고정 선택지 */}
+                  <Stack spacing={0.75}>
+                    <Typography variant="caption" color="text.secondary">
+                      스타일
+                    </Typography>
+                    <Stack direction="row" spacing={0.75} sx={{ flexWrap: 'wrap', rowGap: 0.75 }}>
+                      {THUMBNAIL_STYLE_PRESETS.map((preset) => (
+                        <Chip
+                          key={preset.id}
+                          size="small"
+                          label={preset.label}
+                          disabled={isBusy}
+                          color={aiStyleId === preset.id ? 'primary' : 'default'}
+                          variant={aiStyleId === preset.id ? 'filled' : 'outlined'}
+                          onClick={() => setAiStyleId(preset.id)}
+                        />
+                      ))}
+                    </Stack>
+                  </Stack>
+
+                  <TextField
+                    size="small"
+                    label="문구 (선택)"
+                    placeholder="예) 하루만에 도착"
+                    value={aiHeadline}
+                    disabled={isBusy}
+                    onChange={(event) => setAiHeadline(event.target.value.slice(0, HEADLINE_MAX_LENGTH))}
+                    helperText={`이미지 위에 넣을 짧은 문구예요. ${aiHeadline.length}/${HEADLINE_MAX_LENGTH}자`}
+                  />
+
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<AutoAwesomeOutlinedIcon />}
+                    onClick={generateAiThumbnail}
+                    disabled={isBusy || isCreditShort}
+                    sx={{ alignSelf: 'flex-start' }}
+                  >
+                    {aiBase ? '다시 만들기' : '썸네일 만들기'}
+                  </Button>
+
+                  {/* 크레딧 상태 — 부족하면 충전 경로를 바로 열어준다 */}
+                  {isCreditShort ? (
+                    <Typography variant="caption" color="warning.main">
+                      크레딧이 부족해요.{' '}
+                      <Link href="/pricing" target="_blank" rel="noopener" underline="always">
+                        충전하기
+                      </Link>
+                    </Typography>
+                  ) : (
+                    <Typography variant="caption" color="text.secondary">
+                      {creditBalance === null
+                        ? '지금 이미지를 참고해서 새 썸네일을 만들어요.'
+                        : `남은 크레딧 ${creditBalance}개 · 만들 때마다 ${CREDIT_COST.thumbnail}개 써요.`}
+                    </Typography>
+                  )}
+                </Stack>
+              </Collapse>
+            </Stack>
+
             {/* 배경 — 토글 on 시 즉시 누끼(모델 로드), 툴버튼은 기존 누끼 도구와 동일 구성 */}
             <Stack spacing={1}>
               <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
@@ -363,6 +544,13 @@ export default function SlotImageEditorModal({
         onChange={changeBackground}
         onCustomColorChange={setCustomColor}
         onClose={() => setColorAnchorEl(null)}
+      />
+
+      {/* AI 생성은 크레딧 계정이 필요 — 나머지 편집(누끼·워터마크)은 로그인 없이 그대로 사용 */}
+      <LoginRequiredDialog
+        open={isLoginDialogOpen}
+        description="AI 썸네일은 크레딧을 쓰기 때문에 로그인이 필요해요. 배경 제거·워터마크는 로그인 없이 계속 쓸 수 있어요."
+        onClose={() => setIsLoginDialogOpen(false)}
       />
     </Dialog>
   );

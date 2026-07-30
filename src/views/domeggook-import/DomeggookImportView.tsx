@@ -701,6 +701,7 @@ export default function DomeggookImportView() {
           imageBlob={slotPreview.picked.blob}
           context={slotPreview.context}
           isCurrentMain={mainImage?.id === slotPreview.picked.id}
+          productName={item?.title}
           onClose={() => setSlotPreview(null)}
           onApply={handleEditorApply}
           onSetMain={() => {
